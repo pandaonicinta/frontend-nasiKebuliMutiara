@@ -1,0 +1,110 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Berkshire+Swash&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@layer base {
+    body {
+      font-family: 'Inter', sans-serif;
+      @apply bg-white;
+    }
+    
+    .font-berkshire {
+      font-family: 'Berkshire Swash', cursive;
+    }
+  }
+  
+  /* Wave divider style */
+  .wave-divider {
+    position: relative;
+    height: 100px;
+    width: 100%;
+    overflow: hidden;
+  }
+  
+  .wave-divider svg {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 100px;
+  }
+  
+  /* Lantern styles */
+  .lantern-container {
+    position: relative;
+    display: flex;
+  }
+  
+  .lantern {
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    position: relative;
+  }
+  
+  .lantern::before {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 2px;
+    height: 40px;
+    background-color: #854d0e;
+  }
+  
+  .lantern::after {
+    content: '';
+    position: absolute;
+    top: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 8px;
+    height: 6px;
+    background-color: #854d0e;
+    border-radius: 4px;
+  }
+  
+  /* Star animations */
+  .stars-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+  }
+  
+  .star {
+    opacity: 0.7;
+    animation: twinkle 2s infinite alternate;
+  }
+  
+  .star:nth-child(2) {
+    animation-delay: 0.3s;
+  }
+  
+  .star:nth-child(3) {
+    animation-delay: 0.6s;
+  }
+  
+  .star:nth-child(4) {
+    animation-delay: 0.9s;
+  }
+  
+  @keyframes twinkle {
+    0% {
+      opacity: 0.4;
+      transform: scale(1);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1.2);
+    }
+  }
+  
+  /* Background gradients */
+  .bg-gradient-custom {
+    background: linear-gradient(to right, #EFECD7, #FCFBF5, #F8EAE1, #F9EAEA);
+  }
+  
+  .ramadhan-bg {
+    background: linear-gradient(to right, #FFCB42, #FEB139);
+  }
