@@ -61,7 +61,7 @@ const CustomerReviewDetail = () => {
       <CustomerSidebar activePage="review" />
 
       {/* Main Content */}
-      <div className="relative z-10 flex-1 p-6">
+      <div className="relative z-10 flex-1 ml-52 mx-4 my-4 mr-6">
         {/* Header with Page Title and Customer badge */}
         <div className="flex justify-between items-center mb-6 bg-white p-4 rounded-lg shadow-lg">
           <h1 className="text-base font-bold text-red-800">Review</h1>

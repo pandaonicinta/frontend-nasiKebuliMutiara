@@ -77,7 +77,7 @@ const CustomerProfile = () => {
       <CustomerSidebar activePage="profile" />
 
       {/* Main Content */}
-      <div className="relative z-10 flex-1 mx-4 my-4 mr-6">
+      <div className="relative z-10 flex-1 ml-52 mx-4 my-4 mr-6">
         {/* Header with Title and User */}
         <div className="bg-white rounded-lg p-4 flex justify-between items-center mb-6 shadow-xl">
           <h1 className="text-red-800 font-bold">Profile</h1>

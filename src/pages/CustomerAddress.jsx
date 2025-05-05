@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { FaUser, FaShoppingCart, FaStar, FaHome, FaUserAlt, FaPencilAlt, FaTrash } from 'react-icons/fa';
+import { FaUserAlt, FaPencilAlt, FaTrash } from 'react-icons/fa';
 import CustomerSidebar from './CustomerSidebar';
 import aksen from '../assets/images/aksen.png';
-import logo from '../assets/images/logo.png';
 
 const CustomerAddress = () => {
   const [isEditing, setIsEditing] = useState(false);
@@ -97,11 +96,11 @@ const CustomerAddress = () => {
         }}
       ></div>
 
-       {/* Sidebar */}
-       <CustomerSidebar activePage="address" />
+      {/* Sidebar */}
+      <CustomerSidebar activePage="address" />
 
-      {/* Main Content */}
-      <div className="relative z-10 flex-1 mx-4 my-4 mr-6">
+      {/* Main Content - With proper margin to accommodate fixed sidebar */}
+      <div className="relative z-10 flex-1 ml-52 mx-4 my-4 mr-6">
         {/* Header with Title and User */}
         <div className="bg-white rounded-lg p-4 flex justify-between items-center mb-6">
           <h1 className="text-red-800 font-bold">Address</h1>

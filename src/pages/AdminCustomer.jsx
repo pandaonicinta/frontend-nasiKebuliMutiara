@@ -38,7 +38,7 @@ const AdminCustomer = () => {
       <AdminSidebar activePage="customers" />
 
       {/* Main Content */}
-      <div className="relative z-10 flex-1 p-6">
+      <div className="relative z-10 flex-1 ml-52 p-6">
         {/* Header with Customer and Admin in a box */}
         <div className="flex justify-between items-center mb-6 bg-white p-4 rounded-lg shadow-lg">
           <h1 className="text-xl font-bold text-red-800">Customer</h1>

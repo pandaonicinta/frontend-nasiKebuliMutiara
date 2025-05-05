@@ -68,16 +68,11 @@ const AboutUs = () => {
       <section className="py-16 px-6 md:px-16 lg:px-24 bg-[#F9F7F0]">
         <div className="max-w-6xl mx-auto text-center">
           <h2 className="text-4xl font-berkshire mb-4">
-            Our <span className="text-yellow-400">Family</span> Members
+            Our <span className="text-yellow-400">CEO</span>
           </h2>
           <p className="text-gray-700 mb-12">Get to know the friendly faces behind your favorite flavors.</p>
           
-          <div className="relative">
-            {/* Left Arrow */}
-            <button className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white rounded-full p-2 shadow-md">
-              <span>&larr;</span>
-            </button>
-            
+ 
             {/* Family Members */}
             <div className="flex justify-center gap-8 px-10">
               {/* Member 1 */}
@@ -85,112 +80,20 @@ const AboutUs = () => {
                 <div className="rounded-full overflow-hidden w-48 h-48 mb-6">
                   <img src="/api/placeholder/200/200" alt="Team Member" className="w-full h-full object-cover" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-1">Nama Keluarga</h3>
+                <h3 className="text-xl font-bold text-gray-900 mb-1">CEO</h3>
                 <p className="text-gray-600 mb-4">Bakery Worker</p>
                 <div className="flex gap-2">
                   <a href="#" className="bg-red-800 text-white rounded-full p-2">
-                    <FaFacebookF size={16} />
-                  </a>
-                  <a href="#" className="bg-red-800 text-white rounded-full p-2">
                     <FaInstagram size={16} />
-                  </a>
-                  <a href="#" className="bg-red-800 text-white rounded-full p-2">
-                    <FaYoutube size={16} />
                   </a>
                 </div>
               </div>
-              
-              {/* Member 2 */}
-              <div className="flex flex-col items-center">
-                <div className="rounded-full overflow-hidden w-48 h-48 mb-6">
-                  <img src="/api/placeholder/200/200" alt="Team Member" className="w-full h-full object-cover" />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-1">Nama Keluarga</h3>
-                <p className="text-gray-600 mb-4">Staff Worker</p>
-                <div className="flex gap-2">
-                  <a href="#" className="bg-red-800 text-white rounded-full p-2">
-                    <FaFacebookF size={16} />
-                  </a>
-                  <a href="#" className="bg-red-800 text-white rounded-full p-2">
-                    <FaInstagram size={16} />
-                  </a>
-                  <a href="#" className="bg-red-800 text-white rounded-full p-2">
-                    <FaYoutube size={16} />
-                  </a>
-                </div>
-              </div>
-              
-              {/* Member 3 */}
-              <div className="flex flex-col items-center">
-                <div className="rounded-full overflow-hidden w-48 h-48 mb-6">
-                  <img src="/api/placeholder/200/200" alt="Team Member" className="w-full h-full object-cover" />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-1">Nama Keluarga</h3>
-                <p className="text-gray-600 mb-4">Shop Worker</p>
-                <div className="flex gap-2">
-                  <a href="#" className="bg-red-800 text-white rounded-full p-2">
-                    <FaFacebookF size={16} />
-                  </a>
-                  <a href="#" className="bg-red-800 text-white rounded-full p-2">
-                    <FaInstagram size={16} />
-                  </a>
-                  <a href="#" className="bg-red-800 text-white rounded-full p-2">
-                    <FaYoutube size={16} />
-                  </a>
-                </div>
-              </div>
-            </div>
-            
-            {/* Right Arrow */}
-            <button className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white rounded-full p-2 shadow-md">
-              <span>&rarr;</span>
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* Our Statistics Section */}
-      <section className="py-16 px-6 md:px-16 lg:px-24 bg-white">
-        <div className="max-w-6xl mx-auto text-center">
-          <h2 className="text-4xl font-berkshire mb-4">
-            Our <span className="text-yellow-400">Statistics</span>
-          </h2>
-          <p className="text-gray-700 mb-12">What makes us special through our impressive statistics.</p>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* Stat 1 */}
-            <div className="bg-white p-8 rounded-lg shadow-sm">
-              <h3 className="text-4xl font-bold mb-2">91<sup>+</sup></h3>
-              <p className="text-gray-600">Customer</p>
-              <div className="w-full h-1 bg-yellow-200 mt-4"></div>
-            </div>
-            
-            {/* Stat 2 */}
-            <div className="bg-white p-8 rounded-lg shadow-sm">
-              <h3 className="text-4xl font-bold mb-2">100<sup>%</sup></h3>
-              <p className="text-gray-600">Customer Happy</p>
-              <div className="w-full h-1 bg-yellow-200 mt-4"></div>
-            </div>
-            
-            {/* Stat 3 */}
-            <div className="bg-white p-8 rounded-lg shadow-sm">
-              <h3 className="text-4xl font-bold mb-2">48<sup>+</sup></h3>
-              <p className="text-gray-600">Years of Experience</p>
-              <div className="w-full h-1 bg-yellow-200 mt-4"></div>
-            </div>
-            
-            {/* Stat 4 */}
-            <div className="bg-white p-8 rounded-lg shadow-sm">
-              <h3 className="text-4xl font-bold mb-2">143<sup>+</sup></h3>
-              <p className="text-gray-600">Employees Working</p>
-              <div className="w-full h-1 bg-yellow-200 mt-4"></div>
             </div>
           </div>
-        </div>
       </section>
 
       {/* Our Location Section */}
-      <section className="py-16 px-6 md:px-16 lg:px-24 bg-[#F9F7F0]">
+      <section className="py-16 px-6 md:px-16 lg:px-24 bg-white">
         <div className="max-w-6xl mx-auto text-center">
           <h2 className="text-4xl font-berkshire mb-12">
             Our <span className="text-yellow-400">Location</span>

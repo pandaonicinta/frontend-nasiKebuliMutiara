@@ -1,6 +1,6 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiSearch, FiShoppingBag } from 'react-icons/fi';
+import { FiSearch, FiShoppingBag, FiTrash2 } from 'react-icons/fi';
 import { HiOutlineArrowNarrowRight, HiOutlineArrowNarrowLeft } from 'react-icons/hi';
 import { CartContext } from '../contexts/CartContext';
 import logo from '../assets/images/logo.png';
@@ -14,14 +14,58 @@ const Cart = () => {
   const navigate = useNavigate();
   const { cartItems, removeFromCart, updateQuantity, calculateTotal, cartCount, clearCart } = useContext(CartContext);
   
+  // State for selected items
+  const [selectedItems, setSelectedItems] = useState({});
+  const [selectAll, setSelectAll] = useState(false);
+  
   // Calculate shipping cost (10.000)
   const shippingCost = 10000;
   
-  // Calculate subtotal
-  const subtotal = calculateTotal();
+  // Initialize selected items when cart changes
+  useEffect(() => {
+    const initialSelected = {};
+    cartItems.forEach(item => {
+      const itemKey = `${item.id}-${item.size}`;
+      // Preserve selection if item existed, default to true for new items
+      initialSelected[itemKey] = selectedItems[itemKey] !== undefined ? selectedItems[itemKey] : true;
+    });
+    setSelectedItems(initialSelected);
+    
+    // Check if all items are selected to update selectAll state
+    const allSelected = cartItems.length > 0 && 
+      Object.values(initialSelected).every(value => value === true);
+    setSelectAll(allSelected);
+  }, [cartItems]);
   
-  // Calculate total
-  const total = subtotal + shippingCost;
+  // Calculate subtotal of selected items
+  const calculateSelectedSubtotal = () => {
+    return cartItems.reduce((total, item) => {
+      const itemKey = `${item.id}-${item.size}`;
+      const itemPrice = parseInt(item.price.replace('Rp. ', '').replace(/\./g, ''));
+      
+      if (selectedItems[itemKey]) {
+        return total + (itemPrice * item.quantity);
+      }
+      return total;
+    }, 0);
+  };
+  
+  // Get selected items count - include quantity of each item
+  const getSelectedCount = () => {
+    return cartItems.reduce((count, item) => {
+      const itemKey = `${item.id}-${item.size}`;
+      return count + (selectedItems[itemKey] ? item.quantity : 0);
+    }, 0);
+  };
+  
+  // Get total quantity of all items
+  const getTotalQuantity = () => {
+    return cartItems.reduce((count, item) => count + item.quantity, 0);
+  };
+  
+  // Calculate subtotal and total
+  const subtotal = calculateSelectedSubtotal();
+  const total = subtotal + (getSelectedCount() > 0 ? shippingCost : 0);
   
   // Handle quantity change
   const handleQuantityChange = (itemId, size, newQuantity) => {
@@ -30,8 +74,42 @@ const Cart = () => {
     }
   };
   
-  // Handle proceed to checkout - Fixed to navigate to checkout page
+  // Handle item selection
+  const toggleItemSelection = (itemId, size) => {
+    const itemKey = `${itemId}-${size}`;
+    const newSelectedItems = {
+      ...selectedItems,
+      [itemKey]: !selectedItems[itemKey]
+    };
+    setSelectedItems(newSelectedItems);
+    
+    // Update selectAll state
+    const allSelected = cartItems.length > 0 && 
+      cartItems.every(item => newSelectedItems[`${item.id}-${item.size}`]);
+    setSelectAll(allSelected);
+  };
+  
+  // Handle select all
+  const toggleSelectAll = () => {
+    const newSelectAll = !selectAll;
+    setSelectAll(newSelectAll);
+    
+    // Update all item selections
+    const newSelectedItems = {};
+    cartItems.forEach(item => {
+      newSelectedItems[`${item.id}-${item.size}`] = newSelectAll;
+    });
+    setSelectedItems(newSelectedItems);
+  };
+  
+  // Handle proceed to checkout - only for selected items
   const handleCheckout = () => {
+    // Check if any item is selected
+    if (getSelectedCount() === 0) {
+      alert('Please select at least one item to checkout');
+      return;
+    }
+    
     // Navigate to checkout page
     navigate('/checkout');
   };
@@ -89,9 +167,29 @@ const Cart = () => {
               </div>
             ) : (
               <>
+                {/* Select All Checkbox - Fixed Alignment */}
+                <div className="flex items-center mb-4 bg-gray-50 p-3 rounded-md">
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id="select-all"
+                      checked={selectAll}
+                      onChange={toggleSelectAll}
+                      className="w-4 h-4 text-[#FDC302] focus:ring-[#FDC302] rounded border-gray-300"
+                    />
+                    <label htmlFor="select-all" className="ml-2 text-sm font-medium text-gray-700">
+                      Select All Items ({cartCount})
+                    </label>
+                  </div>
+                  <span className="ml-auto text-sm text-gray-500">
+                    {getSelectedCount()} of {getTotalQuantity()} selected
+                  </span>
+                </div>
+                
                 {/* Table Header */}
                 <div className="hidden md:grid md:grid-cols-12 gap-2 mb-4 pb-2 border-b">
-                  <div className="col-span-5 font-semibold">Product Details</div>
+                  <div className="col-span-1 flex items-center justify-center"></div>
+                  <div className="col-span-4 font-semibold">Product Details</div>
                   <div className="col-span-2 font-semibold">Price</div>
                   <div className="col-span-2 font-semibold">Quantity</div>
                   <div className="col-span-3 font-semibold">Total</div>
@@ -103,11 +201,23 @@ const Cart = () => {
                     // Calculate item total
                     const itemPrice = parseInt(item.price.replace('Rp. ', '').replace(/\./g, ''));
                     const itemTotal = itemPrice * item.quantity;
+                    const itemKey = `${item.id}-${item.size}`;
                     
                     return (
-                      <div key={`${item.id}-${item.size}`} className="grid md:grid-cols-12 gap-2 py-4 border-b items-center">
+                      <div key={itemKey} className="grid md:grid-cols-12 gap-2 py-4 border-b items-center">
+                        {/* Checkbox - Improved Alignment */}
+                        <div className="col-span-1 flex items-center justify-center">
+                          <input
+                            type="checkbox"
+                            id={`select-${itemKey}`}
+                            checked={selectedItems[itemKey] || false}
+                            onChange={() => toggleItemSelection(item.id, item.size)}
+                            className="w-4 h-4 text-[#FDC302] focus:ring-[#FDC302] rounded border-gray-300"
+                          />
+                        </div>
+                        
                         {/* Product Details */}
-                        <div className="col-span-5 flex gap-3">
+                        <div className="col-span-4 flex gap-3">
                           <img src={item.image} alt={item.name} className="w-16 h-16 object-cover rounded-md" />
                           <div className="pr-2">
                             <h3 className="font-semibold text-gray-800 text-sm">{item.name}</h3>
@@ -139,17 +249,15 @@ const Cart = () => {
                           </div>
                         </div>
                         
-                        {/* Total and Remove Button */}
+                        {/* Total and Remove Button - Changed to Trash Icon */}
                         <div className="col-span-3 flex items-center justify-between">
                           <span className="font-medium text-sm">{formatPrice(itemTotal)}</span>
                           <button 
                             onClick={() => removeFromCart(item.id, item.size)}
-                            className="text-red-500 hover:text-red-700"
+                            className="text-red-500 hover:text-red-700 bg-gray-100 p-2 rounded-full"
                             aria-label="Remove item"
                           >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
+                            <FiTrash2 size={16} />
                           </button>
                         </div>
                       </div>
@@ -157,20 +265,20 @@ const Cart = () => {
                   })}
                 </div>
                 
-                {/* Action Buttons */}
+                {/* Action Buttons - Added backgrounds */}
                 <div className="mt-8 flex justify-between">
                   <button 
                     onClick={() => navigate('/menu')}
-                    className="flex items-center text-[#FDC302] hover:text-yellow-500 transition duration-300"
+                    className="flex items-center bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 px-4 rounded-md transition duration-300"
                   >
                     <HiOutlineArrowNarrowLeft className="mr-2" /> Continue Shopping
                   </button>
                   
                   <button 
                     onClick={() => clearCart()}
-                    className="text-red-500 hover:text-red-700 transition duration-300"
+                    className="flex items-center bg-red-100 text-red-600 py-2 px-4 rounded-md hover:bg-red-200 transition duration-300"
                   >
-                    Clear Cart
+                    <FiTrash2 className="mr-2" /> Clear Cart
                   </button>
                 </div>
               </>
@@ -184,13 +292,23 @@ const Cart = () => {
               
               <div className="space-y-3 mb-4">
                 <div className="border-b pb-3">
-                  <h3 className="font-medium mb-2 text-sm">Product Details:</h3>
-                  {cartItems.map((item) => (
-                    <div key={`summary-${item.id}-${item.size}`} className="flex justify-between text-gray-700 mb-1 text-xs">
-                      <span className="truncate max-w-[150px]">{item.name} ({item.size}) x{item.quantity}</span>
-                      <span>{item.price}</span>
-                    </div>
-                  ))}
+                  <h3 className="font-medium mb-2 text-sm">Selected Products:</h3>
+                  {cartItems.map((item) => {
+                    const itemKey = `${item.id}-${item.size}`;
+                    if (selectedItems[itemKey]) {
+                      return (
+                        <div key={`summary-${itemKey}`} className="flex justify-between text-gray-700 mb-1 text-xs">
+                          <span className="truncate max-w-[150px]">{item.name} ({item.size}) x{item.quantity}</span>
+                          <span>{item.price}</span>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })}
+                  
+                  {getSelectedCount() === 0 && (
+                    <div className="text-gray-500 text-xs italic">No items selected</div>
+                  )}
                 </div>
                 
                 <div className="flex justify-between py-1 text-sm">
@@ -200,7 +318,9 @@ const Cart = () => {
                 
                 <div className="flex justify-between py-1 border-b pb-3 text-sm">
                   <span className="text-gray-700">Shipping</span>
-                  <span className="font-medium">{formatPrice(shippingCost)}</span>
+                  <span className="font-medium">
+                    {getSelectedCount() > 0 ? formatPrice(shippingCost) : 'Rp. 0'}
+                  </span>
                 </div>
                 
                 <div className="flex justify-between py-2 font-bold">
@@ -212,12 +332,12 @@ const Cart = () => {
               {/* Checkout Button */}
               <button 
                 onClick={handleCheckout}
-                disabled={cartItems.length === 0}
+                disabled={getSelectedCount() === 0}
                 className={`w-full py-3 px-4 bg-[#FDC302] text-white rounded-md flex items-center justify-center transition duration-300 ${
-                  cartItems.length === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-yellow-500'
+                  getSelectedCount() === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-yellow-500'
                 }`}
               >
-                Proceed to checkout <HiOutlineArrowNarrowRight className="ml-2" />
+                Checkout Selected Items ({getSelectedCount()}) <HiOutlineArrowNarrowRight className="ml-2" />
               </button>
               
               {/* Security Note */}

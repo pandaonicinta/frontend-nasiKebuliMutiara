@@ -72,11 +72,11 @@ const AdminDashboard = () => {
           }}>
       </div>
 
-      {/* Sidebar Component */}
+      {/* Sidebar Component - Fixed Position */}
       <AdminSidebar activePage="dashboard" />
 
-      {/* Main Content */}
-      <div className="relative z-10 flex-1 p-6">
+      {/* Main Content - With left margin to accommodate fixed sidebar */}
+      <div className="relative z-10 flex-1 ml-52 p-6">
         {/* Header with Dashboard and Admin in a box */}
         <div className="flex justify-between items-center mb-6 bg-white p-4 rounded-lg shadow-lg">
           <h1 className="text-xl font-bold text-red-800">Dashboard</h1>

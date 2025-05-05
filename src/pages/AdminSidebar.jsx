@@ -16,14 +16,14 @@ const AdminSidebar = ({ activePage }) => {
   };
 
   return (
-    <div className="relative z-10 w-52 h-screen">
+    <div className="fixed z-10 w-52 h-screen">
       <div className="h-full m-4 bg-white rounded-lg shadow-xl overflow-hidden flex flex-col">
         <div className="p-3 flex items-center justify-center">
           <div className="lg:col-span-1">
             <img src={logo} alt="Kebuli Mutiara" className="h-14 mb-2" />
           </div>
         </div>
-        <div className="p-2 flex-grow">
+        <div className="p-2 flex-grow overflow-y-auto">
           <ul className="text-sm">
             <li className="mb-2">
               <Link to="/admin" className={`flex items-center p-2 ${activePage === 'dashboard' ? 'bg-red-800 text-white' : 'hover:bg-gray-100'} rounded-lg`}>
