@@ -1,6 +1,18 @@
 import React, { createContext, useState, useEffect } from 'react';
 
+// Create the context
 export const CartContext = createContext();
+
+// Sample dummy data to match the UI in the image
+const dummyOrders = [
+  { id: '#123123', date: '1 January 2025, 12:00AM', customerName: 'Agus', amount: 'Rp. 90.000', status: 'DELIVERED' },
+  { id: '#123123', date: '1 January 2025, 12:00AM', customerName: 'Agus', amount: 'Rp. 90.000', status: 'ON DELIVERY' },
+  { id: '#123123', date: '1 January 2025, 12:00AM', customerName: 'Agus', amount: 'Rp. 90.000', status: 'NEW ORDER' },
+  { id: '#123123', date: '1 January 2025, 12:00AM', customerName: 'Agus', amount: 'Rp. 90.000', status: 'DELIVERED' },
+  { id: '#123123', date: '1 January 2025, 12:00AM', customerName: 'Agus', amount: 'Rp. 90.000', status: 'DELIVERED' },
+  { id: '#123123', date: '1 January 2025, 12:00AM', customerName: 'Agus', amount: 'Rp. 90.000', status: 'NEW ORDER' },
+  { id: '#123123', date: '1 January 2025, 12:00AM', customerName: 'Agus', amount: 'Rp. 90.000', status: 'ON DELIVERY' }
+];
 
 export const CartProvider = ({ children }) => {
   // Retrieve cart items from localStorage on initial load

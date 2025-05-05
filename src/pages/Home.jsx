@@ -50,7 +50,7 @@ const Home = () => {
               </h2>
             </div>
             <p className="text-lg text-gray-700 mb-8 max-w-lg">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+            Nasi Kebuli Mutiara menyajikan nasi kebuli autentik dengan cita rasa rempah khas Timur Tengah. Disajikan lengkap dengan daging empuk, sambal, acar, dan kerupuk renyah. Cocok untuk pecinta kuliner khas dan lezat!
             </p>
             <a href="/menu" className="px-8 py-4 bg-yellow-500 text-white rounded-full hover:bg-yellow-600 shadow-lg transition duration-300 inline-flex items-center">
               Browse Our Classic Flavors <HiOutlineArrowNarrowRight className="ml-2" />

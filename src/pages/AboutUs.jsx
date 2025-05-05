@@ -58,10 +58,7 @@ const AboutUs = () => {
               What Is Nasi <span className="text-yellow-400">Kebuli</span> Mutiara?
             </h2>
             <p className="text-gray-700 mb-6">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-            </p>
-            <p className="text-gray-700">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+            Kedai Nasi Kebuli Mutiara** menyajikan nasi kebuli autentik dengan cita rasa kaya rempah, menggunakan daging kambing atau ayam yang empuk. Tempat yang nyaman dan harga terjangkau, ideal untuk menikmati hidangan Timur Tengah bersama keluarga atau teman. Nikmati pengalaman kuliner yang memuaskan dengan menu pendamping dan minuman segar yang melengkapi sajian utama.
             </p>
           </div>
         </div>
