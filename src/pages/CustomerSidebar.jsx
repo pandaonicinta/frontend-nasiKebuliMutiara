@@ -5,16 +5,16 @@ import logo from '../assets/images/logo.png';
 
 const CustomerSidebar = ({ activePage }) => {
   const navigate = useNavigate();
-
+  
   const handleLogout = () => {
     // Clear user data from localStorage
     localStorage.removeItem('userRole');
     localStorage.removeItem('userName');
-    
+    localStorage.removeItem('token');  // Also remove token to ensure clean logout
     // Navigate to the sign in page
     navigate('/');
   };
-
+  
   return (
     <div className="fixed z-10 w-52 h-screen">
       <div className="h-full m-4 bg-white rounded-lg shadow-xl overflow-hidden flex flex-col">
@@ -40,6 +40,10 @@ const CustomerSidebar = ({ activePage }) => {
               <Link
                 to="/customer/review"
                 className={`flex items-center p-2 ${activePage === 'review' ? 'bg-red-800 text-white' : 'hover:bg-gray-100'} rounded-lg`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigate('/customer/review');
+                }}
               >
                 <span className={`${activePage === 'review' ? 'p-1 bg-white text-red-800 rounded' : 'text-red-800'} mr-2`}>
                   <FaStar className="text-xs" />
@@ -51,6 +55,10 @@ const CustomerSidebar = ({ activePage }) => {
               <Link
                 to="/customer/address"
                 className={`flex items-center p-2 ${activePage === 'address' ? 'bg-red-800 text-white' : 'hover:bg-gray-100'} rounded-lg`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigate('/customer/address');
+                }}
               >
                 <span className={`${activePage === 'address' ? 'p-1 bg-white text-red-800 rounded' : 'text-red-800'} mr-2`}>
                   <FaMapMarkerAlt className="text-xs" />
@@ -62,6 +70,10 @@ const CustomerSidebar = ({ activePage }) => {
               <Link
                 to="/customer/profile"
                 className={`flex items-center p-2 ${activePage === 'profile' ? 'bg-red-800 text-white' : 'hover:bg-gray-100'} rounded-lg`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigate('/customer/profile');
+                }}
               >
                 <span className={`${activePage === 'profile' ? 'p-1 bg-white text-red-800 rounded' : 'text-red-800'} mr-2`}>
                   <FaUser className="text-xs" />

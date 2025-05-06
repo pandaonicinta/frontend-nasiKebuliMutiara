@@ -1,28 +1,107 @@
 import React, { useState, useEffect } from 'react';
-import { FaUser, FaUserAlt } from 'react-icons/fa';
+import { FaUser, FaUserAlt, FaEye, FaEyeSlash } from 'react-icons/fa';
+import axios from 'axios';
 import CustomerSidebar from './CustomerSidebar';
 import aksen from '../assets/images/aksen.png';
-import logo from '../assets/images/logo.png';
 
 const CustomerProfile = () => {
   const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [profile, setProfile] = useState({
-    fullName: '',
-    email: '',
-    phoneNumber: ''
+    username: localStorage.getItem('userUsername') || '',
+    name: localStorage.getItem('userName') || '',
+    email: localStorage.getItem('userEmail') || '',
+    phone: localStorage.getItem('userPhone') || '',
+    gender: localStorage.getItem('userGender') || '',
+    password: '',
+    picture: localStorage.getItem('userPicture') || ''
   });
 
-  useEffect(() => {
-    // Fetch user profile data from localStorage or API
-    const userName = localStorage.getItem('userName') || 'Agus Mutiara';
-    const userEmail = localStorage.getItem('userEmail') || 'agus@gmail.com';
-    const userPhone = localStorage.getItem('userPhone') || '0812 1234 1234';
+  const apiUrl = 'http://kebabmutiara.xyz/api';
 
-    setProfile({
-      fullName: userName,
-      email: userEmail,
-      phoneNumber: userPhone
-    });
+  // Fetch user profile data from API
+  const fetchProfileData = async () => {
+    setIsLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      
+      // First try to get user data from the aboutMe endpoint
+      const response = await axios.get(`${apiUrl}/aboutMe`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      
+      if (response.data && response.data.data) {
+        const userData = response.data.data;
+        setProfile({
+          username: userData.username || localStorage.getItem('userUsername') || '',
+          name: userData.name || localStorage.getItem('userName') || '',
+          email: userData.email || localStorage.getItem('userEmail') || '',
+          phone: userData.phone || localStorage.getItem('userPhone') || '',
+          gender: userData.gender || localStorage.getItem('userGender') || '',
+          password: userData.password || '',  // This might not be returned by the API for security reasons
+          picture: userData.picture || localStorage.getItem('userPicture') || ''
+        });
+        
+        // Update localStorage with the latest data
+        if (userData.username) localStorage.setItem('userUsername', userData.username);
+        if (userData.name) localStorage.setItem('userName', userData.name);
+        if (userData.email) localStorage.setItem('userEmail', userData.email);
+        if (userData.phone) localStorage.setItem('userPhone', userData.phone);
+        if (userData.gender) localStorage.setItem('userGender', userData.gender);
+        if (userData.picture) localStorage.setItem('userPicture', userData.picture);
+      }
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching profile:', err);
+      setError('Failed to load profile data. Please try again later.');
+      
+      // Attempt to fetch the user info directly if aboutMe fails
+      try {
+        const token = localStorage.getItem('token');
+        const userResponse = await axios.get(`${apiUrl}/user`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        
+        if (userResponse.data && userResponse.data.user) {
+          const userData = userResponse.data.user;
+          setProfile({
+            username: userData.username || localStorage.getItem('userUsername') || '',
+            name: userData.name || localStorage.getItem('userName') || '',
+            email: userData.email || localStorage.getItem('userEmail') || '',
+            phone: userData.phone || localStorage.getItem('userPhone') || '',
+            gender: userData.gender || localStorage.getItem('userGender') || '',
+            password: userData.password || '',  // This might not be returned by the API
+            picture: userData.picture || localStorage.getItem('userPicture') || ''
+          });
+          
+          // Update localStorage with the latest data
+          if (userData.username) localStorage.setItem('userUsername', userData.username);
+          if (userData.name) localStorage.setItem('userName', userData.name);
+          if (userData.email) localStorage.setItem('userEmail', userData.email);
+          if (userData.phone) localStorage.setItem('userPhone', userData.phone);
+          if (userData.gender) localStorage.setItem('userGender', userData.gender);
+          if (userData.picture) localStorage.setItem('userPicture', userData.picture);
+          
+          setError(null);
+        }
+      } catch (userErr) {
+        console.error('Error fetching user data:', userErr);
+        // Keep the existing error message
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProfileData();
   }, []);
 
   const handleChange = (e) => {
@@ -39,27 +118,83 @@ const CustomerProfile = () => {
 
   const handleBack = () => {
     setIsEditing(false);
-    // Reload original data
-    const userName = localStorage.getItem('userName') || 'Agus Mutiara';
-    const userEmail = localStorage.getItem('userEmail') || 'agus@gmail.com';
-    const userPhone = localStorage.getItem('userPhone') || '0812 1234 1234';
-    setProfile({
-      fullName: userName,
-      email: userEmail,
-      phoneNumber: userPhone
-    });
+    // Reload original data from API
+    fetchProfileData();
   };
 
-  const handleSave = () => {
-    // Save to localStorage or API
-    localStorage.setItem('userName', profile.fullName);
-    localStorage.setItem('userEmail', profile.email);
-    localStorage.setItem('userPhone', profile.phoneNumber);
-    // Exit edit mode
-    setIsEditing(false);
+  const handleSave = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      // Create a form data object to handle file uploads if needed
+      const formData = new FormData();
+      formData.append('username', profile.username);
+      formData.append('name', profile.name);
+      formData.append('email', profile.email);
+      formData.append('phone', profile.phone);
+      formData.append('gender', profile.gender);
+      
+      // Only append password if it was changed (non-empty)
+      if (profile.password) {
+        formData.append('password', profile.password);
+      }
+      
+      // If there's a new picture file selected, append it
+      // Note: This would require additional handling for file inputs
+      // if (profilePictureFile) {
+      //   formData.append('picture', profilePictureFile);
+      // }
+      
+      await axios.post(
+        `${apiUrl}/aboutMe/update`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+          }
+        }
+      );
+      
+      // Update localStorage with all profile values
+      localStorage.setItem('userUsername', profile.username);
+      localStorage.setItem('userName', profile.name);
+      localStorage.setItem('userEmail', profile.email);
+      localStorage.setItem('userPhone', profile.phone);
+      localStorage.setItem('userGender', profile.gender);
+      
+      // Exit edit mode
+      setIsEditing(false);
+      
+      // Show success message
+      setSuccessMessage('Profile updated successfully!');
+      setTimeout(() => {
+        setSuccessMessage('');
+      }, 3000);
+      
+    } catch (err) {
+      console.error('Error updating profile:', err);
+      setError('Failed to update profile. Please try again.');
+      setTimeout(() => {
+        setError('');
+      }, 3000);
+    }
   };
 
-  const userName = profile.fullName.split(' ')[0] || 'Agus';
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
+  // Format gender for display
+  const displayGender = () => {
+    if (!profile.gender) return 'Not specified';
+    if (profile.gender.toLowerCase() === 'male') return 'Laki-laki';
+    if (profile.gender.toLowerCase() === 'female') return 'Perempuan';
+    return profile.gender;
+  };
+
+  // Get first name for display
+  const userName = profile.name.split(' ')[0] || 'Customer';
 
   return (
     <div className="flex min-h-screen bg-red-900">
@@ -89,13 +224,34 @@ const CustomerProfile = () => {
 
         {/* Main Content Area */}
         <div className="bg-white rounded-lg overflow-hidden shadow-xl">
+          {/* Error and Success Messages */}
+          {error && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mx-6 mt-6">
+              {error}
+            </div>
+          )}
+          
+          {successMessage && (
+            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mx-6 mt-6">
+              {successMessage}
+            </div>
+          )}
+
           {/* Profile Header with Avatar */}
           <div className="bg-red-800 p-6 pb-16 relative">
             <div className="absolute -bottom-10 left-6">
               <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center">
-                <div className="w-16 h-16 bg-red-800 rounded-full flex items-center justify-center text-white">
-                  <FaUser size={32} />
-                </div>
+                {profile.picture ? (
+                  <img 
+                    src={profile.picture} 
+                    alt="Profile" 
+                    className="w-16 h-16 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-16 h-16 bg-red-800 rounded-full flex items-center justify-center text-white">
+                    <FaUser size={32} />
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -104,6 +260,7 @@ const CustomerProfile = () => {
           <div className="pt-12 px-6 pb-6">
             <div className="flex flex-col mb-4">
               <div className="text-xl font-bold">{userName}</div>
+              <div className="text-gray-600 text-sm">@{profile.username}</div>
               <div className="text-gray-600 text-sm">{profile.email}</div>
             </div>
             <div className="absolute right-10 top-32">
@@ -112,89 +269,179 @@ const CustomerProfile = () => {
               </div>
             </div>
 
-            {/* Profile Details */}
-            {isEditing ? (
-              // Edit Form
-              <div className="mt-8">
-                <div className="bg-white p-6 rounded-lg shadow-inner shadow-gray-400 mb-6">
-                  <div className="mb-6">
-                    <label className="block text-red-800 font-medium mb-2">Full Name</label>
-                    <input
-                      type="text"
-                      name="fullName"
-                      value={profile.fullName}
-                      onChange={handleChange}
-                      className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 shadow"
-                    />
-                  </div>
-                  <div className="mb-6">
-                    <label className="block text-red-800 font-medium mb-2">Email</label>
-                    <input
-                      type="email"
-                      name="email"
-                      value={profile.email}
-                      onChange={handleChange}
-                      className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 shadow"
-                    />
-                  </div>
-                  <div className="mb-6">
-                    <label className="block text-red-800 font-medium mb-2">Phone Number</label>
-                    <input
-                      type="tel"
-                      name="phoneNumber"
-                      value={profile.phoneNumber}
-                      onChange={handleChange}
-                      className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 shadow"
-                    />
-                  </div>
-                </div>
-                <div className="flex justify-end space-x-4">
-                  <button
-                    onClick={handleBack}
-                    className="px-6 py-2 border border-red-800 text-red-800 rounded-lg text-sm"
-                  >
-                    BACK
-                  </button>
-                  <button
-                    onClick={handleSave}
-                    className="px-8 py-2 bg-red-800 text-white rounded-lg text-sm uppercase"
-                  >
-                    Save
-                  </button>
-                </div>
+            {/* Loading State */}
+            {isLoading ? (
+              <div className="text-center py-8">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-red-800"></div>
+                <p className="mt-2 text-gray-600">Loading profile...</p>
               </div>
             ) : (
-              // View Mode
-              <div className="mt-8">
-                <div className="bg-white p-6 rounded-lg shadow-inner shadow-gray-400 mb-6">
-                  <div className="mb-6">
-                    <h3 className="text-red-800 font-medium mb-2">Full Name</h3>
-                    <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 shadow">
-                      {profile.fullName}
+              <>
+                {/* Profile Details */}
+                {isEditing ? (
+                  // Edit Form
+                  <div className="mt-8">
+                    <div className="bg-white p-6 rounded-lg shadow-inner shadow-gray-400 mb-6">
+                      <div className="mb-6">
+                        <label className="block text-red-800 font-medium mb-2">Username</label>
+                        <input
+                          type="text"
+                          name="username"
+                          value={profile.username}
+                          onChange={handleChange}
+                          className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 shadow"
+                        />
+                      </div>
+                      <div className="mb-6">
+                        <label className="block text-red-800 font-medium mb-2">Full Name</label>
+                        <input
+                          type="text"
+                          name="name"
+                          value={profile.name}
+                          onChange={handleChange}
+                          className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 shadow"
+                        />
+                      </div>
+                      <div className="mb-6">
+                        <label className="block text-red-800 font-medium mb-2">Email</label>
+                        <input
+                          type="email"
+                          name="email"
+                          value={profile.email}
+                          onChange={handleChange}
+                          className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 shadow"
+                        />
+                      </div>
+                      <div className="mb-6">
+                        <label className="block text-red-800 font-medium mb-2">Password</label>
+                        <div className="relative">
+                          <input
+                            type={showPassword ? "text" : "password"}
+                            name="password"
+                            value={profile.password}
+                            onChange={handleChange}
+                            placeholder="Leave empty to keep current password"
+                            className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 shadow pr-10"
+                          />
+                          <button
+                            type="button"
+                            onClick={togglePasswordVisibility}
+                            className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                          >
+                            {showPassword ? (
+                              <FaEyeSlash className="text-gray-500" />
+                            ) : (
+                              <FaEye className="text-gray-500" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                      <div className="mb-6">
+                        <label className="block text-red-800 font-medium mb-2">Gender</label>
+                        <select
+                          name="gender"
+                          value={profile.gender || ''}
+                          onChange={handleChange}
+                          className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 shadow"
+                        >
+                          <option value="">Select gender</option>
+                          <option value="male">Laki-laki</option>
+                          <option value="female">Perempuan</option>
+                        </select>
+                      </div>
+                      <div className="mb-6">
+                        <label className="block text-red-800 font-medium mb-2">Phone Number</label>
+                        <input
+                          type="tel"
+                          name="phone"
+                          value={profile.phone}
+                          onChange={handleChange}
+                          className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 shadow"
+                        />
+                      </div>
+                      {/* Profile picture upload would go here */}
+                    </div>
+                    <div className="flex justify-end space-x-4">
+                      <button
+                        onClick={handleBack}
+                        className="px-6 py-2 border border-red-800 text-red-800 rounded-lg text-sm"
+                      >
+                        BACK
+                      </button>
+                      <button
+                        onClick={handleSave}
+                        className="px-8 py-2 bg-red-800 text-white rounded-lg text-sm uppercase"
+                      >
+                        Save
+                      </button>
                     </div>
                   </div>
-                  <div className="mb-6">
-                    <h3 className="text-red-800 font-medium mb-2">Email</h3>
-                    <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 shadow">
-                      {profile.email}
+                ) : (
+                  // View Mode
+                  <div className="mt-8">
+                    <div className="bg-white p-6 rounded-lg shadow-inner shadow-gray-400 mb-6">
+                      <div className="mb-6">
+                        <h3 className="text-red-800 font-medium mb-2">Username</h3>
+                        <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 shadow">
+                          {profile.username}
+                        </div>
+                      </div>
+                      <div className="mb-6">
+                        <h3 className="text-red-800 font-medium mb-2">Full Name</h3>
+                        <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 shadow">
+                          {profile.name}
+                        </div>
+                      </div>
+                      <div className="mb-6">
+                        <h3 className="text-red-800 font-medium mb-2">Email</h3>
+                        <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 shadow">
+                          {profile.email}
+                        </div>
+                      </div>
+                      <div className="mb-6">
+                        <h3 className="text-red-800 font-medium mb-2">Password</h3>
+                        <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 shadow relative">
+                          {profile.password ? (
+                            <div className="flex items-center">
+                              <div className="flex-1">
+                                {showPassword ? profile.password : '••••••••'}
+                              </div>
+                              <button
+                                onClick={togglePasswordVisibility}
+                                className="ml-2 text-gray-500"
+                              >
+                                {showPassword ? <FaEyeSlash /> : <FaEye />}
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-gray-500 italic">Password is encrypted</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="mb-6">
+                        <h3 className="text-red-800 font-medium mb-2">Gender</h3>
+                        <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 shadow">
+                          {displayGender()}
+                        </div>
+                      </div>
+                      <div className="mb-6">
+                        <h3 className="text-red-800 font-medium mb-2">Phone Number</h3>
+                        <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 shadow">
+                          {profile.phone || 'Not provided'}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex justify-end">
+                      <button
+                        onClick={handleEdit}
+                        className="px-8 py-2 bg-red-800 text-white rounded-lg text-sm uppercase shadow-md"
+                      >
+                        Edit
+                      </button>
                     </div>
                   </div>
-                  <div className="mb-6">
-                    <h3 className="text-red-800 font-medium mb-2">Phone Number</h3>
-                    <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 shadow">
-                      {profile.phoneNumber}
-                    </div>
-                  </div>
-                </div>
-                <div className="flex justify-end">
-                  <button
-                    onClick={handleEdit}
-                    className="px-8 py-2 bg-red-800 text-white rounded-lg text-sm uppercase shadow-md"
-                  >
-                    Edit
-                  </button>
-                </div>
-              </div>
+                )}
+              </>
             )}
           </div>
         </div>

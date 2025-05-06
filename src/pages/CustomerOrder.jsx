@@ -1,14 +1,17 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaUser } from 'react-icons/fa';
 import CustomerSidebar from './CustomerSidebar';
 import aksen from '../assets/images/aksen.png';
+import axios from 'axios';
 
 const CustomerOrder = () => {
   const navigate = useNavigate();
   const customerName = localStorage.getItem('userName') || 'Customer';
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Check if user is logged in as customer - accept both 'customer' and 'pembeli' roles
   useEffect(() => {
     const userRole = localStorage.getItem('userRole');
     console.log("Current user role in CustomerOrder:", userRole); // Debug logging
@@ -19,51 +22,63 @@ const CustomerOrder = () => {
     }
   }, [navigate]);
 
-  // Order history data
-  const orders = [
-    {
-      id: 1,
-      date: '1 January 2025',
-      status: 'Completed',
-      items: [
-        {
-          name: 'Nasi Kebuli Kambing',
-          size: 'L',
-          quantity: 1,
-          price: 'Rp. 55.000',
-          image: '/api/placeholder/100/100'
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem('token');
+        
+        if (!token) {
+          throw new Error('Authentication token not found');
         }
-      ]
-    },
-    {
-      id: 2,
-      date: '1 January 2025',
-      status: 'Completed',
-      items: [
-        {
-          name: 'Nasi Kebuli Kambing',
-          size: 'L',
-          quantity: 1,
-          price: 'Rp. 55.000',
-          image: '/api/placeholder/100/100'
-        }
-      ]
-    },
-    {
-      id: 3,
-      date: '1 January 2025',
-      status: 'Completed',
-      items: [
-        {
-          name: 'Nasi Kebuli Kambing',
-          size: 'L',
-          quantity: 1,
-          price: 'Rp. 55.000',
-          image: '/api/placeholder/100/100'
-        }
-      ]
+        
+        const response = await axios.get('http://kebabmutiara.xyz/api/transaksi', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        console.log("Orders data received:", response.data);
+        setOrders(response.data.data || []);
+        setLoading(false);
+      } catch (err) {
+        console.error("Error fetching orders:", err);
+        setError('Failed to load order history. Please try again later.');
+        setLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, []);
+
+  // Function to format status label based on API response
+  const formatStatus = (status) => {
+    const statusMap = {
+      'bayar': 'Payment Pending',
+      'bayar_berhasil': 'Payment Completed',
+      'bayar_gagal': 'Payment Failed',
+      'masak': 'Cooking',
+      'otw': 'On The Way',
+      'sampai': 'Delivered',
+      'selesai': 'Completed'
+    };
+    
+    return statusMap[status] || status;
+  };
+
+  // Function to format date from API response
+  const formatDate = (dateString) => {
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      });
+    } catch (error) {
+      return dateString;
     }
-  ];
+  };
 
   const handleViewDetails = (orderId) => {
     navigate(`/customer/order/${orderId}`);
@@ -111,8 +126,30 @@ const CustomerOrder = () => {
             <div className="flex-1">ORDER</div>
           </div>
 
+          {/* Loading state */}
+          {loading && (
+            <div className="p-8 text-center">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-red-800"></div>
+              <p className="mt-2 text-gray-600">Loading your orders...</p>
+            </div>
+          )}
+
+          {/* Error state */}
+          {error && (
+            <div className="p-8 text-center">
+              <p className="text-red-600">{error}</p>
+            </div>
+          )}
+
+          {/* No orders state */}
+          {!loading && !error && orders.length === 0 && (
+            <div className="p-8 text-center">
+              <p className="text-gray-600">You don't have any orders yet.</p>
+            </div>
+          )}
+
           {/* Orders List */}
-          {orders.map((order, index) => (
+          {!loading && !error && orders.length > 0 && orders.map((order, index) => (
             <div key={order.id} className="border-b border-gray-200 last:border-b-0">
               <div className="flex p-3">
                 <div className="w-16 text-center">{index + 1}</div>
@@ -123,17 +160,19 @@ const CustomerOrder = () => {
                         <div className="bg-red-800 w-6 h-6 rounded-full flex items-center justify-center mr-2">
                           <span className="text-white text-xs">✓</span>
                         </div>
-                        <span className="text-sm font-bold">{order.status}</span>
-                        <span className="text-xs text-gray-500 ml-2">Enjoy your meal</span>
+                        <span className="text-sm font-bold">{formatStatus(order.status)}</span>
+                        <span className="text-xs text-gray-500 ml-2">
+                          {order.status === 'sampai' || order.status === 'selesai' ? 'Enjoy your meal' : 'Thank you for your order'}
+                        </span>
                       </div>
-                      <span className="text-xs">{order.date}</span>
+                      <span className="text-xs">{formatDate(order.created_at)}</span>
                     </div>
                     
                     {/* Divider between status and order items */}
                     <div className="w-full h-px bg-gray-300 my-3"></div>
 
                     {/* Order Items */}
-                    {order.items.map((item, itemIndex) => (
+                    {order.items && order.items.map((item, itemIndex) => (
                       <div key={itemIndex} className="w-full flex items-center mt-2">
                         <div className="w-10 mr-3">
                           {/* Empty column for alignment */}
@@ -141,22 +180,25 @@ const CustomerOrder = () => {
                         <div className="w-12 h-12 mr-3">
                           <div className="w-full h-full bg-gray-200 rounded-lg overflow-hidden">
                             <img
-                              src={item.image}
-                              alt={item.name}
+                              src={item.gambar || '/api/placeholder/100/100'}
+                              alt={item.nama}
                               className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.target.src = '/api/placeholder/100/100';
+                              }}
                             />
                           </div>
                         </div>
                         <div className="flex-1">
-                          <h4 className="text-xs font-bold">{item.name}</h4>
-                          <p className="text-xs text-gray-500">Size: {item.size}</p>
+                          <h4 className="text-xs font-bold">{item.nama}</h4>
+                          <p className="text-xs text-gray-500">Size: {item.ukuran || '-'}</p>
                         </div>
                         <div className="flex flex-1 justify-evenly">
                           <div className="text-center text-xs">
-                            {item.quantity}
+                            {item.jumlah || 1}
                           </div>
                           <div className="text-center text-xs font-bold">
-                            {item.price}
+                            Rp. {item.harga?.toLocaleString('id-ID') || '0'}
                           </div>
                         </div>
                         <div className="w-28 text-right">
@@ -169,6 +211,20 @@ const CustomerOrder = () => {
                         </div>
                       </div>
                     ))}
+                    
+                    {/* If there are no items in the order */}
+                    {(!order.items || order.items.length === 0) && (
+                      <div className="w-full text-center py-2">
+                        <p className="text-sm text-gray-500">No items in this order</p>
+                      </div>
+                    )}
+                    
+                    {/* Total amount */}
+                    <div className="w-full flex justify-end mt-4 pt-2 border-t border-gray-200">
+                      <div className="text-sm font-bold">
+                        Total: Rp. {order.total?.toLocaleString('id-ID') || '0'}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

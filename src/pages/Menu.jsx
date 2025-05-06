@@ -57,7 +57,6 @@ const Menu = () => {
 
   // Function to handle menu item click
   const handleMenuClick = (menuId) => {
-    // Navigate to the menu detail page with the selected menu id
     navigate(`/menu/${menuId}`);
   };
 
