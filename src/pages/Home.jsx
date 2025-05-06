@@ -492,7 +492,7 @@ const handleLogin = async (credentials) => {
       </section>
 
 
-      {/* Footer - MODIFIED: Reorganized layout with social icons next to address */}
+      {/* Footer */}
       <footer className="bg-red-900 text-white py-8 px-6 md:px-20 lg:px-32 mt-16">
         <div className="container mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -559,7 +559,7 @@ const handleLogin = async (credentials) => {
                     </div>
                     <div>
                       <h4 className="font-semibold text-xs">Address:</h4>
-                      <p className="text-xs">
+                      <p className="text-xs max-w-xs">
                         Jl. Villa Mutiara Cikarang blok H10, No.37, Ciantra, Cikarang Sel. Kab. Bekasi, Jawa Barat 17530
                       </p>
                     </div>
@@ -632,4 +632,5 @@ const handleLogin = async (credentials) => {
     </div>
   );
 };
+
 export default Home

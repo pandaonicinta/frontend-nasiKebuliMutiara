@@ -8,10 +8,13 @@ const CustomerOrder = () => {
   const navigate = useNavigate();
   const customerName = localStorage.getItem('userName') || 'Customer';
 
-  // Check if user is logged in as customer
+  // Check if user is logged in as customer - accept both 'customer' and 'pembeli' roles
   useEffect(() => {
     const userRole = localStorage.getItem('userRole');
-    if (!userRole || userRole !== 'customer') {
+    console.log("Current user role in CustomerOrder:", userRole); // Debug logging
+    
+    if (!userRole || (userRole !== 'customer' && userRole !== 'pembeli')) {
+      console.log("Invalid role detected, redirecting to home"); // Debug logging
       navigate('/');
     }
   }, [navigate]);

@@ -53,10 +53,10 @@ const AboutUs = () => {
           </div>
           <div className="md:w-1/2 md:pl-12">
             <h2 className="text-4xl font-berkshire text-gray-900 mb-6">
-              What Is Nasi <span className="text-yellow-400">Kebuli</span> Mutiara?
+               Kedai Nasi <span className="text-yellow-400">Kebuli</span> Mutiara itu apa?
             </h2>
             <p className="text-gray-700 mb-6">
-            Kedai Nasi Kebuli Mutiara** menyajikan nasi kebuli autentik dengan cita rasa kaya rempah, menggunakan daging kambing atau ayam yang empuk. Tempat yang nyaman dan harga terjangkau, ideal untuk menikmati hidangan Timur Tengah bersama keluarga atau teman. Nikmati pengalaman kuliner yang memuaskan dengan menu pendamping dan minuman segar yang melengkapi sajian utama.
+            Kedai Nasi Kebuli Mutiara menyajikan nasi kebuli autentik dengan cita rasa kaya rempah, menggunakan daging kambing atau ayam yang empuk. Tempat yang nyaman dan harga terjangkau, ideal untuk menikmati hidangan Timur Tengah bersama keluarga atau teman. Nikmati pengalaman kuliner yang memuaskan dengan menu pendamping dan minuman segar yang melengkapi sajian utama.
             </p>
           </div>
         </div>
@@ -66,9 +66,8 @@ const AboutUs = () => {
       <section className="py-16 px-6 md:px-16 lg:px-24 bg-[#F9F7F0]">
         <div className="max-w-6xl mx-auto text-center">
           <h2 className="text-4xl font-berkshire mb-4">
-            Our <span className="text-yellow-400">CEO</span>
+            CEO <span className="text-yellow-400">Kami</span>
           </h2>
-          <p className="text-gray-700 mb-12">Get to know the friendly faces behind your favorite flavors.</p>
             <div className="flex justify-center gap-8 px-10">
               <div className="flex flex-col items-center">
                 <div className="rounded-full overflow-hidden w-48 h-48 mb-6">
