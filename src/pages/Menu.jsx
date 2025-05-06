@@ -35,60 +35,8 @@ const dummyMenuItems = [
     image: foto,
     category: "nasi-kebuli"
   },
-  {
-    id: 4,
-    name: "Paket Nampan Ayam Small",
-    description: "Paket nampan dengan nasi kebuli dan ayam untuk 3-4 orang.",
-    price: "Rp. 65.000",
-    rating: "5.0/5",
-    image: foto,
-    category: "paket-nampan-ayam"
-  },
-  {
-    id: 5,
-    name: "Paket Nampan Ayam Medium",
-    description: "Paket nampan dengan nasi kebuli dan ayam untuk 5-6 orang.",
-    price: "Rp. 95.000",
-    rating: "4.7/5",
-    image: foto,
-    category: "paket-nampan-ayam"
-  },
-  {
-    id: 6,
-    name: "Paket Nampan Kambing Small",
-    description: "Paket nampan dengan nasi kebuli dan daging kambing untuk 3-4 orang.",
-    price: "Rp. 100.000",
-    rating: "4.8/5",
-    image: foto,
-    category: "paket-nampan-kambing"
-  },
-  {
-    id: 7,
-    name: "Paket Nampan Kambing Medium",
-    description: "Paket nampan dengan nasi kebuli dan daging kambing untuk 5-6 orang.",
-    price: "Rp. 150.000",
-    rating: "4.9/5",
-    image: foto,
-    category: "paket-nampan-kambing"
-  },
-  {
-    id: 8,
-    name: "Paket Nampan Sapi Small",
-    description: "Paket nampan dengan nasi kebuli dan daging sapi untuk 3-4 orang.",
-    price: "Rp. 110.000",
-    rating: "4.8/5",
-    image: foto,
-    category: "paket-nampan-sapi"
-  },
-  {
-    id: 9,
-    name: "Paket Nampan Sapi Medium",
-    description: "Paket nampan dengan nasi kebuli dan daging sapi untuk 5-6 orang.",
-    price: "Rp. 165.000",
-    rating: "4.7/5",
-    image: foto,
-    category: "paket-nampan-sapi"
-  }
+
+  
 ];
 
 // Categories definition

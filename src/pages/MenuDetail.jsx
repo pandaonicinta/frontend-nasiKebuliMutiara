@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FiSearch, FiShoppingBag } from 'react-icons/fi';
+import { FiShoppingBag } from 'react-icons/fi';
 import { HiOutlineArrowNarrowRight } from 'react-icons/hi';
 import { FaStar } from 'react-icons/fa';
 import { CartContext } from '../contexts/CartContext';
@@ -199,10 +199,6 @@ const MenuDetail = () => {
             <a href="/" className="text-gray-800 hover:text-[#FDC302] font-medium">Home</a>
             <a href="/about" className="text-gray-800 hover:text-[#FDC302] font-medium">About Us</a>
             <a href="/menu" className="text-[#FDC302] font-medium">Menu</a>
-            <a href="/contact" className="text-gray-800 hover:text-[#FDC302] font-medium">Contact</a>
-            <button className="text-gray-800 hover:text-[#FDC302]">
-              <FiSearch size={20} />
-            </button>
             <a href="/cart" className="text-gray-800 hover:text-[#FDC302] relative">
               <FiShoppingBag size={20} />
               <span className="absolute -top-1 -right-1 bg-[#FDC302] text-white rounded-full w-4 h-4 flex items-center justify-center text-xs">

@@ -36,9 +36,12 @@ const ProtectedRoute = ({ children, allowedRole }) => {
     return <Navigate to="/signin" replace />;
   }
   
-  if (allowedRole && userRole !== allowedRole) {
+  // Handle pembeli role as equivalent to customer
+  const normalizedRole = userRole === 'pembeli' ? 'customer' : userRole;
+  
+  if (allowedRole && normalizedRole !== allowedRole) {
     // User logged in but doesn't have the required role
-    return <Navigate to={userRole === 'admin' ? '/admin' : '/'} replace />;
+    return <Navigate to={normalizedRole === 'admin' ? '/admin' : '/'} replace />;
   }
   
   return children;
@@ -54,6 +57,15 @@ function App() {
     if (storedRole) {
       setIsAuthenticated(true);
       setUserRole(storedRole);
+      
+      // Store the token if it exists in the URL parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get('token');
+      if (token) {
+        localStorage.setItem('authToken', token);
+        // Clean up URL after extracting token
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
     }
   }, []);
 
@@ -150,7 +162,6 @@ function App() {
               <CustomerAddress />
             </ProtectedRoute>
           } />
-          {/* Fixed route to CustomerProfile instead of CustomerAddress */}
           <Route path="/customer/profile" element={
             <ProtectedRoute allowedRole="customer">
               <CustomerProfile />

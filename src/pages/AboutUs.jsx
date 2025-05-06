@@ -1,9 +1,10 @@
 import React from 'react';
-import { FiSearch, FiShoppingBag } from 'react-icons/fi';
+import { FiShoppingBag } from 'react-icons/fi';
 import { HiOutlineArrowNarrowRight } from 'react-icons/hi';
 import { FaFacebookF, FaInstagram, FaYoutube } from 'react-icons/fa';
 import logo from '../assets/images/logo.png';
 import foto from '../assets/images/foto.png';
+import ceo from '../assets/images/ceo.png';
 
 const AboutUs = () => {
   return (
@@ -18,9 +19,6 @@ const AboutUs = () => {
             <a href="/" className="text-gray-800 hover:text-yellow-500 font-medium">Home</a>
             <a href="/about" className="text-yellow-500 font-medium">About Us</a>
             <a href="/menu" className="text-gray-800 hover:text-yellow-500 font-medium">Menu</a>
-            <button className="text-gray-800 hover:text-yellow-500">
-              <FiSearch size={20} />
-            </button>
             <a href="/cart" className="text-gray-800 hover:text-yellow-500 relative">
               <FiShoppingBag size={20} />
               <span className="absolute -top-1 -right-1 bg-yellow-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs">0</span>
@@ -40,7 +38,7 @@ const AboutUs = () => {
         </div>
       </section>
 
-      {/* Wave Divider - More waves (at least 9) */}
+      {/* Wave Divider */}
       <div className="wave-divider relative h-32">
         <svg className="absolute bottom-0 w-full" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 120" fill="none" preserveAspectRatio="none">
           <path d="M0,64 C40,80 80,48 120,64 C160,80 200,48 240,64 C280,80 320,48 360,64 C400,80 440,48 480,64 C520,80 560,48 600,64 C640,80 680,48 720,64 C760,80 800,48 840,64 C880,80 920,48 960,64 C1000,80 1040,48 1080,64 C1120,80 1160,48 1200,64 C1240,80 1280,48 1320,64 C1360,80 1400,48 1440,64 L1440,120 L0,120 Z" fill="white"></path>
@@ -64,21 +62,17 @@ const AboutUs = () => {
         </div>
       </section>
 
-      {/* Our Family Members Section */}
+      {/* CEO Section */}
       <section className="py-16 px-6 md:px-16 lg:px-24 bg-[#F9F7F0]">
         <div className="max-w-6xl mx-auto text-center">
           <h2 className="text-4xl font-berkshire mb-4">
             Our <span className="text-yellow-400">CEO</span>
           </h2>
           <p className="text-gray-700 mb-12">Get to know the friendly faces behind your favorite flavors.</p>
-          
- 
-            {/* Family Members */}
             <div className="flex justify-center gap-8 px-10">
-              {/* Member 1 */}
               <div className="flex flex-col items-center">
                 <div className="rounded-full overflow-hidden w-48 h-48 mb-6">
-                  <img src="/api/placeholder/200/200" alt="Team Member" className="w-full h-full object-cover" />
+                  <img src={ceo} alt="Team Member" className="w-full h-full object-cover" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-1">CEO</h3>
                 <p className="text-gray-600 mb-4">Bakery Worker</p>
