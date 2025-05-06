@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { FaUser, FaUserAlt, FaEye, FaEyeSlash } from 'react-icons/fa';
+import React, { useState, useEffect, useRef } from 'react';
+import { FaUser, FaUserAlt, FaEye, FaEyeSlash, FaCamera } from 'react-icons/fa';
 import axios from 'axios';
 import CustomerSidebar from './CustomerSidebar';
 import aksen from '../assets/images/aksen.png';
@@ -19,6 +19,8 @@ const CustomerProfile = () => {
     password: '',
     picture: localStorage.getItem('userPicture') || ''
   });
+  const [profilePictureFile, setProfilePictureFile] = useState(null);
+  const fileInputRef = useRef(null);
 
   const apiUrl = 'http://kebabmutiara.xyz/api';
 
@@ -43,7 +45,7 @@ const CustomerProfile = () => {
           email: userData.email || localStorage.getItem('userEmail') || '',
           phone: userData.phone || localStorage.getItem('userPhone') || '',
           gender: userData.gender || localStorage.getItem('userGender') || '',
-          password: userData.password || '',  // This might not be returned by the API for security reasons
+          password: '',  // Password shouldn't be displayed for security reasons
           picture: userData.picture || localStorage.getItem('userPicture') || ''
         });
         
@@ -77,7 +79,7 @@ const CustomerProfile = () => {
             email: userData.email || localStorage.getItem('userEmail') || '',
             phone: userData.phone || localStorage.getItem('userPhone') || '',
             gender: userData.gender || localStorage.getItem('userGender') || '',
-            password: userData.password || '',  // This might not be returned by the API
+            password: '',  // Password shouldn't be displayed
             picture: userData.picture || localStorage.getItem('userPicture') || ''
           });
           
@@ -112,6 +114,22 @@ const CustomerProfile = () => {
     }));
   };
 
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setProfilePictureFile(e.target.files[0]);
+      
+      // Create a preview URL
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setProfile(prev => ({
+          ...prev,
+          picture: e.target.result // Just for preview
+        }));
+      };
+      reader.readAsDataURL(e.target.files[0]);
+    }
+  };
+
   const handleEdit = () => {
     setIsEditing(true);
   };
@@ -120,13 +138,15 @@ const CustomerProfile = () => {
     setIsEditing(false);
     // Reload original data from API
     fetchProfileData();
+    // Reset picture file
+    setProfilePictureFile(null);
   };
 
   const handleSave = async () => {
     try {
       const token = localStorage.getItem('token');
       
-      // Create a form data object to handle file uploads if needed
+      // Create a form data object to handle file uploads
       const formData = new FormData();
       formData.append('username', profile.username);
       formData.append('name', profile.name);
@@ -140,12 +160,11 @@ const CustomerProfile = () => {
       }
       
       // If there's a new picture file selected, append it
-      // Note: This would require additional handling for file inputs
-      // if (profilePictureFile) {
-      //   formData.append('picture', profilePictureFile);
-      // }
+      if (profilePictureFile) {
+        formData.append('picture', profilePictureFile);
+      }
       
-      await axios.post(
+      const response = await axios.post(
         `${apiUrl}/aboutMe/update`,
         formData,
         {
@@ -156,12 +175,25 @@ const CustomerProfile = () => {
         }
       );
       
+      console.log('Profile update response:', response.data);
+      
       // Update localStorage with all profile values
       localStorage.setItem('userUsername', profile.username);
       localStorage.setItem('userName', profile.name);
       localStorage.setItem('userEmail', profile.email);
       localStorage.setItem('userPhone', profile.phone);
       localStorage.setItem('userGender', profile.gender);
+      
+      // If the API returns an updated picture URL, save it
+      if (response.data && response.data.data && response.data.data.picture) {
+        localStorage.setItem('userPicture', response.data.data.picture);
+      } else if (profile.picture && !profile.picture.startsWith('data:')) {
+        // Keep the existing picture if it's a URL and not a data URL
+        localStorage.setItem('userPicture', profile.picture);
+      }
+      
+      // Reset the file input
+      setProfilePictureFile(null);
       
       // Exit edit mode
       setIsEditing(false);
@@ -171,6 +203,9 @@ const CustomerProfile = () => {
       setTimeout(() => {
         setSuccessMessage('');
       }, 3000);
+      
+      // Refresh data to get the latest from server
+      fetchProfileData();
       
     } catch (err) {
       console.error('Error updating profile:', err);
@@ -193,8 +228,19 @@ const CustomerProfile = () => {
     return profile.gender;
   };
 
+  // Format email for display (remove duplicate @ if present)
+  const displayEmail = () => {
+    const email = profile.email || '';
+    return email.replace(/^(.*)@@(.*)$/, '$1@$2');
+  };
+
   // Get first name for display
   const userName = profile.name.split(' ')[0] || 'Customer';
+
+  // Trigger the file input click
+  const triggerFileInput = () => {
+    fileInputRef.current.click();
+  };
 
   return (
     <div className="flex min-h-screen bg-red-900">
@@ -240,7 +286,7 @@ const CustomerProfile = () => {
           {/* Profile Header with Avatar */}
           <div className="bg-red-800 p-6 pb-16 relative">
             <div className="absolute -bottom-10 left-6">
-              <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center">
+              <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center relative">
                 {profile.picture ? (
                   <img 
                     src={profile.picture} 
@@ -252,6 +298,22 @@ const CustomerProfile = () => {
                     <FaUser size={32} />
                   </div>
                 )}
+                
+                {isEditing && (
+                  <div 
+                    className="absolute -bottom-1 -right-1 bg-red-800 text-white p-1 rounded-full cursor-pointer hover:bg-red-900"
+                    onClick={triggerFileInput}
+                  >
+                    <FaCamera size={16} />
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleFileChange}
+                    />
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -261,7 +323,7 @@ const CustomerProfile = () => {
             <div className="flex flex-col mb-4">
               <div className="text-xl font-bold">{userName}</div>
               <div className="text-gray-600 text-sm">@{profile.username}</div>
-              <div className="text-gray-600 text-sm">{profile.email}</div>
+              <div className="text-gray-600 text-sm">{displayEmail()}</div>
             </div>
             <div className="absolute right-10 top-32">
               <div className="text-sm bg-white text-black border border-gray-300 rounded px-3 py-1 shadow-lg">
@@ -359,7 +421,29 @@ const CustomerProfile = () => {
                           className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 shadow"
                         />
                       </div>
-                      {/* Profile picture upload would go here */}
+                      <div className="mb-6">
+                        <label className="block text-red-800 font-medium mb-2">Profile Picture</label>
+                        <div className="flex items-center">
+                          <div className="w-16 h-16 mr-4 bg-gray-200 rounded-full overflow-hidden flex items-center justify-center">
+                            {profile.picture ? (
+                              <img 
+                                src={profile.picture} 
+                                alt="Preview" 
+                                className="w-full h-full object-cover" 
+                              />
+                            ) : (
+                              <FaUser size={32} className="text-gray-400" />
+                            )}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={triggerFileInput}
+                            className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                          >
+                            Change Picture
+                          </button>
+                        </div>
+                      </div>
                     </div>
                     <div className="flex justify-end space-x-4">
                       <button
@@ -395,27 +479,13 @@ const CustomerProfile = () => {
                       <div className="mb-6">
                         <h3 className="text-red-800 font-medium mb-2">Email</h3>
                         <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 shadow">
-                          {profile.email}
+                          {displayEmail()}
                         </div>
                       </div>
                       <div className="mb-6">
                         <h3 className="text-red-800 font-medium mb-2">Password</h3>
-                        <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 shadow relative">
-                          {profile.password ? (
-                            <div className="flex items-center">
-                              <div className="flex-1">
-                                {showPassword ? profile.password : '••••••••'}
-                              </div>
-                              <button
-                                onClick={togglePasswordVisibility}
-                                className="ml-2 text-gray-500"
-                              >
-                                {showPassword ? <FaEyeSlash /> : <FaEye />}
-                              </button>
-                            </div>
-                          ) : (
-                            <span className="text-gray-500 italic">Password is encrypted</span>
-                          )}
+                        <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 shadow">
+                          <span className="text-gray-500 italic">Password is encrypted</span>
                         </div>
                       </div>
                       <div className="mb-6">
