@@ -3,19 +3,26 @@ import { useNavigate } from 'react-router-dom';
 import { FiSearch, FiShoppingBag } from 'react-icons/fi';
 import { HiOutlineArrowNarrowRight } from 'react-icons/hi';
 import { CartContext } from '../contexts/CartContext';
+import axios from 'axios'; // Make sure to install axios if not already installed
 import logo from '../assets/images/logo.png';
+
+// Import payment method icons
+import qrisIcon from '../assets/images/qris.png';
+import bcaIcon from '../assets/images/bca.png';
+import mandiriIcon from '../assets/images/mandiri.png';
+import bniIcon from '../assets/images/bni.png';
 
 const Checkout = () => {
   const navigate = useNavigate();
   const { cartItems, calculateTotal, clearCart, cartCount } = useContext(CartContext);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [addresses, setAddresses] = useState([]);
+  const [selectedAddress, setSelectedAddress] = useState('');
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     email: '',
     phoneNumber: '',
-    detailAddress: '',
-    deliveryLocation: { lat: -6.2088, lng: 106.8456 }, // Default to Jakarta
     paymentMethod: ''
   });
   const [formValid, setFormValid] = useState(false);
@@ -34,6 +41,40 @@ const Checkout = () => {
     return `Rp. ${price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`;
   };
   
+  // Fetch user's saved addresses on component mount
+  useEffect(() => {
+    const fetchAddresses = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await axios.get('/api/alamat', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        setAddresses(response.data);
+        
+        // If addresses exist, select the first one by default
+        if (response.data.length > 0) {
+          setSelectedAddress(response.data[0].id_alamat);
+        }
+      } catch (error) {
+        console.error('Error fetching addresses:', error);
+      }
+    };
+    
+    // Get user data from localStorage or context
+    const userData = JSON.parse(localStorage.getItem('user')) || {};
+    setFormData(prevData => ({
+      ...prevData,
+      firstName: userData.first_name || '',
+      lastName: userData.last_name || '',
+      email: userData.email || '',
+      phoneNumber: userData.phone || ''
+    }));
+    
+    fetchAddresses();
+  }, []);
+  
   // Handle input change
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -43,14 +84,9 @@ const Checkout = () => {
     });
   };
   
-  // Handle map click to set delivery location
-  const handleMapClick = (e) => {
-    // In a real implementation, this would get coordinates from the map click event
-    // For this mock-up, we'll just set some placeholder values
-    setFormData({
-      ...formData,
-      deliveryLocation: { lat: -6.2088, lng: 106.8456 }
-    });
+  // Handle address selection
+  const handleAddressChange = (e) => {
+    setSelectedAddress(e.target.value);
   };
   
   // Handle payment method selection
@@ -63,34 +99,117 @@ const Checkout = () => {
   
   // Validate form
   useEffect(() => {
-    const { firstName, lastName, email, phoneNumber, detailAddress, paymentMethod } = formData;
+    const { firstName, lastName, email, phoneNumber, paymentMethod } = formData;
     
     // Check if all required fields are filled
     const isValid = firstName.trim() !== '' && 
                     lastName.trim() !== '' && 
                     email.trim() !== '' && 
                     phoneNumber.trim() !== '' && 
-                    detailAddress.trim() !== '' && 
+                    selectedAddress !== '' &&
                     paymentMethod !== '';
     
     setFormValid(isValid);
-  }, [formData]);
+  }, [formData, selectedAddress]);
+  
+  // Process midtrans payment
+  const processMidtransPayment = (snapToken) => {
+    window.snap.pay(snapToken, {
+      onSuccess: function(result) {
+        handlePaymentSuccess(result.order_id);
+      },
+      onPending: function(result) {
+        alert('Payment pending, please complete your payment');
+      },
+      onError: function(result) {
+        handlePaymentFailure(result.order_id);
+      },
+      onClose: function() {
+        alert('You closed the payment window without completing payment');
+      }
+    });
+  };
+  
+  // Handle successful payment
+  const handlePaymentSuccess = async (transactionId) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(`/api/transaksi/berhasil/${transactionId}`, {}, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      clearCart();
+      alert('Payment successful! Your order has been placed.');
+      navigate('/orders');
+    } catch (error) {
+      console.error('Error updating transaction status:', error);
+    }
+  };
+  
+  // Handle failed payment
+  const handlePaymentFailure = async (transactionId) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(`/api/transaksi/gagal/${transactionId}`, {}, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      alert('Payment failed. Please try again later.');
+    } catch (error) {
+      console.error('Error updating transaction status:', error);
+    }
+  };
   
   // Handle order placement
-  const handlePlaceOrder = () => {
+  const handlePlaceOrder = async () => {
     if (!formValid) {
       alert('Please fill all required fields');
       return;
     }
     
+    if (cartItems.length === 0) {
+      alert('Your cart is empty');
+      return;
+    }
+    
     setIsProcessing(true);
-    // Simulate order processing
-    setTimeout(() => {
-      alert('Order placed successfully!');
-      clearCart();
-      navigate('/');
+    
+    try {
+      const token = localStorage.getItem('token');
+      
+      // Get cart item IDs
+      const cartItemIds = cartItems.map(item => item.id);
+      
+      const response = await axios.post('/api/transaksi', {
+        total: total,
+        id_alamat: selectedAddress,
+        id_item: cartItemIds
+      }, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      const { transaksi_id, snaptoken } = response.data;
+      
+      // Handle payment based on selected method
+      if (formData.paymentMethod === 'cash') {
+        // For cash on delivery, just mark it as success
+        handlePaymentSuccess(transaksi_id);
+      } else {
+        // For online payments, use Midtrans
+        processMidtransPayment(snaptoken);
+      }
+    } catch (error) {
+      console.error('Error creating transaction:', error);
+      alert(error.response?.data?.message || 'Failed to create transaction');
+    } finally {
       setIsProcessing(false);
-    }, 1500);
+    }
   };
 
   return (
@@ -133,7 +252,7 @@ const Checkout = () => {
           {/* Delivery Form */}
           <div className="md:w-2/3">
             <div className="mb-8">
-              <h2 className="text-xl font-bold mb-6">Delivery Address:</h2>
+              <h2 className="text-xl font-bold mb-6">Informasi Pembeli:</h2>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
@@ -162,7 +281,7 @@ const Checkout = () => {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
-                  <label className="block text-sm mb-2">Email address <span className="text-red-500">*</span></label>
+                  <label className="block text-sm mb-2">Email <span className="text-red-500">*</span></label>
                   <input 
                     type="email" 
                     name="email"
@@ -173,7 +292,7 @@ const Checkout = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm mb-2">Phone number <span className="text-red-500">*</span></label>
+                  <label className="block text-sm mb-2">No. HP <span className="text-red-500">*</span></label>
                   <input 
                     type="tel" 
                     name="phoneNumber"
@@ -185,46 +304,51 @@ const Checkout = () => {
                   />
                 </div>
               </div>
+            </div>
+            
+            {/* Delivery Address Section */}
+            <div className="mb-8">
+              <h2 className="text-xl font-bold mb-6">Alamat Pengiriman: <span className="text-red-500">*</span></h2>
               
-              {/* Delivery Map Section */}
-              <div className="mb-4">
-                <label className="block text-sm mb-2">Delivery Location <span className="text-red-500">*</span></label>
-                <div className="border border-gray-300 rounded-md overflow-hidden bg-gray-100 h-64 relative">
-                  {/* This would be your actual map component in a real implementation */}
-                  <div 
-                    className="w-full h-full bg-gray-200 flex items-center justify-center cursor-pointer"
-                    onClick={handleMapClick}
+              {addresses.length > 0 ? (
+                <div className="mb-4">
+                  <select
+                    value={selectedAddress}
+                    onChange={handleAddressChange}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#FDC302]"
                   >
-                    <p className="text-gray-600">Click on the map to set delivery location</p>
-                    {/* Map placeholder */}
-                    <img src="/api/placeholder/600/300" alt="Map" className="absolute inset-0 w-full h-full object-cover opacity-50" />
-                  </div>
+                    <option value="" disabled>Select a delivery address</option>
+                    {addresses.map(address => (
+                      <option key={address.id_alamat} value={address.id_alamat}>
+                        {address.alamat} - {address.kecamatan}, {address.kota} {address.kode_pos}
+                      </option>
+                    ))}
+                  </select>
                   
-                  {/* Selected location indicator */}
-                  <div className="absolute top-2 right-2 bg-white p-2 rounded-md shadow text-xs">
-                    <p>Selected location:</p>
-                    <p className="font-mono">Lat: {formData.deliveryLocation.lat.toFixed(4)}</p>
-                    <p className="font-mono">Lng: {formData.deliveryLocation.lng.toFixed(4)}</p>
+                  <div className="mt-4 text-right">
+                    <button 
+                      onClick={() => navigate('/profile/addresses/add')}
+                      className="text-sm text-[#FDC302] hover:underline"
+                    >
+                      + Tambah Alamat Baru
+                    </button>
                   </div>
                 </div>
-              </div>
-              
-              {/* Detail Address Field */}
-              <div className="mb-4">
-                <label className="block text-sm mb-2">Detail Address <span className="text-red-500">*</span></label>
-                <textarea 
-                  name="detailAddress"
-                  value={formData.detailAddress}
-                  onChange={handleInputChange}
-                  placeholder="House/Apartment number, Street, Building, Landmark, etc."
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#FDC302] h-24"
-                  required
-                />
-              </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-8 border border-dashed border-gray-300 rounded-md">
+                  <p className="text-gray-500 mb-4">Kamu tidak mempunyai alamat pengiriman yang tersimpan</p>
+                  <button
+                    onClick={() => navigate('/profile/addresses/add')}
+                    className="px-4 py-2 bg-[#F9C847] text-black rounded-md hover:bg-[#FDC302] transition"
+                  >
+                    Tambah Alamat Baru
+                  </button>
+                </div>
+              )}
             </div>
             
             <div className="mb-8">
-              <h2 className="text-xl font-bold mb-6">Payment Method: <span className="text-red-500">*</span></h2>
+              <h2 className="text-xl font-bold mb-6">Metode Pembayaran: <span className="text-red-500">*</span></h2>
               
               {/* QRIS Payment */}
               <div className="border border-gray-300 rounded-md mb-4">
@@ -239,7 +363,7 @@ const Checkout = () => {
                   />
                   <span className="flex-1">QRIS</span>
                   <div className="flex gap-2">
-                    <img src="/api/placeholder/36/24" alt="QRIS" className="h-6" />
+                    <img src={qrisIcon} alt="QRIS" className="h-6" />
                   </div>
                 </label>
               </div>
@@ -257,9 +381,9 @@ const Checkout = () => {
                   />
                   <span className="flex-1">Virtual Account</span>
                   <div className="flex gap-2">
-                    <img src="/api/placeholder/36/24" alt="BCA" className="h-6" />
-                    <img src="/api/placeholder/36/24" alt="Mandiri" className="h-6" />
-                    <img src="/api/placeholder/36/24" alt="BNI" className="h-6" />
+                    <img src={bcaIcon} alt="BCA" className="h-6" />
+                    <img src={mandiriIcon} alt="Mandiri" className="h-6" />
+                    <img src={bniIcon} alt="BNI" className="h-6" />
                   </div>
                 </label>
               </div>
@@ -276,16 +400,13 @@ const Checkout = () => {
                     className="mr-3"
                   />
                   <span className="flex-1">Cash on Delivery</span>
-                  <div>
-                    <img src="/api/placeholder/36/24" alt="Cash" className="h-6" />
-                  </div>
                 </label>
               </div>
               
               <div className="mt-8 text-center">
                 <p className="text-sm text-gray-500 mb-6">
-                  By clicking the button, you agree to the 
-                  <a href="#" className="text-[#FDC302] ml-1">Terms and Conditions</a>
+                  Dengan meng-klik tombol, kamu setuju dengan  
+                  <a href="/terms" className="text-[#FDC302] ml-1">Syarat dan Ketentuan</a>
                 </p>
                 
                 <button 
@@ -297,7 +418,7 @@ const Checkout = () => {
                 >
                   {isProcessing ? 'Processing...' : (
                     <>
-                      Place Order Now <HiOutlineArrowNarrowRight className="ml-2" />
+                      Pesan Sekarang <HiOutlineArrowNarrowRight className="ml-2" />
                     </>
                   )}
                 </button>
@@ -307,17 +428,21 @@ const Checkout = () => {
           
           {/* Order Summary */}
           <div className="md:w-1/3">
-            <div className="bg-white border border-[#F9C847] rounded-lg p-4 shadow-sm">
-              <h2 className="text-xl font-bold mb-4 text-center">Order Summary</h2>
+            <div className="bg-white border border-[#F9C847] rounded-lg p-4 shadow-sm sticky top-4">
+              <h2 className="text-xl font-bold mb-4 text-center">Rincian Pembayaran</h2>
               
               <div className="border-b pb-4 mb-4">
-                <h3 className="font-medium mb-2 text-sm">Product Details:</h3>
-                {cartItems.map((item) => (
-                  <div key={`summary-${item.id}-${item.size}`} className="flex justify-between text-gray-700 mb-1 text-xs">
-                    <span className="truncate max-w-[150px]">{item.name} ({item.size}) x{item.quantity}</span>
-                    <span>{item.price}</span>
-                  </div>
-                ))}
+                <h3 className="font-medium mb-2 text-sm">Rincian Produk:</h3>
+                {cartItems.length > 0 ? (
+                  cartItems.map((item) => (
+                    <div key={`summary-${item.id}`} className="flex justify-between text-gray-700 mb-1 text-xs">
+                      <span className="truncate max-w-[150px]">{item.nama} x{item.quantity}</span>
+                      <span>{formatPrice(item.harga * item.quantity)}</span>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-gray-500 text-xs italic">Keranjangmu kosong</p>
+                )}
               </div>
               
               <div className="flex justify-between py-1 text-sm">
@@ -326,7 +451,7 @@ const Checkout = () => {
               </div>
               
               <div className="flex justify-between py-1 border-b pb-3 text-sm">
-                <span className="text-gray-700">Shipping</span>
+                <span className="text-gray-700">Pengiriman</span>
                 <span className="font-medium">{formatPrice(shippingCost)}</span>
               </div>
               
@@ -387,13 +512,13 @@ const Checkout = () => {
                     </a>
                   </li>
                   <li>
-                    <a href="#" className="hover:text-yellow-400 flex items-center text-xs">
+                    <a href="/blog" className="hover:text-yellow-400 flex items-center text-xs">
                       <span className="text-yellow-400 mr-2">•</span>
                       Blog
                     </a>
                   </li>
                   <li>
-                    <a href="#" className="hover:text-yellow-400 flex items-center text-xs">
+                    <a href="/contact" className="hover:text-yellow-400 flex items-center text-xs">
                       <span className="text-yellow-400 mr-2">•</span>
                       Contact
                     </a>
@@ -472,6 +597,7 @@ const Checkout = () => {
           <p className="text-xs">Copyright © 2025 Kebuli Mutiara. All rights reserved.</p>
         </div>
       </div>
+
     </div>
   );
 };

@@ -7,7 +7,6 @@ import AdminSidebar from './AdminSidebar';
 const AdminOrderDetail = () => {
   const navigate = useNavigate();
 
-  // Order details data
   const orderDetails = {
     id: '#123123',
     date: '1 January 2025, 12.00',
@@ -50,7 +49,6 @@ const AdminOrderDetail = () => {
 
   return (
     <div className="flex min-h-screen bg-gray-100">
-      {/* Background with red top 1/3 and accent pattern */}
       <div 
         className="absolute top-0 left-0 right-0 h-1/3 bg-red-800 z-0" 
         style={{ 
@@ -65,7 +63,6 @@ const AdminOrderDetail = () => {
 
       {/* Main Content */}
       <div className="relative z-10 flex-1 ml-52 p-6">
-        {/* Header with Order Detail and Admin in a box */}
         <div className="flex justify-between items-center mb-6 bg-white p-4 rounded-lg shadow-lg">
           <h1 className="text-base font-bold text-red-800">Order Detail</h1>
           <div className="flex items-center bg-red-800 text-white px-4 py-2 rounded-lg">
@@ -74,19 +71,15 @@ const AdminOrderDetail = () => {
           </div>
         </div>
 
-        {/* Main container - Order section and content below */}
+        {/* Main container */}
         <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-6">
-          {/* Order Heading */}
           <div className="p-4">
             <h2 className="text-base font-bold text-gray-800">Order</h2>
           </div>
-          
-          {/* Red divider line - thinner */}
           <div className="h-4 bg-red-800"></div>
           
-          {/* Content section - white background continuous with Order section */}
+          {/* Content section */}
           <div className="p-4">
-            {/* Back Button and Order Status */}
             <div className="flex gap-4 mb-6">
               <button 
                 onClick={handleBack}
@@ -106,15 +99,12 @@ const AdminOrderDetail = () => {
 
             {/* Order Details and Tracking */}
             <div className="flex flex-wrap gap-6">
-              {/* Left column - Tracking */}
               <div className="w-1/3">
                 <div className="bg-white p-3 rounded-lg border-2 border-red-800">
                   <h3 className="text-sm font-bold text-gray-800 mb-3">Tracking Order</h3>
                   
-                  {/* Map placeholder with border */}
                   <div className="border-2 border-red-800 rounded-lg overflow-hidden mb-3">
                     <div className="w-full h-48 bg-gray-100 relative">
-                      {/* Restaurant marker */}
                       <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
                         <div className="flex flex-col items-center">
                           <div className="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center shadow-md">
@@ -123,8 +113,6 @@ const AdminOrderDetail = () => {
                           <div className="mt-1 text-red-800 font-bold text-xs">Kebuli Mutiara</div>
                         </div>
                       </div>
-                      
-                      {/* Customer marker */}
                       <div className="absolute bottom-8 left-1/4">
                         <div className="w-8 h-8 bg-gray-400 rounded-full flex items-center justify-center shadow-md">
                           <FaUser className="text-white" />
@@ -155,13 +143,12 @@ const AdminOrderDetail = () => {
                 </div>
               </div>
               
-              {/* Right column - Order Details */}
+              {/* Order Details */}
               <div className="flex-1">
                 <div className="bg-white p-3 rounded-lg border-2 border-red-800">
                   <h3 className="text-sm font-bold text-gray-800 mb-3">Details</h3>
                   
                   <div className="border-2 border-red-800 rounded-lg p-3">
-                    {/* Order details */}
                     <div className="mb-3">
                       <div className="flex justify-between mb-2">
                         <span className="text-xs text-gray-700">Order id</span>

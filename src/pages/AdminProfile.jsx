@@ -37,7 +37,6 @@ const AdminProfile = () => {
 
   return (
     <div className="flex min-h-screen bg-gray-100">
-      {/* Background with red top 1/2 and accent pattern */}
       <div 
         className="absolute top-0 left-0 right-0 h-1/2 bg-red-800 z-0"
         style={{
@@ -52,14 +51,12 @@ const AdminProfile = () => {
 
       {/* Main Content */}
       <div className="relative z-10 flex-1 ml-52 p-6">
-        {/* Header with Profile and Admin in a box */}
         <div className="flex justify-between items-center mb-6 bg-white p-4 rounded-lg shadow-xl">
           <h1 className="text-xl font-bold text-red-800">Profile</h1>
         </div>
 
-        {/* Combined Profile and Details Card */}
+        {/* Profile and Details Card */}
         <div className="bg-white rounded-lg shadow-xl mb-6">
-          {/* Profile Header */}
           <div className="flex items-center p-6">
             <div className="mr-6">
               <div className="w-20 h-20 bg-red-800 rounded-full flex items-center justify-center">
@@ -76,8 +73,7 @@ const AdminProfile = () => {
               </button>
             </div>
           </div>
-          
-          {/* Red divider */}
+    
           <div className="bg-red-800 h-8"></div>
           
           {/* Profile Details */}

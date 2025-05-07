@@ -1,18 +1,40 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaShoppingCart, FaHome, FaSignOutAlt, FaUser, FaMapMarkerAlt, FaStar } from 'react-icons/fa';
+import { FaShoppingCart, FaSignOutAlt, FaUser, FaMapMarkerAlt, FaStar } from 'react-icons/fa';
 import logo from '../assets/images/logo.png';
 
 const CustomerSidebar = ({ activePage }) => {
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
   
   const handleLogout = () => {
-    // Clear user data from localStorage
-    localStorage.removeItem('userRole');
-    localStorage.removeItem('userName');
-    localStorage.removeItem('token');  // Also remove token to ensure clean logout
-    // Navigate to the sign in page
-    navigate('/');
+    try {
+      setIsLoading(true);
+      
+      // Since we're encountering CORS issues with the API, we'll handle logout locally
+      // and let the token expire on the server side
+      
+      // Clear all auth-related data from localStorage
+      localStorage.removeItem('userRole');
+      localStorage.removeItem('userName');
+      localStorage.removeItem('authToken'); // Changed from 'token' to match AdminSidebar
+      
+      // Clear any additional storage that might contain auth data
+      sessionStorage.clear();
+      
+      // Add a small delay to ensure UI updates before navigation
+      setTimeout(() => {
+        // Navigate to the sign in page
+        navigate('/');
+        setIsLoading(false);
+      }, 500);
+      
+    } catch (error) {
+      console.error('Error during logout process:', error);
+      setIsLoading(false);
+      // Still attempt to navigate even if there was an error
+      navigate('/');
+    }
   };
   
   return (
@@ -86,10 +108,11 @@ const CustomerSidebar = ({ activePage }) => {
         <div className="p-3">
           <button
             onClick={handleLogout}
+            disabled={isLoading}
             className="flex items-center justify-center w-full p-2 bg-red-800 text-white rounded-lg text-xs"
           >
             <FaSignOutAlt className="mr-2 text-xs" />
-            <span>LOGOUT</span>
+            <span>{isLoading ? 'LOADING...' : 'LOGOUT'}</span>
           </button>
         </div>
       </div>

@@ -15,7 +15,6 @@ const AdminMenu = () => {
 
   useEffect(() => {
     fetchMenus();
-    // Check for authentication
     const token = localStorage.getItem('token');
     if (!token) {
       navigate('/login');
@@ -42,7 +41,6 @@ const AdminMenu = () => {
       console.error('Error fetching menu items:', err);
       setError('Failed to load menu items. Please try again later.');
       
-      // Handle unauthorized access
       if (err.response && err.response.status === 401) {
         localStorage.removeItem('token');
         navigate('/login');
@@ -65,17 +63,14 @@ const AdminMenu = () => {
         
         // Check response
         if (response.status === 200) {
-          // Update local state without refetching
           setMenus(prevMenus => prevMenus.filter(menu => menu.produk_id !== id));
           alert("Menu item has been deleted successfully.");
         } else {
-          // If server doesn't indicate success, throw error
           throw new Error(response.data?.message || 'Delete operation failed');
         }
       } catch (err) {
         console.error('Error deleting menu item:', err);
         
-        // Handle unauthorized access
         if (err.response && err.response.status === 401) {
           localStorage.removeItem('token');
           navigate('/login');
@@ -89,10 +84,9 @@ const AdminMenu = () => {
     }
   };
 
-  // Fixed: Edit function to navigate correctly within admin dashboard
   const handleEdit = (id) => {
-    // Navigate to the edit page within the admin dashboard structure
-    navigate(`/admin/menu/edit/${id}`);
+    // Navigate to the add/edit menu page with isEdit flag
+    navigate('/admin/menu/add', { state: { isEdit: true, menuId: id } });
   };
 
   const formatCurrency = (price) => {
@@ -100,22 +94,16 @@ const AdminMenu = () => {
     return `Rp. ${parseInt(price).toLocaleString('id-ID')}`;
   };
 
-  // Updated image URL handling based on Laravel's storage structure
   const getImageUrl = (imagePath) => {
     if (!imagePath) return 'https://via.placeholder.com/80?text=No+Image';
-    
-    // If the path already has the domain, use it directly
     if (imagePath.startsWith('http')) {
       return imagePath;
     }
-    
-    // Based on the Laravel API shown, images are stored as 'produk/filename.ext'
     return `${API_URL}/storage/${imagePath}`;
   };
 
   return (
     <div className="flex min-h-screen bg-gray-100">
-      {/* Background with red top 1/3 and accent pattern */}
       <div
         className="absolute top-0 left-0 right-0 h-1/3 bg-red-800 z-0"
         style={{
@@ -130,7 +118,7 @@ const AdminMenu = () => {
 
       {/* Main Content */}
       <div className="relative z-10 flex-1 ml-52 p-6">
-        {/* Header with Menu and Admin in a box */}
+        {/* Header */}
         <div className="flex justify-between items-center mb-6 bg-white p-4 rounded-lg shadow-lg">
           <h1 className="text-xl font-bold text-red-800">Menu</h1>
           <div className="flex items-center bg-red-800 text-white px-4 py-2 rounded-lg">
@@ -212,17 +200,12 @@ const AdminMenu = () => {
                                   alt={menu.nama_produk}
                                   className="h-full w-full object-cover"
                                   onError={(e) => {
-                                    // Reset error handler to prevent infinite loop
                                     e.target.onerror = null;
-                                    
-                                    // Log the failed URL for debugging
                                     console.log("Image failed to load:", e.target.src);
                                     
-                                    // Try fallback approaches
                                     const originalPath = e.target.src;
                                     const fileName = menu.gambar.split('/').pop();
                                     
-                                    // Try direct path without the full structure
                                     const fallback1 = `${API_URL}/storage/produk/${fileName}`;
                                     console.log("Trying fallback 1:", fallback1);
                                     
@@ -230,8 +213,7 @@ const AdminMenu = () => {
                                       e.target.src = fallback1;
                                       return;
                                     }
-                                    
-                                    // If that didn't work, try without 'storage'
+
                                     const fallback2 = `${API_URL}/produk/${fileName}`;
                                     console.log("Trying fallback 2:", fallback2);
                                     
@@ -239,8 +221,7 @@ const AdminMenu = () => {
                                       e.target.src = fallback2;
                                       return;
                                     }
-                                    
-                                    // Final fallback - placeholder image
+
                                     e.target.src = 'https://via.placeholder.com/80?text=No+Image';
                                   }}
                                 />
@@ -257,9 +238,14 @@ const AdminMenu = () => {
                             <button
                               className="text-blue-600 hover:text-blue-800"
                               onClick={() => handleEdit(menu.produk_id)}
+                              disabled={loading}
                               title="Edit menu item"
                             >
-                              <FaPencilAlt size={14} />
+                              {loading && deleteLoading === null ? (
+                                <FaSpinner size={14} className="animate-spin" />
+                              ) : (
+                                <FaPencilAlt size={14} />
+                              )}
                             </button>
                             <button
                               className="text-red-600 hover:text-red-800"

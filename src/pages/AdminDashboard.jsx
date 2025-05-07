@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { FaChartPie, FaUsers, FaShoppingCart } from 'react-icons/fa';
 import aksen from '../assets/images/aksen.png';
 import AdminSidebar from './AdminSidebar';
-import axios from 'axios'; // Make sure axios is installed
+import axios from 'axios'; 
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -29,7 +29,6 @@ const AdminDashboard = () => {
   ]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check if user is logged in as admin
   useEffect(() => {
     const userRole = localStorage.getItem('userRole');
     if (!userRole || userRole !== 'admin') {
@@ -39,17 +38,14 @@ const AdminDashboard = () => {
     }
   }, [navigate]);
 
-  // Fetch dashboard data from API
   const fetchDashboardData = async () => {
     try {
       setIsLoading(true);
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
       
-      // Get dashboard summary data
       const summaryResponse = await axios.get('http://kebabmutiara.xyz/api/dashboard', { headers });
       
-      // Format the money value to Rupiah format
       const formattedIncome = new Intl.NumberFormat('id-ID', {
         style: 'currency',
         currency: 'IDR',
@@ -63,7 +59,6 @@ const AdminDashboard = () => {
         totalCustomers: summaryResponse.data.total_customer
       });
       
-      // Calculate order summary
       const totalOrder = summaryResponse.data.total_order;
       const delivered = summaryResponse.data.total_delivered;
       const onDelivery = totalOrder - delivered;
@@ -90,10 +85,6 @@ const AdminDashboard = () => {
       
       setRecentOrders(formattedOrders);
       
-      // For now, we'll keep the performance data static
-      // In a real implementation, you would fetch this data from an API endpoint
-      // that provides monthly sales data
-      
       setIsLoading(false);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -116,7 +107,6 @@ const AdminDashboard = () => {
     }
   };
 
-  // Calculate percentages for the donut chart
   const calculateChartData = () => {
     const total = orderSummary.totalOrder;
     if (total === 0) return { totalPercent: 0, onDeliveryPercent: 0, deliveredPercent: 0 };
@@ -134,9 +124,8 @@ const AdminDashboard = () => {
 
   const chartData = calculateChartData();
   
-  // Calculate stroke dasharray and dashoffset for circle segments
   const calculateCircleSegments = () => {
-    const circumference = 2 * Math.PI * 60; // 2πr where r=60
+    const circumference = 2 * Math.PI * 60; 
     
     const totalDash = (chartData.totalPercent / 100) * circumference;
     const onDeliveryDash = (chartData.onDeliveryPercent / 100) * circumference;
@@ -160,7 +149,6 @@ const AdminDashboard = () => {
 
   return (
     <div className="flex min-h-screen bg-gray-100">
-      {/* Background with red top 1/3 and accent pattern */}
       <div className="absolute top-0 left-0 right-0 h-1/3 bg-red-800 z-0" 
           style={{ 
             backgroundImage: `url(${aksen})`,
@@ -169,12 +157,10 @@ const AdminDashboard = () => {
           }}>
       </div>
 
-      {/* Sidebar Component - Fixed Position */}
       <AdminSidebar activePage="dashboard" />
 
-      {/* Main Content - With left margin to accommodate fixed sidebar */}
+      {/* Main Content */}
       <div className="relative z-10 flex-1 ml-52 p-6">
-        {/* Header with Dashboard and Admin in a box */}
         <div className="flex justify-between items-center mb-6 bg-white p-4 rounded-lg shadow-lg">
           <h1 className="text-xl font-bold text-red-800">Dashboard</h1>
           <div className="flex items-center bg-red-800 text-white px-4 py-2 rounded-lg">
@@ -189,7 +175,6 @@ const AdminDashboard = () => {
           </div>
         ) : (
           <>
-            {/* Summary Cards - With shadow */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
               {/* Income Card */}
               <div className="bg-white rounded-lg shadow-lg">
@@ -245,7 +230,7 @@ const AdminDashboard = () => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Order Summary with Chart - With shadow */}
+              {/* Order Summary */}
               <div className="lg:col-span-2 bg-white p-4 rounded-lg shadow-lg">
                 <div className="mb-3">
                   <p className="text-xs text-gray-500">ORDERS</p>
@@ -266,14 +251,13 @@ const AdminDashboard = () => {
                   </div>
                 </div>
                 
-                {/* Donut chart with thicker stroke */}
+                {/* Donut chart */}
                 <div className="flex justify-center items-center h-44">
                   <div className="flex items-center">
                     <svg width="160" height="160" viewBox="0 0 160 160">
-                      {/* Background circle */}
                       <circle cx="80" cy="80" r="60" fill="none" stroke="#f1f1f1" strokeWidth="30" />
                       
-                      {/* Red segment (Total Order) */}
+                      {/* Total Order */}
                       <circle
                         cx="80"
                         cy="80"
@@ -285,7 +269,7 @@ const AdminDashboard = () => {
                         strokeDashoffset={circleSegments.totalOffset}
                       />
                       
-                      {/* Blue segment (On Delivery) */}
+                      {/* On Delivery */}
                       <circle
                         cx="80"
                         cy="80"
@@ -297,7 +281,7 @@ const AdminDashboard = () => {
                         strokeDashoffset={circleSegments.onDeliveryOffset}
                       />
                       
-                      {/* Green segment (Delivered) */}
+                      {/* Delivered */}
                       <circle
                         cx="80"
                         cy="80"
@@ -309,11 +293,9 @@ const AdminDashboard = () => {
                         strokeDashoffset={circleSegments.deliveredOffset}
                       />
                       
-                      {/* Center white circle */}
                       <circle cx="80" cy="80" r="30" fill="white" />
                     </svg>
                     <div className="ml-4">
-                      {/* Legend for the chart */}
                       <div className="flex flex-col space-y-2">
                         <div className="flex items-center">
                           <div className="w-3 h-3 bg-red-600 rounded-full mr-2"></div>
@@ -333,14 +315,14 @@ const AdminDashboard = () => {
                 </div>
               </div>
 
-              {/* Performance Chart - With shadow */}
+              {/* Performance Chart */}
               <div className="bg-white p-4 rounded-lg shadow-lg">
                 <div className="mb-3">
                   <p className="text-xs text-gray-500">PERFORMANCE</p>
                   <h4 className="font-medium text-gray-800">Total orders</h4>
                 </div>
                 
-                {/* Thicker Bar chart */}
+                {/* Bar chart */}
                 <div className="h-44 flex items-end justify-between px-2 pt-4">
                   {performanceData.map((item, index) => (
                     <div key={index} className="flex flex-col items-center">
@@ -355,7 +337,7 @@ const AdminDashboard = () => {
               </div>
             </div>
 
-            {/* Recent Orders - Improved styling with box and shadow */}
+            {/* Recent Orders */}
             <div className="mt-6 bg-white rounded-lg shadow-lg">
               <div className="flex justify-between items-center p-4 border-b border-gray-200 ">
                 <h3 className="font-bold text-gray-800">Recent Order</h3>

@@ -4,7 +4,6 @@ import aksen from '../assets/images/aksen.png';
 import AdminSidebar from './AdminSidebar';
 
 const AdminCustomer = () => {
-  // Customer data with fixed values based on the screenshot
   const customers = [
     { no: 1, name: 'Agus', address: 'Jln. Raya XXXXX XXXXXXXX XXXXX', totalSpent: 'Rp. 900.000', lastSpent: 'Rp. 50.000' },
     { no: 2, name: 'Agus', address: 'Jln. Raya XXXXX XXXXXXXX XXXXX', totalSpent: 'Rp. 900.000', lastSpent: 'Rp. 50.000' },
@@ -24,7 +23,6 @@ const AdminCustomer = () => {
 
   return (
     <div className="flex min-h-screen bg-gray-100">
-      {/* Background with red top 1/3 and accent pattern */}
       <div 
         className="absolute top-0 left-0 right-0 h-1/3 bg-red-800 z-0"
         style={{
@@ -39,7 +37,6 @@ const AdminCustomer = () => {
 
       {/* Main Content */}
       <div className="relative z-10 flex-1 ml-52 p-6">
-        {/* Header with Customer and Admin in a box */}
         <div className="flex justify-between items-center mb-6 bg-white p-4 rounded-lg shadow-lg">
           <h1 className="text-xl font-bold text-red-800">Customer</h1>
           <div className="flex items-center bg-red-800 text-white px-4 py-2 rounded-lg">
@@ -48,7 +45,6 @@ const AdminCustomer = () => {
           </div>
         </div>
 
-        {/* Customer Table - Styled with box and shadow */}
         <div className="bg-white rounded-lg shadow-lg">
           <div className="flex justify-between items-center p-4 border-b border-gray-200">
             <h3 className="font-bold text-gray-800">Customer</h3>

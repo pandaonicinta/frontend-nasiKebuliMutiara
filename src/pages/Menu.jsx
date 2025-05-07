@@ -3,72 +3,78 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { FiSearch, FiShoppingBag } from 'react-icons/fi';
 import { HiOutlineArrowNarrowRight } from 'react-icons/hi';
 import { FaStar } from 'react-icons/fa';
+import axios from 'axios';
 import logo from '../assets/images/logo.png';
-import foto from '../assets/images/foto.png';
-
-// Dummy data for menu items
-const dummyMenuItems = [
-  {
-    id: 1,
-    name: "Nasi Kebuli Ayam",
-    description: "Nasi kebuli dengan topping ayam yang lezat dan bumbu rempah pilihan.",
-    price: "Rp. 20.000",
-    rating: "4.9/5",
-    image: foto,
-    category: "nasi-kebuli"
-  },
-  {
-    id: 2,
-    name: "Nasi Kebuli Sapi",
-    description: "Nasi kebuli dengan topping daging sapi empuk yang kaya rasa.",
-    price: "Rp. 49.000",
-    rating: "4.8/5",
-    image: foto,
-    category: "nasi-kebuli"
-  },
-  {
-    id: 3,
-    name: "Nasi Kebuli Kambing",
-    description: "Nasi kebuli dengan topping daging kambing yang dimasak sempurna.",
-    price: "Rp. 55.000",
-    rating: "4.9/5",
-    image: foto,
-    category: "nasi-kebuli"
-  },
-
-  
-];
-
-// Categories definition
-const categories = [
-  { id: "all", name: "All Menu", slug: "all" },
-  { id: "nasi-kebuli", name: "Nasi Kebuli", slug: "nasi-kebuli" },
-  { id: "paket-nampan-ayam", name: "Paket Nampan Ayam", slug: "paket-nampan-ayam" },
-  { id: "paket-nampan-kambing", name: "Paket Nampan Kambing", slug: "paket-nampan-kambing" },
-  { id: "paket-nampan-sapi", name: "Paket Nampan Sapi", slug: "paket-nampan-sapi" }
-];
+import foto from '../assets/images/foto.png'; // Fallback image
 
 const Menu = () => {
   const navigate = useNavigate();
   const { category } = useParams();
   const [activeCategory, setActiveCategory] = useState("all");
-  const [filteredItems, setFilteredItems] = useState(dummyMenuItems);
+  const [menuItems, setMenuItems] = useState([]);
+  const [filteredItems, setFilteredItems] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [categories, setCategories] = useState([
+    { id: "all", name: "All Menu", slug: "all" },
+  ]);
+  const API_URL = 'http://kebabmutiara.xyz';
 
   // Function to handle menu item click
   const handleMenuClick = (menuId) => {
     navigate(`/menu/${menuId}`);
   };
 
+  // Fetch menu items from API
+  useEffect(() => {
+    const fetchMenuItems = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get(`${API_URL}/api/produk`);
+        
+        if (response.data && Array.isArray(response.data)) {
+          setMenuItems(response.data);
+          
+          // Extract unique categories from the menu items
+          const uniqueCategories = [
+            { id: "all", name: "All Menu", slug: "all" }
+          ];
+          
+          // Create a set to track unique category IDs
+          const categoryIds = new Set();
+          
+          response.data.forEach(item => {
+            if (item.kategori && !categoryIds.has(item.kategori)) {
+              categoryIds.add(item.kategori);
+              uniqueCategories.push({
+                id: item.kategori,
+                name: item.kategori,
+                slug: item.kategori.toLowerCase().replace(/\s+/g, '-')
+              });
+            }
+          });
+          
+          setCategories(uniqueCategories);
+        } else {
+          console.error('Invalid response format:', response.data);
+          setError('Failed to load menu items. Invalid data format.');
+        }
+      } catch (err) {
+        console.error('Error fetching menu items:', err);
+        setError('Failed to load menu items. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMenuItems();
+  }, [API_URL]);
+
   // Set active category from URL parameter
   useEffect(() => {
     if (category) {
-      const validCategory = categories.find(cat => cat.slug === category);
-      if (validCategory) {
-        setActiveCategory(validCategory.slug);
-      } else {
-        setActiveCategory("all");
-      }
+      setActiveCategory(category);
     } else {
       setActiveCategory("all");
     }
@@ -76,23 +82,31 @@ const Menu = () => {
 
   // Filter menu items based on active category and search term
   useEffect(() => {
-    let items = dummyMenuItems;
+    let items = menuItems;
     
     // Apply category filter if not "all"
     if (activeCategory !== "all") {
-      items = items.filter(item => item.category === activeCategory);
+      // Find the category object from slug
+      const categoryObj = categories.find(cat => cat.slug === activeCategory);
+      
+      if (categoryObj) {
+        // Filter items by the category name
+        items = items.filter(item => 
+          item.kategori && item.kategori.toLowerCase() === categoryObj.name.toLowerCase()
+        );
+      }
     }
     
     // Apply search filter if search term exists
     if (searchTerm.trim() !== '') {
-      items = items.filter(item => 
-        item.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        item.description.toLowerCase().includes(searchTerm.toLowerCase())
+      items = items.filter(item =>
+        item.nama_produk?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.deskripsi?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
     
     setFilteredItems(items);
-  }, [activeCategory, searchTerm]);
+  }, [activeCategory, searchTerm, menuItems, categories]);
 
   // Handle category change
   const handleCategoryChange = (categorySlug) => {
@@ -102,6 +116,25 @@ const Menu = () => {
   // Handle search input change
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
+  };
+
+  // Format price to Indonesian Rupiah
+  const formatCurrency = (price) => {
+    if (!price) return 'Rp. 0';
+    return `Rp. ${parseInt(price).toLocaleString('id-ID')}`;
+  };
+
+  // Function to get image URL
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return foto;
+    
+    // If the path already has the domain, use it directly
+    if (imagePath.startsWith('http')) {
+      return imagePath;
+    }
+    
+    // Based on the Laravel API shown, images are stored as 'produk/filename.ext'
+    return `${API_URL}/storage/${imagePath}`;
   };
 
   return (
@@ -136,7 +169,7 @@ const Menu = () => {
           </div>
         </div>
       </header>
-      
+
       {/* Hero Section */}
       <section className="pt-16 pb-12 px-6 md:px-16 lg:px-24 text-center">
         <h1 className="text-6xl font-berkshire mb-6">
@@ -146,14 +179,14 @@ const Menu = () => {
           <span className="text-gray-800">Explore our delicious offerings</span>
         </div>
       </section>
-      
-          {/* Wave Divider */}
-          <div className="wave-divider relative h-32">
-                <svg className="absolute bottom-0 w-full" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 120" fill="none" preserveAspectRatio="none">
-                <path d="M0,64 C40,80 80,48 120,64 C160,80 200,48 240,64 C280,80 320,48 360,64 C400,80 440,48 480,64 C520,80 560,48 600,64 C640,80 680,48 720,64 C760,80 800,48 840,64 C880,80 920,48 960,64 C1000,80 1040,48 1080,64 C1120,80 1160,48 1200,64 C1240,80 1280,48 1320,64 C1360,80 1400,48 1440,64 L1440,120 L0,120 Z" fill="white"></path>
-                </svg>
-            </div>
-            
+
+      {/* Wave Divider */}
+      <div className="wave-divider relative h-32">
+        <svg className="absolute bottom-0 w-full" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 120" fill="none" preserveAspectRatio="none">
+          <path d="M0,64 C40,80 80,48 120,64 C160,80 200,48 240,64 C280,80 320,48 360,64 C400,80 440,48 480,64 C520,80 560,48 600,64 C640,80 680,48 720,64 C760,80 800,48 840,64 C880,80 920,48 960,64 C1000,80 1040,48 1080,64 C1120,80 1160,48 1200,64 C1240,80 1280,48 1320,64 C1360,80 1400,48 1440,64 L1440,120 L0,120 Z" fill="white"></path>
+        </svg>
+      </div>
+
       {/* Category Tabs */}
       <section className="py-8 px-6 md:px-16 lg:px-24 bg-white">
         <div className="max-w-6xl mx-auto">
@@ -175,34 +208,75 @@ const Menu = () => {
 
           {/* Menu Items */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredItems.length > 0 ? (
+            {loading ? (
+              // Loading state
+              Array.from({ length: 6 }, (_, index) => (
+                <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 w-full max-w-xs mx-auto">
+                  <div className="animate-pulse">
+                    <div className="bg-gray-200 pt-[66%]"></div>
+                    <div className="p-4">
+                      <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                      <div className="h-3 bg-gray-200 rounded w-full mb-1"></div>
+                      <div className="h-3 bg-gray-200 rounded w-5/6 mb-4"></div>
+                      <div className="flex justify-between mb-4">
+                        <div className="h-3 bg-gray-200 rounded w-1/4"></div>
+                        <div className="h-3 bg-gray-200 rounded w-1/4"></div>
+                      </div>
+                      <div className="h-8 bg-gray-200 rounded-full w-full"></div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : error ? (
+              // Error state
+              <div className="col-span-3 text-center py-12">
+                <h3 className="text-xl text-red-600 mb-4">{error}</h3>
+                <button 
+                  onClick={() => window.location.reload()}
+                  className="bg-[#FDC302] text-white py-2 px-6 rounded-full hover:bg-yellow-500 transition duration-300"
+                >
+                  Try Again
+                </button>
+              </div>
+            ) : filteredItems.length > 0 ? (
+              // Menu items
               filteredItems.map((item) => (
                 <div
-                  key={item.id}
+                  key={item.produk_id}
                   className="flex flex-col bg-white rounded-lg shadow-md overflow-hidden border border-[#FDC302] w-full max-w-xs mx-auto cursor-pointer transform transition-transform hover:scale-105"
-                  onClick={() => handleMenuClick(item.id)}
+                  onClick={() => handleMenuClick(item.produk_id)}
                 >
                   <div className="relative pt-[66%] overflow-hidden">
                     <img
-                      src={item.image}
-                      alt={item.name}
+                      src={getImageUrl(item.gambar)}
+                      alt={item.nama_produk}
                       className="absolute inset-0 w-full h-full object-contain p-2"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = foto;
+                      }}
                     />
                   </div>
                   <div className="p-4 flex flex-col">
-                    <h3 className="text-xl font-bold text-gray-900 mb-2 text-left">{item.name}</h3>
-                    <p className="text-gray-700 mb-4 text-left flex-grow">{item.description}</p>
+                    <h3 className="text-xl font-bold text-gray-900 mb-2 text-left">{item.nama_produk}</h3>
+                    <p className="text-gray-700 mb-4 text-left flex-grow">
+                      {item.deskripsi?.length > 100
+                        ? `${item.deskripsi.substring(0, 100)}...`
+                        : item.deskripsi || 'No description available'}
+                    </p>
                     <div className="flex items-center justify-between w-full mb-4">
                       <div className="flex items-center text-[#FDC302]">
-                        <FaStar className="mr-1" />
-                        <span>{item.rating}</span>
+                        <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs">
+                          {item.ukuran || 'M'}
+                        </span>
                       </div>
-                      <span className="text-lg font-semibold text-gray-900">{item.price}</span>
+                      <span className="text-lg font-semibold text-gray-900">{formatCurrency(item.harga)}</span>
                     </div>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleMenuClick(item.id);
+                        // Navigate to MenuDetail page with the product ID
+                        navigate(`/menu/${menuid}`);
                       }}
                       className="w-full bg-[#FDC302] text-white py-2 px-4 rounded-full hover:bg-yellow-500 transition duration-300"
                     >
@@ -212,6 +286,7 @@ const Menu = () => {
                 </div>
               ))
             ) : (
+              // No items found
               <div className="col-span-3 text-center py-12">
                 <h3 className="text-xl text-gray-600">No menu items found. Try a different category or search term.</h3>
               </div>
@@ -219,7 +294,7 @@ const Menu = () => {
           </div>
         </div>
       </section>
-      
+
       {/* Footer*/}
       <footer className="bg-red-900 text-white py-8 px-6 md:px-20 lg:px-32">
         <div className="container mx-auto">
@@ -232,39 +307,39 @@ const Menu = () => {
               <div className="grid grid-cols-2 gap-x-4">
                 <ul className="space-y-2">
                   <li>
-                    <a href="#" className="hover:text-yellow-400 flex items-center text-xs">
+                    <a href="/" className="hover:text-yellow-400 flex items-center text-xs">
                       <span className="text-yellow-400 mr-2">•</span>
                       Home
                     </a>
                   </li>
                   <li>
-                    <a href="#" className="hover:text-yellow-400 flex items-center text-xs">
+                    <a href="/about" className="hover:text-yellow-400 flex items-center text-xs">
                       <span className="text-yellow-400 mr-2">•</span>
                       About
                     </a>
                   </li>
                   <li>
-                    <a href="#" className="hover:text-yellow-400 flex items-center text-xs">
+                    <a href="/menu" className="hover:text-yellow-400 flex items-center text-xs">
                       <span className="text-yellow-400 mr-2">•</span>
-                      Shop
+                      Menu
                     </a>
                   </li>
                 </ul>
                 <ul className="space-y-2">
                   <li>
-                    <a href="#" className="hover:text-yellow-400 flex items-center text-xs">
+                    <a href="/cart" className="hover:text-yellow-400 flex items-center text-xs">
                       <span className="text-yellow-400 mr-2">•</span>
-                      Products
+                      Cart
                     </a>
                   </li>
                   <li>
-                    <a href="#" className="hover:text-yellow-400 flex items-center text-xs">
+                    <a href="/login" className="hover:text-yellow-400 flex items-center text-xs">
                       <span className="text-yellow-400 mr-2">•</span>
-                      Blog
+                      Login
                     </a>
                   </li>
                   <li>
-                    <a href="#" className="hover:text-yellow-400 flex items-center text-xs">
+                    <a href="/contact" className="hover:text-yellow-400 flex items-center text-xs">
                       <span className="text-yellow-400 mr-2">•</span>
                       Contact
                     </a>
@@ -272,7 +347,6 @@ const Menu = () => {
                 </ul>
               </div>
             </div>
-
             {/* Address */}
             <div className="lg:col-span-1">
               <div className="flex items-start mb-3">
@@ -288,7 +362,6 @@ const Menu = () => {
                   </p>
                 </div>
               </div>
-
               <div className="flex items-start">
                 <div className="bg-red-800 p-1.5 rounded-full mr-2 mt-1">
                   <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
@@ -302,7 +375,6 @@ const Menu = () => {
                 </div>
               </div>
             </div>
-
             {/* Phone */}
             <div className="lg:col-span-1">
               <div className="flex items-center mb-4">
@@ -316,7 +388,6 @@ const Menu = () => {
                   <p className="text-xs">Got Questions? Call us 24/7</p>
                 </div>
               </div>
-
               {/*Social Media */}
               <div className="flex justify-end space-x-3 mt-4">
                 <a href="#" className="bg-red-800 p-1.5 rounded-md hover:bg-red-700">
@@ -334,10 +405,9 @@ const Menu = () => {
           </div>
         </div>
       </footer>
-
       {/* Copyright Section */}
       <div className="bg-red-900 text-white text-center py-3 px-6 md:px-20 lg:px-32">
-        <div className="w-full h-px bg-red-800 mb-4"></div> 
+        <div className="w-full h-px bg-red-800 mb-4"></div>
         <div className="p-0 mt-0"></div>
         <div className="container mx-auto">
           <p className="text-xs">Copyright © 2025 Kebuli Mutiara. All rights reserved.</p>

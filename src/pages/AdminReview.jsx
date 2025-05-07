@@ -4,7 +4,6 @@ import aksen from '../assets/images/aksen.png';
 import AdminSidebar from './AdminSidebar';
 
 const AdminReview = () => {
-  // Review data with state to track appearance
   const [reviews, setReviews] = useState([
     { no: 1, name: 'Agus', rating: 5, review: 'Share your opinion about your shopping experience on our application here', appearance: true },
     { no: 2, name: 'Budi', rating: 4, review: 'Share your opinion about your shopping experience on our application here', appearance: true },
@@ -22,7 +21,6 @@ const AdminReview = () => {
     { no: 14, name: 'Nico', rating: 4, review: 'Share your opinion about your shopping experience on our application here', appearance: true }
   ]);
 
-  // Function to toggle appearance status
   const toggleAppearance = (reviewNo) => {
     setReviews(reviews.map(review =>
       review.no === reviewNo
@@ -31,14 +29,12 @@ const AdminReview = () => {
     ));
   };
 
-  // Render star rating
   const renderStars = (rating) => {
     return '★'.repeat(rating);
   };
 
   return (
     <div className="flex min-h-screen bg-gray-100">
-      {/* Background with red top 1/3 and accent pattern */}
       <div
         className="absolute top-0 left-0 right-0 h-1/3 bg-red-800 z-0"
         style={{
@@ -53,7 +49,6 @@ const AdminReview = () => {
 
       {/* Main Content */}
       <div className="relative z-10 flex-1 ml-52 p-6">
-        {/* Header with Review and Admin in a box */}
         <div className="flex justify-between items-center mb-6 bg-white p-4 rounded-lg shadow-lg">
           <h1 className="text-xl font-bold text-red-800">Review</h1>
           <div className="flex items-center bg-red-800 text-white px-4 py-2 rounded-lg">
@@ -62,7 +57,7 @@ const AdminReview = () => {
           </div>
         </div>
 
-        {/* Review Table - Improved styling with box and shadow */}
+        {/* Review Table */}
         <div className="bg-white rounded-lg shadow-lg">
           <div className="flex justify-between items-center p-4 border-b border-gray-200">
             <h3 className="font-bold text-gray-800">Review</h3>

@@ -130,6 +130,11 @@ function App() {
               <AddMenu />
             </ProtectedRoute>
           } />
+          <Route path="/admin/menu/edit/:id" element={
+          <ProtectedRoute allowedRole="admin">
+            <AddMenu />
+          </ProtectedRoute>
+        } />
 
           {/* Customer Routes */}
           <Route path="/customer" element={

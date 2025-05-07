@@ -12,7 +12,6 @@ const AdminOrder = () => {
   const [error, setError] = useState(null);
   
   useEffect(() => {
-    // Fetch orders from the API
     const fetchOrders = async () => {
       try {
         setLoading(true);
@@ -79,7 +78,6 @@ const AdminOrder = () => {
   };
 
   const handleOrderClick = (orderId) => {
-    // Navigate to order detail page with the specific order ID
     navigate(`/admin/orders/${orderId}`);
   };
 
@@ -87,7 +85,6 @@ const AdminOrder = () => {
     try {
       let nextEndpoint = '';
       
-      // Determine next status based on current status
       switch (currentStatus?.toUpperCase()) {
         case 'PENDING':
           nextEndpoint = `http://kebabmutiara.xyz/api/masak/${orderId}`;
@@ -99,7 +96,7 @@ const AdminOrder = () => {
           nextEndpoint = `http://kebabmutiara.xyz/api/sampai/${orderId}`;
           break;
         default:
-          return; // No further status update possible
+          return; 
       }
       
       if (nextEndpoint) {
@@ -109,7 +106,6 @@ const AdminOrder = () => {
           }
         });
         
-        // Refresh orders after status update
         const response = await axios.get('http://kebabmutiara.xyz/api/dashboard/order', {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -125,7 +121,6 @@ const AdminOrder = () => {
 
   return (
     <div className="flex min-h-screen bg-gray-100">
-      {/* Background with red top 1/3 and accent pattern */}
       <div 
         className="absolute top-0 left-0 right-0 h-1/3 bg-red-800 z-0" 
         style={{ 
@@ -140,7 +135,6 @@ const AdminOrder = () => {
 
       {/* Main Content */}
       <div className="relative z-10 flex-1 ml-52 p-6">
-        {/* Header with Order and Admin in a box */}
         <div className="flex justify-between items-center mb-6 bg-white p-4 rounded-lg shadow-lg">
           <h1 className="text-xl font-bold text-red-800">Order</h1>
           <div className="flex items-center bg-red-800 text-white px-4 py-2 rounded-lg">
@@ -149,7 +143,7 @@ const AdminOrder = () => {
           </div>
         </div>
 
-        {/* Order Table - Improved styling with box and shadow */}
+        {/* Order Table */}
         <div className="bg-white rounded-lg shadow-lg">
           <div className="flex justify-between items-center p-4 border-b border-gray-200">
             <h3 className="font-bold text-gray-800">Order</h3>

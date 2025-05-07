@@ -3,149 +3,166 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { FiShoppingBag } from 'react-icons/fi';
 import { HiOutlineArrowNarrowRight } from 'react-icons/hi';
 import { FaStar } from 'react-icons/fa';
+import axios from 'axios'; // Added missing axios import
 import { CartContext } from '../contexts/CartContext';
 import logo from '../assets/images/logo.png';
-import foto from '../assets/images/foto.png';
+import foto from '../assets/images/foto.png'; 
 
-// Dummy data for menu items
-const dummyMenuItems = [
-  {
-    id: 1,
-    name: "Nasi Kebuli Ayam",
-    description: "Nasi kebuli dengan topping ayam yang lezat dan bumbu rempah pilihan.",
-    price: "Rp. 20.000",
-    rating: "4.9/5",
-    image: foto,
-    longDescription: "Ratione voluptatem sequi nesciunt neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur.",
-    additionalInfo: {
-      weight: "500g",
-      dimensions: "20 × 30 × 5 cm",
-      ingredients: "Rice, chicken, spices, vegetables",
-      allergens: "May contain traces of nuts"
-    }
-  },
-  {
-    id: 2,
-    name: "Nasi Kebuli Sapi",
-    description: "Nasi kebuli dengan topping daging sapi premium yang lezat dan bumbu rempah pilihan.",
-    price: "Rp. 35.000",
-    rating: "4.8/5",
-    image: foto,
-    longDescription: "Nasi kebuli daging sapi dimasak dengan rempah pilihan dan rasa yang khas dari timur tengah. Daging sapi premium yang empuk dan juicy memberikan pengalaman makan yang luar biasa.",
-    additionalInfo: {
-      weight: "520g",
-      dimensions: "20 × 30 × 5 cm",
-      ingredients: "Rice, beef, spices, vegetables",
-      allergens: "May contain traces of nuts"
-    }
-  },
-  {
-    id: 3,
-    name: "Nasi Kebuli Kambing",
-    description: "Nasi kebuli dengan topping daging kambing yang dimasak sempurna.",
-    price: "Rp. 55.000",
-    rating: "4.9/5",
-    image: foto,
-    longDescription: "Ratione voluptatem sequi nesciunt neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem.",
-    additionalInfo: {
-      weight: "550g",
-      dimensions: "20 × 30 × 5 cm",
-      ingredients: "Rice, mutton, spices, vegetables",
-      allergens: "May contain traces of nuts"
-    }
-  },
-  {
-    id: 4,
-    name: "Nasi Kebuli Spesial",
-    description: "Nasi kebuli dengan topping daging campur ayam dan sapi serta telur.",
-    price: "Rp. 45.000",
-    rating: "4.7/5",
-    image: foto,
-    longDescription: "Kombinasi sempurna dari daging ayam dan sapi yang dimasak dengan bumbu kebuli khas Mutiara. Disajikan dengan telur rebus dan acar segar.",
-    additionalInfo: {
-      weight: "600g",
-      dimensions: "20 × 30 × 5 cm",
-      ingredients: "Rice, chicken, beef, egg, spices, vegetables",
-      allergens: "May contain traces of nuts and eggs"
-    }
-  }
-];
+// API base URL
+const API_BASE_URL = 'http://kebabmutiara.xyz/api';
 
-// Dummy review data
-const dummyReviews = [
-  {
-    id: 1,
-    name: "Ahmad Fauzi",
-    date: "10 Maret 2025",
-    rating: 5,
-    comment: "Nasi kebuli terbaik yang pernah saya makan! Bumbu yang meresap dan daging yang empuk, sangat memuaskan."
-  },
-  {
-    id: 2,
-    name: "Siti Aminah",
-    date: "5 Maret 2025",
-    rating: 4,
-    comment: "Rasanya autentik dan porsinya cukup banyak. Saya suka dengan aroma rempahnya yang khas."
-  },
-  {
-    id: 3,
-    name: "Budi Santoso",
-    date: "28 Februari 2025",
-    rating: 5,
-    comment: "Sudah langganan di sini selama bertahun-tahun. Kualitas selalu konsisten dan pelayanannya ramah."
+// Use the exact same getImageUrl function from Menu.jsx
+const getImageUrl = (imagePath) => {
+  if (!imagePath) return foto;
+  
+  // If the path already has the domain, use it directly
+  if (imagePath.startsWith('http')) {
+    return imagePath;
   }
-];
+  
+  // Based on the Laravel API shown, images are stored as 'produk/filename.ext'
+  return `${API_BASE_URL}/storage/${imagePath}`;
+};
 
 const MenuDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [quantity, setQuantity] = useState(1);
-  const [selectedSize, setSelectedSize] = useState('L');
+  const [selectedSize, setSelectedSize] = useState('');
   const [activeTab, setActiveTab] = useState('Description');
   const [mainImage, setMainImage] = useState(null);
   const [thumbnailIndex, setThumbnailIndex] = useState(0);
   const [addedToCart, setAddedToCart] = useState(false);
+  const [menu, setMenu] = useState(null);
+  const [relatedMenus, setRelatedMenus] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [reviews, setReviews] = useState([]);
+  const [images, setImages] = useState([]);
   
   // Use the CartContext
   const { addToCart, cartCount } = useContext(CartContext);
   
-  // Create dummy thumbnail images array
-  const thumbnails = [foto, foto, foto, foto];
-  
-  // Find the menu item with the matching id
-  const menuId = parseInt(id);
-  const menu = dummyMenuItems.find(item => item.id === menuId);
-  
-  // Set initial main image when menu is loaded
+  // Function to format price to Indonesian Rupiah
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0
+    }).format(price);
+  };
+
+  // Fetch menu item data and images
   useEffect(() => {
-    if (menu) {
-      setMainImage(menu.image);
-    }
+    const fetchMenuData = async () => {
+      try {
+        setIsLoading(true);
+        
+        // Fetch product details
+        const response = await axios.get(`${API_BASE_URL}/produk/${id}`);
+        setMenu(response.data);
+        
+        // Fetch product images
+        try {
+          // Updated image handling code
+          // Set the main product image
+          const mainImageUrl = getImageUrl(response.data.gambar);
+          setMainImage(mainImageUrl);
+          
+          // If there are additional images, process them
+          if (response.data.gambar_tambahan && response.data.gambar_tambahan.length > 0) {
+            const processedImages = response.data.gambar_tambahan.map(img => getImageUrl(img));
+            setImages([mainImageUrl, ...processedImages]);
+          } else {
+            // Try to fetch images from separate endpoint if available
+            const imagesResponse = await axios.get(`${API_BASE_URL}/produk/${id}/images`);
+            if (imagesResponse.data && Array.isArray(imagesResponse.data) && imagesResponse.data.length > 0) {
+              // Process and set images from the API
+              const processedImages = imagesResponse.data.map(img => getImageUrl(img.image_path));
+              setImages([mainImageUrl, ...processedImages]);
+            } else {
+              // If no additional images, duplicate the main image for thumbnails
+              setImages([mainImageUrl, mainImageUrl, mainImageUrl, mainImageUrl]);
+            }
+          }
+        } catch (imgErr) {
+          console.error('Error processing product images:', imgErr);
+          // Fallback to default image
+          setMainImage(foto);
+          setImages([foto, foto, foto, foto]);
+        }
+        
+        // Set initial selected size based on available sizes
+        if (response.data.ukuran) {
+          const sizes = response.data.ukuran.split(',').map(size => size.trim());
+          if (sizes.length > 0) {
+            setSelectedSize(sizes[0]);
+          }
+        }
+        
+        setIsLoading(false);
+      } catch (err) {
+        console.error('Error fetching menu data:', err);
+        setError('Failed to load product data');
+        setIsLoading(false);
+      }
+    };
+
+    fetchMenuData();
+  }, [id]);
+
+  // Fetch related products (products with the same category)
+  useEffect(() => {
+    const fetchRelatedProducts = async () => {
+      if (menu) {
+        try {
+          const response = await axios.get(`${API_BASE_URL}/produk`);
+          // Filter products with the same category but different ID
+          const filteredProducts = response.data
+            .filter(product => product.kategori === menu.kategori && product.produk_id !== menu.produk_id)
+            .slice(0, 3); // Limit to 3 products
+          
+          setRelatedMenus(filteredProducts);
+        } catch (err) {
+          console.error('Error fetching related products:', err);
+        }
+      }
+    };
+
+    fetchRelatedProducts();
   }, [menu]);
-  
-  // Redirect to menu page if menu item not found
+
+  // Get visible thumbnails based on current index
+  const visibleThumbnails = images.slice(thumbnailIndex, thumbnailIndex + 4);
+
+  // Redirect to menu page if menu item not found or on error
   useEffect(() => {
-    if (!menu) {
+    if (error) {
       navigate('/menu');
     }
-  }, [menu, navigate]);
+  }, [error, navigate]);
+
+  // Show loading state
+  if (isLoading) {
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  }
+
+  // Show error
+  if (error) {
+    return <div className="min-h-screen flex items-center justify-center text-red-500">{error}</div>;
+  }
 
   // If menu is not found and hasn't redirected yet, show loading
   if (!menu) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
 
-  // Generate related menus (excluding current menu)
-  const relatedMenus = dummyMenuItems
-    .filter(item => item.id !== menuId)
-    .slice(0, 3);
-
   const increment = () => setQuantity(prev => prev + 1);
   const decrement = () => setQuantity(prev => prev > 1 ? prev - 1 : 1);
   
   // Handle thumbnail navigation
   const showNextThumbnails = () => {
-    if (thumbnailIndex + 4 < thumbnails.length) {
+    if (thumbnailIndex + 4 < images.length) {
       setThumbnailIndex(thumbnailIndex + 1);
     }
   };
@@ -158,11 +175,17 @@ const MenuDetail = () => {
   
   // Handle add to cart
   const handleAddToCart = () => {
+    // Check if product is in stock
+    if (menu.stok <= 0) {
+      alert('Maaf, produk ini sedang tidak tersedia.');
+      return;
+    }
+
     const cartItem = {
-      id: menu.id,
-      name: menu.name,
-      price: menu.price,
-      image: menu.image,
+      id: menu.produk_id,
+      name: menu.nama_produk,
+      price: menu.harga,
+      image: getImageUrl(menu.gambar),
       quantity: quantity,
       size: selectedSize
     };
@@ -178,13 +201,21 @@ const MenuDetail = () => {
   const handleThumbnailClick = (thumb) => {
     setMainImage(thumb);
   };
-  
-  // Visible thumbnails based on current index
-  const visibleThumbnails = thumbnails.slice(thumbnailIndex, thumbnailIndex + 4);
+
+  // Parse sizes from the ukuran field
+  const sizes = menu.ukuran ? menu.ukuran.split(',').map(size => size.trim()) : [];
+
+  // Generate additional info object from menu data
+  const additionalInfo = {
+    'Kategori': menu.kategori || 'N/A',
+    'Ukuran': menu.ukuran || 'N/A',
+    'Stok': menu.stok ? `${menu.stok} tersedia` : 'Habis',
+    'ID Produk': menu.produk_id || 'N/A'
+  };
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Modified Navigation Bar with white background and full-width shadow */}
+      {/* Navigation Bar */}
       <header className="bg-white py-4 px-6 md:px-16 lg:px-24 w-full">
         <div className="flex justify-between items-center">
           <div>
@@ -217,7 +248,7 @@ const MenuDetail = () => {
         <div className="flex items-center text-sm">
           <a href="/menu" className="text-gray-500 hover:text-[#FDC302]">Menu</a>
           <span className="mx-2">›</span>
-          <span className="text-gray-700">{menu.name}</span>
+          <span className="text-gray-700">{menu.nama_produk}</span>
         </div>
       </div>
 
@@ -229,72 +260,93 @@ const MenuDetail = () => {
             {/* Menu Images */}
             <div className="lg:w-1/2">
               <div className="bg-gray-100 rounded-lg mb-4 h-96 flex items-center justify-center">
-                <img src={mainImage} alt={menu.name} className="w-full h-auto object-contain max-h-full" />
+                <img 
+                 src={getImageUrl(menu.gambar)}
+                  alt={menu.nama_produk}
+                  className="w-full h-auto object-contain max-h-full" 
+                  onError={(e) => { e.target.onerror = null; e.target.src = foto; }}
+                />
               </div>
-              <div className="relative">
-                <button 
-                  onClick={showPrevThumbnails}
-                  className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white rounded-full p-2 shadow-md hover:bg-gray-100 transition"
-                  disabled={thumbnailIndex === 0}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                </button>
-                <div className="grid grid-cols-4 gap-2 mx-8">
-                  {visibleThumbnails.map((thumb, i) => (
-                    <div 
-                      key={i + thumbnailIndex} 
-                      className={`border rounded-lg overflow-hidden cursor-pointer hover:border-[#FDC302] transition ${
-                        mainImage === thumb ? 'border-[#FDC302]' : 'border-gray-200'
-                      }`}
-                      onClick={() => handleThumbnailClick(thumb)}
-                    >
-                      <img src={thumb} alt={`${menu.name} thumbnail ${i + thumbnailIndex + 1}`} className="w-full h-auto" />
-                    </div>
-                  ))}
+              {images.length > 0 && (
+                <div className="relative">
+                  <button 
+                    onClick={showPrevThumbnails}
+                    className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white rounded-full p-2 shadow-md hover:bg-gray-100 transition"
+                    disabled={thumbnailIndex === 0}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                  <div className="grid grid-cols-4 gap-2 mx-8">
+                    {visibleThumbnails.map((thumb, i) => (
+                      <div 
+                        key={i + thumbnailIndex} 
+                        className={`border rounded-lg overflow-hidden cursor-pointer hover:border-[#FDC302] transition ${
+                          mainImage === thumb ? 'border-[#FDC302]' : 'border-gray-200'
+                        }`}
+                        onClick={() => handleThumbnailClick(thumb)}
+                      >
+                        <img 
+                          src={thumb} 
+                          alt={`${menu.nama_produk} thumbnail ${i + thumbnailIndex + 1}`} 
+                          className="w-full h-auto object-cover aspect-square" 
+                          onError={(e) => { e.target.onerror = null; e.target.src = foto; }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <button 
+                    onClick={showNextThumbnails}
+                    className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white rounded-full p-2 shadow-md hover:bg-gray-100 transition"
+                    disabled={thumbnailIndex + 4 >= images.length}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
                 </div>
-                <button 
-                  onClick={showNextThumbnails}
-                  className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white rounded-full p-2 shadow-md hover:bg-gray-100 transition"
-                  disabled={thumbnailIndex + 4 >= thumbnails.length}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-              </div>
+              )}
             </div>
 
             {/* Menu Info */}
             <div className="lg:w-1/2">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">{menu.name}</h1>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">{menu.nama_produk}</h1>
               <div className="flex items-center mb-4">
                 {[1, 2, 3, 4, 5].map(star => (
                   <FaStar key={star} className="text-[#FDC302]" />
                 ))}
-                <span className="ml-2 text-sm text-gray-500">({menu.rating})</span>
+                <span className="ml-2 text-sm text-gray-500">(5/5)</span>
               </div>
-              <h2 className="text-2xl font-bold text-[#B22222] mb-6">{menu.price}</h2>
-              <p className="text-gray-700 mb-6">{menu.description}</p>
+              <h2 className="text-2xl font-bold text-[#B22222] mb-6">{formatPrice(menu.harga)}</h2>
+              <p className="text-gray-700 mb-6">{menu.deskripsi}</p>
+
+              {/* Stock Status */}
+              <div className="mb-4">
+                <span className={`px-3 py-1 rounded-full text-sm ${menu.stok > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                  {menu.stok > 0 ? `Stok: ${menu.stok}` : 'Stok Habis'}
+                </span>
+              </div>
 
               {/* Size Selection */}
-              <div className="mb-6">
-                <h3 className="font-medium mb-2">Ukuran:</h3>
-                <div className="flex space-x-4">
-                  {['S', 'M', 'L'].map(size => (
-                    <button 
-                      key={size}
-                      onClick={() => setSelectedSize(size)}
-                      className={`w-10 h-10 rounded-full flex items-center justify-center border ${
-                        selectedSize === size ? 'border-[#FDC302] bg-[#FDC302] text-white' : 'border-gray-300 text-gray-700'
-                      }`}
-                    >
-                      {size}
-                    </button>
-                  ))}
+              {sizes.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="font-medium mb-2">Ukuran:</h3>
+                  <div className="flex space-x-4">
+                    {sizes.map(size => (
+                      <button 
+                        key={size}
+                        onClick={() => setSelectedSize(size)}
+                        className={`px-4 py-2 rounded-md flex items-center justify-center border ${
+                          selectedSize === size ? 'border-[#FDC302] bg-[#FDC302] text-white' : 'border-gray-300 text-gray-700'
+                        }`}
+                      >
+                        {size}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Quantity & Add to Cart */}
               <div className="flex items-center space-x-4 mb-6">
@@ -317,7 +369,12 @@ const MenuDetail = () => {
                 </div>
                 <button 
                   onClick={handleAddToCart}
-                  className="bg-[#B22222] text-white py-2 px-6 rounded-md hover:bg-red-700 transition duration-300 flex items-center"
+                  className={`py-2 px-6 rounded-md transition duration-300 flex items-center ${
+                    menu.stok > 0 
+                      ? 'bg-[#B22222] text-white hover:bg-red-700' 
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  }`}
+                  disabled={menu.stok <= 0}
                 >
                   Add to Cart <HiOutlineArrowNarrowRight className="ml-2" />
                 </button>
@@ -327,7 +384,7 @@ const MenuDetail = () => {
               {addedToCart && (
                 <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-6" role="alert">
                   <strong className="font-bold">Success! </strong>
-                  <span className="block sm:inline">{menu.name} ({selectedSize}) has been added to your cart.</span>
+                  <span className="block sm:inline">{menu.nama_produk} ({selectedSize}) has been added to your cart.</span>
                 </div>
               )}
             </div>
@@ -335,7 +392,6 @@ const MenuDetail = () => {
 
           {/* Separator Line */}
           <div className="border-t border-gray-200 container mx-auto px-6 md:px-16 lg:px-24 bg-white"></div>
-
 
           {/* Additional Information - Bottom Section - Updated Tab Design */}
           <div className="tabs-container w-full">
@@ -358,8 +414,7 @@ const MenuDetail = () => {
             <div className="py-6 max-w-3xl mx-auto">
               {activeTab === 'Description' && (
                 <div className="text-center">
-                  <p className="text-gray-700 font-medium">{menu.longDescription}</p>
-                  <p className="text-gray-700 mt-4 font-medium">Quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt porro quisquam est, qui dolore ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptate ruis aute irure dolor in reprehenderit.</p>
+                  <p className="text-gray-700 font-medium">{menu.deskripsi}</p>
                 </div>
               )}
               
@@ -367,7 +422,7 @@ const MenuDetail = () => {
                 <div className="mx-auto">
                   <table className="w-full">
                     <tbody>
-                      {Object.entries(menu.additionalInfo).map(([key, value]) => (
+                      {Object.entries(additionalInfo).map(([key, value]) => (
                         <tr key={key} className="border-b">
                           <td className="py-2 font-bold text-gray-500 capitalize w-1/3">{key}</td>
                           <td className="py-2 text-gray-700 font-medium">{value}</td>
@@ -380,23 +435,27 @@ const MenuDetail = () => {
               
               {activeTab === 'Reviews' && (
                 <div>
-                  {dummyReviews.map(review => (
-                    <div key={review.id} className="border-b pb-4 mb-4">
-                      <div className="flex justify-between mb-2">
-                        <span className="font-bold">{review.name}</span>
-                        <span className="text-gray-500 text-sm">{review.date}</span>
+                  {reviews.length > 0 ? (
+                    reviews.map(review => (
+                      <div key={review.id} className="border-b pb-4 mb-4">
+                        <div className="flex justify-between mb-2">
+                          <span className="font-bold">{review.user_name}</span>
+                          <span className="text-gray-500 text-sm">{review.created_at}</span>
+                        </div>
+                        <div className="flex mb-2">
+                          {[1, 2, 3, 4, 5].map(star => (
+                            <FaStar 
+                              key={star} 
+                              className={star <= review.rating ? "text-[#FDC302]" : "text-gray-300"} 
+                            />
+                          ))}
+                        </div>
+                        <p className="text-gray-700 font-medium">{review.comment}</p>
                       </div>
-                      <div className="flex mb-2">
-                        {[1, 2, 3, 4, 5].map(star => (
-                          <FaStar 
-                            key={star} 
-                            className={star <= review.rating ? "text-[#FDC302]" : "text-gray-300"} 
-                          />
-                        ))}
-                      </div>
-                      <p className="text-gray-700 font-medium">{review.comment}</p>
-                    </div>
-                  ))}
+                    ))
+                  ) : (
+                    <p className="text-center text-gray-500">No reviews yet. Be the first to leave a review!</p>
+                  )}
                 </div>
               )}
             </div>
@@ -407,7 +466,7 @@ const MenuDetail = () => {
       {/* Separator Line */}
       <div className="border-t border-gray-200 container mx-auto px-6 md:px-16 lg:px-24 bg-white"></div>
 
-      {/* Related Products - Now with white background */}
+      {/* Related Products */}
       <div className="bg-white py-12 px-6 md:px-16 lg:px-32">
         <div className="container mx-auto">
           <h2 className="text-3xl font-berkshire mb-8 text-center">
@@ -417,41 +476,47 @@ const MenuDetail = () => {
           <p className="text-center text-gray-600 mb-8 font-medium">Choose from some of related products</p>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {relatedMenus.map(item => (
-              <div
-                key={item.id}
-                className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 hover:border-[#FDC302] transition-all duration-300 cursor-pointer"
-                onClick={() => navigate(`/menu/${item.id}`)}
-              >
-                <div className="relative pt-[66%] overflow-hidden">
-                  <img
-                    src={item.image}
-                    alt={item.name}
-                    className="absolute inset-0 w-full h-full object-cover"
-                  />
-                </div>
-                <div className="p-4">
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">{item.name}</h3>
-                  <p className="text-gray-700 mb-4 line-clamp-2">{item.description}</p>
-                  <div className="flex items-center justify-between w-full mb-4">
-                    <div className="flex items-center text-[#FDC302]">
-                      <FaStar className="mr-1" />
-                      <span>{item.rating}</span>
-                    </div>
-                    <span className="text-lg font-semibold text-[#B22222]">{item.price}</span>
+            {relatedMenus.length > 0 ? (
+              relatedMenus.map(item => (
+                <div
+                  key={item.produk_id}
+                  className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 hover:border-[#FDC302] transition-all duration-300 cursor-pointer"
+                  onClick={() => navigate(`/menu/${item.produk_id}`)}
+                >
+                  <div className="relative pt-[66%] overflow-hidden">
+                    <img
+                      src={item.gambar ? `${API_BASE_URL}/storage/${item.gambar}` : '/placeholder-image.jpg'}
+                      alt={item.nama_produk}
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
                   </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate(`/menu/${item.id}`);
-                    }}
-                    className="w-full bg-[#FDC302] text-white py-2 px-4 rounded-md hover:bg-yellow-500 transition duration-300"
-                  >
-                    Buy Now
-                  </button>
+                  <div className="p-4">
+                    <h3 className="text-xl font-bold text-gray-900 mb-2">{item.nama_produk}</h3>
+                    <p className="text-gray-700 mb-4 line-clamp-2">{item.deskripsi}</p>
+                    <div className="flex items-center justify-between w-full mb-4">
+                      <div className="flex items-center text-[#FDC302]">
+                        <FaStar className="mr-1" />
+                        <span>5/5</span>
+                      </div>
+                      <span className="text-lg font-semibold text-[#B22222]">{formatPrice(item.harga)}</span>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/menu/${item.produk_id}`);
+                      }}
+                      className="w-full bg-[#FDC302] text-white py-2 px-4 rounded-md hover:bg-yellow-500 transition duration-300"
+                    >
+                      Buy Now
+                    </button>
+                  </div>
                 </div>
+              ))
+            ) : (
+              <div className="col-span-3 text-center text-gray-500 py-8">
+                No related products found
               </div>
-            ))}
+            )}
           </div>
         </div>
       </div>

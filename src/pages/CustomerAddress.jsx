@@ -18,6 +18,7 @@ const CustomerAddress = () => {
     kecamatan: '',
     kabupaten: '',
     provinsi: '',
+    noHP: '',
     is_utama: false
   });
 
@@ -91,6 +92,7 @@ const CustomerAddress = () => {
       kecamatan: address.kecamatan || '',
       kabupaten: address.kabupaten || '',
       provinsi: address.provinsi || '',
+      noHP: address.noHP || '',
       is_utama: address.is_utama || false
     });
     setIsEditing(true);
@@ -167,6 +169,7 @@ const CustomerAddress = () => {
       kecamatan: '',
       kabupaten: '',
       provinsi: '',
+      noHP: '',
       is_utama: addresses.length === 0 // Make default if first address
     });
     setIsEditing(true);
@@ -333,7 +336,7 @@ const CustomerAddress = () => {
                         <h3 className="font-bold">{address.label_alamat}</h3>
                         <p className="text-sm">{address.detail}</p>
                         <p className="text-sm">
-                          {[address.kelurahan, address.kecamatan, address.kabupaten, address.provinsi]
+                          {[address.kelurahan, address.kecamatan, address.kabupaten, address.provinsi, address.noHP]
                             .filter(Boolean)
                             .join(', ')}
                         </p>
@@ -448,6 +451,17 @@ const CustomerAddress = () => {
                     type="text"
                     name="provinsi"
                     value={currentAddress.provinsi}
+                    onChange={handleInputChange}
+                    className="w-full border border-red-800 rounded-lg p-3"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-gray-600 text-sm mb-2">NO. HP</label>
+                  <input
+                    type="text"
+                    name="noHP"
+                    value={currentAddress.noHp}
                     onChange={handleInputChange}
                     className="w-full border border-red-800 rounded-lg p-3"
                   />

@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useRef, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { FaUsers, FaUpload } from 'react-icons/fa';
 import axios from 'axios';
 import AdminSidebar from './AdminSidebar';
@@ -7,9 +7,14 @@ import aksen from '../assets/images/aksen.png';
 
 const AddMenu = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const fileInputRef = useRef(null);
+  
+  const isEdit = location.state?.isEdit || false;
+  const menuId = location.state?.menuId || null;
+  
   const [menuData, setMenuData] = useState({
     nama_produk: '',
     deskripsi: '',
@@ -20,6 +25,68 @@ const AddMenu = () => {
     gambar: null
   });
   const [filePreview, setFilePreview] = useState(null);
+  const API_URL = 'http://kebabmutiara.xyz';
+
+  // Load existing data if in edit mode
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+    if (isEdit && menuId) {
+      fetchMenuData(menuId);
+    }
+  }, [isEdit, menuId, navigate]);
+
+  // Function to fetch menu data for editing
+  const fetchMenuData = async (id) => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`${API_URL}/api/produk/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (response.data) {
+        const data = response.data;
+        
+        // Set form data
+        setMenuData({
+          nama_produk: data.nama_produk || '',
+          deskripsi: data.deskripsi || '',
+          harga: data.harga || '',
+          ukuran: data.ukuran || 'M',
+          kategori: data.kategori || 'Nasi Kebuli',
+          stok: data.stok || 0,
+          gambar: null 
+        });
+        
+        // Set image preview if available
+        if (data.gambar) {
+          const imageUrl = data.gambar.startsWith('http')
+            ? data.gambar
+            : `${API_URL}/storage/${data.gambar}`;
+          
+          setFilePreview(imageUrl);
+        }
+      } else {
+        setError('Menu item not found');
+      }
+    } catch (err) {
+      console.error('Error fetching menu data:', err);
+      setError('Failed to load menu data for editing');
+      
+      // Handle unauthorized access
+      if (err.response && err.response.status === 401) {
+        localStorage.removeItem('token');
+        navigate('/login');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -77,14 +144,12 @@ const AddMenu = () => {
       setLoading(true);
       setError('');
       
-      // Form validation
       if (!menuData.nama_produk || !menuData.deskripsi || !menuData.harga || !menuData.stok) {
         setError('Please fill in all required fields');
         setLoading(false);
         return;
       }
-
-      // Create FormData object to send file
+  
       const formData = new FormData();
       formData.append('nama_produk', menuData.nama_produk);
       formData.append('deskripsi', menuData.deskripsi);
@@ -96,20 +161,36 @@ const AddMenu = () => {
       if (menuData.gambar) {
         formData.append('gambar', menuData.gambar);
       }
-
-      // Send data to API
-      const response = await axios.post('http://kebabmutiara.xyz/api/produk/add', formData, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'multipart/form-data'
-        }
-      });
-
-      alert('Menu item added successfully!');
+  
+      let response;
+      
+      if (isEdit && menuId) {
+        response = await axios.post(`${API_URL}/api/produk/update/${menuId}`, formData, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+        alert('Menu item updated successfully!');
+      } else {
+        response = await axios.post(`${API_URL}/api/produk/add`, formData, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+        alert('Menu item added successfully!');
+      }
+  
       navigate('/admin/menu');
     } catch (err) {
-      console.error('Error adding menu item:', err);
-      setError(err.response?.data?.message || 'Failed to add menu item. Please try again.');
+      console.error('Error saving menu item:', err);
+      setError(err.response?.data?.message || 'Failed to save menu item. Please try again.');
+ 
+      if (err.response && err.response.status === 401) {
+        localStorage.removeItem('token');
+        navigate('/login');
+      }
     } finally {
       setLoading(false);
     }
@@ -117,7 +198,6 @@ const AddMenu = () => {
 
   return (
     <div className="flex min-h-screen bg-gray-100">
-      {/* Background with red top 1/3 and accent pattern */}
       <div 
         className="absolute top-0 left-0 right-0 h-1/3 bg-red-800 z-0"
         style={{
@@ -134,14 +214,14 @@ const AddMenu = () => {
       <div className="relative z-10 flex-1 ml-52 p-6">
         {/* Header */}
         <div className="flex justify-between items-center mb-6 bg-white p-4 rounded-lg shadow-lg">
-          <h1 className="text-xl font-bold text-red-800">Add Menu</h1>
+          <h1 className="text-xl font-bold text-red-800">{isEdit ? 'Edit Menu' : 'Add Menu'}</h1>
           <div className="flex items-center bg-red-800 text-white px-4 py-2 rounded-lg">
             <FaUsers className="mr-2 text-sm" />
             <span className="text-sm font-medium">Admin</span>
           </div>
         </div>
 
-        {/* Add Menu Form */}
+        {/* Add/Edit Menu Form */}
         <div className="bg-white rounded-lg shadow-lg p-6">
           {error && (
             <div className="mb-4 p-3 bg-red-100 text-red-800 rounded-lg">
@@ -248,7 +328,7 @@ const AddMenu = () => {
                     className="bg-red-800 text-white px-4 py-2 rounded-lg mb-3 flex items-center"
                     onClick={() => fileInputRef.current.click()}
                   >
-                    <FaUpload className="mr-2" /> Add File
+                    <FaUpload className="mr-2" /> {isEdit ? 'Change Image' : 'Add File'}
                   </button>
                   <p className="text-gray-500 text-sm">Or drag and drop files</p>
                 </div>
@@ -263,7 +343,7 @@ const AddMenu = () => {
                     onClick={() => {
                       setFilePreview(null);
                       setMenuData({...menuData, gambar: null});
-                      fileInputRef.current.value = '';
+                      if (fileInputRef.current) fileInputRef.current.value = '';
                     }}
                   >
                     Remove Image
@@ -271,6 +351,9 @@ const AddMenu = () => {
                 </div>
               )}
             </div>
+            {isEdit && !filePreview && (
+              <p className="text-gray-500 text-xs mt-1">Current image will be retained if no new image is uploaded</p>
+            )}
           </div>
           
           <div className="flex justify-end space-x-4 mt-8">
@@ -285,7 +368,7 @@ const AddMenu = () => {
               disabled={loading}
               className={`px-8 py-2 bg-red-800 text-white rounded-lg ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
             >
-              {loading ? 'SAVING...' : 'SAVE'}
+              {loading ? 'SAVING...' : isEdit ? 'UPDATE' : 'SAVE'}
             </button>
           </div>
         </div>

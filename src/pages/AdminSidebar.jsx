@@ -1,19 +1,51 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaChartPie, FaUsers, FaShoppingCart, FaHome, FaSignOutAlt, FaInfo, FaUtensils } from 'react-icons/fa';
 import logo from '../assets/images/logo.png';
 
 const AdminSidebar = ({ activePage }) => {
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogout = () => {
-    // Clear user data from localStorage
-    localStorage.removeItem('userRole');
-    localStorage.removeItem('userName');
-    
-    // Navigate to the sign in page
-    navigate('/');
+  const handleLogout = async () => {
+    try {
+      setIsLoading(true);
+      
+      const token = localStorage.getItem('authToken');
+      
+      if (token) {
+        const response = await fetch('http://kebabmutiara.xyz/api/logout', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (!response.ok) {
+          console.error('Logout API call failed:', response.status);
+        }
+      }
+
+      localStorage.removeItem('userRole');
+      localStorage.removeItem('userName');
+      localStorage.removeItem('authToken');
+      sessionStorage.clear();
+
+      window.location.href = '/';
+      
+    } catch (error) {
+      console.error('Error during logout process:', error);
+      localStorage.removeItem('userRole');
+      localStorage.removeItem('userName');
+      localStorage.removeItem('authToken');
+      sessionStorage.clear();
+      
+      setIsLoading(false);
+      window.location.href = '/signin';
+    }
   };
+  
 
   return (
     <div className="fixed z-10 w-52 h-screen">
@@ -78,10 +110,11 @@ const AdminSidebar = ({ activePage }) => {
         <div className="p-3">
           <button 
             onClick={handleLogout}
+            disabled={isLoading}
             className="flex items-center justify-center w-full p-2 bg-red-800 text-white rounded-lg text-xs"
           >
             <FaSignOutAlt className="mr-2 text-xs" />
-            <span>LOGOUT</span>
+            <span>{isLoading ? 'LOADING...' : 'LOGOUT'}</span>
           </button>
         </div>
       </div>

@@ -50,12 +50,8 @@ const SignIn = () => {
           // Optional: Validate token with your backend
           // const response = await axios.get('/validate-token');
           
-          // Redirect based on user role
-          if (userRole === 'admin') {
-            navigate('/admin');
-          } else if (userRole === 'pembeli') {
-            navigate('/customer');
-          }
+          // Redirect to home page instead of role-specific page
+          navigate('/');
         } catch (err) {
           // If token validation fails, clear storage and stay on login page
           console.error('Authentication validation error:', err);
@@ -184,12 +180,8 @@ const SignIn = () => {
           // Continue with the login flow even if this fails
         }
         
-        // Redirect based on role
-        if (user.role === 'admin') {
-          navigate('/admin');
-        } else if (user.role === 'pembeli') {
-          navigate('/customer');
-        }
+        // Redirect to home page instead of role-specific page
+        navigate('/');
       } else {
         // Register request
         // Create FormData for multipart/form-data (for image upload)

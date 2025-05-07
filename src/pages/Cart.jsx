@@ -40,8 +40,9 @@ const Cart = () => {
   // Calculate subtotal of selected items
   const calculateSelectedSubtotal = () => {
     return cartItems.reduce((total, item) => {
+      console.log(item);
       const itemKey = `${item.id}-${item.size}`;
-      const itemPrice = parseInt(item.price.replace('Rp. ', '').replace(/\./g, ''));
+      const itemPrice = item.price;
       
       if (selectedItems[itemKey]) {
         return total + (itemPrice * item.quantity);
@@ -199,7 +200,7 @@ const Cart = () => {
                 <div className="max-h-[450px] overflow-y-auto pr-2">
                   {cartItems.map((item) => {
                     // Calculate item total
-                    const itemPrice = parseInt(item.price.replace('Rp. ', '').replace(/\./g, ''));
+                    const itemPrice = item.price;
                     const itemTotal = itemPrice * item.quantity;
                     const itemKey = `${item.id}-${item.size}`;
                     
