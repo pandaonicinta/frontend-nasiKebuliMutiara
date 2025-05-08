@@ -52,10 +52,9 @@ const CustomerAddress = () => {
         console.warn('Unexpected API response structure:', response.data);
         addressData = [];
       }
-      
-      // Transform API response to match our frontend structure
+
       const transformedAddresses = addressData.map(address => ({
-        id: address.alamat_id || address.id, // Handle both potential field names
+        id: address.alamat_id || address.id, 
         label_alamat: address.label_alamat,
         detail: address.detail,
         kelurahan: address.kelurahan,
@@ -63,7 +62,7 @@ const CustomerAddress = () => {
         kabupaten: address.kabupaten,
         provinsi: address.provinsi,
         no_telepon: address.no_telepon,
-        is_utama: address.isPrimary === 1 || address.isPrimary === true // Convert from backend isPrimary to frontend is_utama
+        is_utama: address.isPrimary === 1 || address.isPrimary === true 
       }));
       
       setAddresses(transformedAddresses);
@@ -77,9 +76,8 @@ const CustomerAddress = () => {
           localStorage.removeItem('token');
           setTimeout(() => window.location.href = '/login', 3000);
         } else if (err.response.status === 403 && err.response.data?.message === 'Kamu belum ada alamat utama') {
-          // Handle the specific message from the API when no primary address exists
           setAddresses([]);
-          setError(null); // Don't show as an error since this is expected for new users
+          setError(null);
         } else if (err.response.status === 500) {
           setError('Server error. Please try again later or contact support.');
         } else {
@@ -106,8 +104,7 @@ const CustomerAddress = () => {
     fetchAddresses();
   }, []);
 
-  // Enhanced handleSetPrimary function implementation
-  const handleSetPrimary = async (addressId) => {
+   const handleSetPrimary = async (addressId) => {
     if (!addressId && addressId !== 0) {
       setError('Invalid address ID for setting as primary');
       return;
@@ -122,7 +119,6 @@ const CustomerAddress = () => {
       
       setIsLoading(true);
       
-      // Use the primary endpoint consistently
       await axios.get(`${apiUrl}/alamat/primary/${addressId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -131,16 +127,13 @@ const CustomerAddress = () => {
         },
       });
       
-      // Show success message
       setError(null);
       
-      // Update the local state to reflect the address as primary before fetching
       setAddresses(addresses.map(addr => ({
         ...addr,
         is_utama: addr.id === addressId
       })));
-      
-      // Then refresh from server to ensure we're in sync
+
       await fetchAddresses();
     } catch (err) {
       console.error('Error setting address as primary:', err);
@@ -164,7 +157,6 @@ const CustomerAddress = () => {
   };
 
   const handleEditAddress = (address) => {
-    // Fix 2: Ensure we're properly setting all fields from the existing address
     setCurrentAddress({
       id: address.id || null,
       label_alamat: address.label_alamat || '',
@@ -180,7 +172,6 @@ const CustomerAddress = () => {
   };
 
   const handleDeleteAddress = async (addressId) => {
-    // Fix 1: Check for null/undefined AND also check for empty string
     if (!addressId && addressId !== 0) {
       setError('Invalid address ID for deletion');
       return;
@@ -198,7 +189,6 @@ const CustomerAddress = () => {
       }
       
       setIsLoading(true);
-      // Adjusted to match the backend route (from the controller's destroy method)
       await axios.delete(`${apiUrl}/alamat/delete/${addressId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -219,7 +209,6 @@ const CustomerAddress = () => {
           setError('Address not found. It may have been already deleted.');
           fetchAddresses();
         } else if (err.response.status === 403 || err.response.status === 422) {
-          // This might happen if trying to delete a primary address
           setError(`Cannot delete address: ${err.response.data?.message || 'This address cannot be deleted'}`);
         } else {
           setError(`Failed to delete address: ${err.response.data?.message || err.response.statusText || 'Unknown error'}`);
@@ -300,7 +289,6 @@ const CustomerAddress = () => {
         'Content-Type': 'application/json'
       };
       
-      // Updated payload to match backend field names
       const payload = {
         label_alamat: currentAddress.label_alamat,
         detail: currentAddress.detail,
@@ -309,20 +297,16 @@ const CustomerAddress = () => {
         kabupaten: currentAddress.kabupaten || '',
         provinsi: currentAddress.provinsi || '',
         no_telepon: currentAddress.no_telepon || '', 
-        // Match backend field name - use 1 or 0 for isPrimary
         isPrimary: currentAddress.is_utama ? 1 : 0
       };
 
-      // Ensure we're checking for id properly and using correct endpoint
       if (currentAddress.id !== null && currentAddress.id !== undefined) {
-        // Update address - adjusted to match the controller's update method
         await axios.post(
           `${apiUrl}/alamat/update/${currentAddress.id}`,
           payload,
           { headers }
         );
         
-        // If we're setting this address as primary, use the primary endpoint consistently
         if (currentAddress.is_utama) {
           await axios.get(
             `${apiUrl}/alamat/primary/${currentAddress.id}`,
@@ -330,15 +314,12 @@ const CustomerAddress = () => {
           );
         }
       } else {
-        // Add new address - adjusted to match the controller's store method
         const response = await axios.post(
           `${apiUrl}/alamat/add`,
           payload,
           { headers }
         );
         
-        // If this is set as primary and the backend returns the new address ID
-        // Use the primary endpoint to set it as primary consistently
         if (currentAddress.is_utama && response.data?.alamat_id) {
           await axios.get(
             `${apiUrl}/alamat/primary/${response.data.alamat_id}`,
@@ -404,7 +385,7 @@ const CustomerAddress = () => {
       {/* Main Content */}
       <div className="relative z-10 flex-1 ml-52 mx-4 my-4 mr-6">
         <div className="bg-white rounded-lg p-4 flex justify-between items-center mb-6">
-          <h1 className="text-red-800 font-bold">Address Management</h1>
+          <h1 className="text-red-800 font-bold">Alamat Saya</h1>
           <div className="flex items-center bg-red-800 text-white px-4 py-2 rounded-lg">
             <FaUserAlt className="mr-2 text-xs" />
             <span className="text-xs">{customerName}</span>
@@ -492,10 +473,10 @@ const CustomerAddress = () => {
                       {!address.is_utama && (
                         <button 
                           onClick={() => handleSetPrimary(address.id)}
-                          className="flex items-center justify-center px-3 h-8 rounded-full bg-green-100 text-green-600 hover:bg-green-200 transition-colors text-xs font-medium"
+                          className="flex items-center justify-center px-3 h-8 rounded-full bg-red-100 text-red-800 hover:bg-red-200 transition-colors text-xs font-medium"
                           title="Set as primary address"
                         >
-                          Set as Primary
+                          Atur sebagai Alamat Utama
                         </button>
                       )}
                       
