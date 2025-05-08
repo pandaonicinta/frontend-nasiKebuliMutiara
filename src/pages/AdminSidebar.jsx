@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FaChartPie, FaUsers, FaShoppingCart, FaHome, FaSignOutAlt, FaInfo, FaUtensils } from 'react-icons/fa';
+import { FaChartPie, FaUsers, FaShoppingCart, FaHome, FaSignOutAlt, FaInfo, FaUtensils, FaArrowLeft } from 'react-icons/fa';
 import logo from '../assets/images/logo.png';
 
 const AdminSidebar = ({ activePage }) => {
@@ -9,13 +9,12 @@ const AdminSidebar = ({ activePage }) => {
   const handleLogout = async () => {
     try {
       setIsLoading(true);
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('token');
       
       if (token) {
         try {
-          // Panggil endpoint logout dengan token yang valid
-          const response = await fetch('http://kebabmutiara.xyz/api//logout', {
-            method: 'GET',  // Sesuai dengan route API
+          const response = await fetch('http://kebabmutiara.xyz/api/logout', {
+            method: 'GET', 
             headers: {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json',
@@ -28,26 +27,21 @@ const AdminSidebar = ({ activePage }) => {
           } else {
             localStorage.removeItem('userRole');
             localStorage.removeItem('userName');
-            localStorage.removeItem('authToken');
+            localStorage.removeItem('token');
             sessionStorage.clear();
+            window.location.replace('/');
           }
         } catch (apiError) {
           console.error('API error during logout:', apiError);
         }
       }
-      t
-      setTimeout(() => {
-        setIsLoading(false);
-        window.location.replace('/');
-      }, 300);
     } catch (error) {
       console.error('Error during logout process:', error);
       localStorage.removeItem('userRole');
       localStorage.removeItem('userName');
-      localStorage.removeItem('authToken');
+      localStorage.removeItem('token');
       sessionStorage.clear();
       setIsLoading(false);
-      window.location.replace('/signin');
     }
   };
   
@@ -59,8 +53,16 @@ const AdminSidebar = ({ activePage }) => {
             <img src={logo} alt="Kebuli Mutiara" className="h-14 mb-2" />
           </div>
         </div>
-        <div className="p-2 flex-grow overflow-y-auto">
+        <div className="flex-grow overflow-y-auto p-2">
           <ul className="text-sm">
+            <li className="mb-2">
+              <Link to="/" className={`flex items-center p-2 ${activePage === 'home' ? 'bg-red-800 text-white' : 'hover:bg-gray-100'} rounded-lg`}>
+                <span className={`${activePage === 'home' ? 'p-1 bg-white text-red-800 rounded' : 'text-red-800'} mr-2`}>
+                  <FaArrowLeft className="text-xs" />
+                </span>
+                <span className="text-xs">Home</span>
+              </Link>
+            </li>
             <li className="mb-2">
               <Link to="/admin" className={`flex items-center p-2 ${activePage === 'dashboard' ? 'bg-red-800 text-white' : 'hover:bg-gray-100'} rounded-lg`}>
                 <span className={`${activePage === 'dashboard' ? 'p-1 bg-white text-red-800 rounded' : 'text-red-800'} mr-2`}>
@@ -111,7 +113,7 @@ const AdminSidebar = ({ activePage }) => {
             </li>
           </ul>
         </div>
-        <div className="p-3">
+        <div className="mt-auto p-3">
           <button 
             onClick={handleLogout}
             disabled={isLoading}

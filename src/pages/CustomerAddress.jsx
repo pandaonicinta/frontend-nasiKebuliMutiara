@@ -42,16 +42,19 @@ const CustomerAddress = () => {
         timeout: 10000
       });
       
-      if (response.data && response.data.data) {
-        setAddresses(response.data.data);
+      const data = response?.data?.data;
+      
+      if (Array.isArray(data)) {
+        setAddresses(data);
       } else {
+        console.warn('Unexpected API response:', response.data);
         setAddresses([]);
       }
       setError(null);
     } catch (err) {
       console.error('Error fetching addresses:', err);
       
-      // Provide more specific error messages based on error type
+
       if (err.response) {
         if (err.response.status === 401) {
           setError('Authentication failed. Please log in again.');
@@ -229,7 +232,6 @@ const CustomerAddress = () => {
         );
       }
       
-      // Refresh addresses after saving
       fetchAddresses();
       setIsEditing(false);
     } catch (err) {
@@ -340,7 +342,7 @@ const CustomerAddress = () => {
                             .filter(Boolean)
                             .join(', ')}
                         </p>
-                        {address.is_utama && (
+                        {address.is_primary && (
                           <p className="text-xs text-blue-600 mt-2">This is your default delivery address</p>
                         )}
                       </div>
@@ -461,7 +463,7 @@ const CustomerAddress = () => {
                   <input
                     type="text"
                     name="noHP"
-                    value={currentAddress.noHp}
+                    value={currentAddress.noHP}
                     onChange={handleInputChange}
                     className="w-full border border-red-800 rounded-lg p-3"
                   />

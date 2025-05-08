@@ -557,7 +557,7 @@ const Home = () => {
                     </div>
                   </div>
 
-                  {/* Social Media */}
+                  {/* Social Media x  */}
                   <div className="mt-4 md:mt-0 flex items-start md:justify-end">
                     <div className="flex space-x-3">
                       <a href="https://facebook.com/mutiaravillage" 
