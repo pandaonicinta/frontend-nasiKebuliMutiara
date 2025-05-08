@@ -1,52 +1,56 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { FaChartPie, FaUsers, FaShoppingCart, FaHome, FaSignOutAlt, FaInfo, FaUtensils } from 'react-icons/fa';
 import logo from '../assets/images/logo.png';
 
 const AdminSidebar = ({ activePage }) => {
-  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogout = async () => {
     try {
       setIsLoading(true);
-      
       const token = localStorage.getItem('authToken');
       
       if (token) {
-        const response = await fetch('http://kebabmutiara.xyz/api/logout', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-        
-        if (!response.ok) {
-          console.error('Logout API call failed:', response.status);
+        try {
+          // Panggil endpoint logout dengan token yang valid
+          const response = await fetch('http://kebabmutiara.xyz/api//logout', {
+            method: 'GET',  // Sesuai dengan route API
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            },
+          });
+          
+          if (!response.ok) {
+            console.error('Logout API call failed:', response.status);
+          } else {
+            localStorage.removeItem('userRole');
+            localStorage.removeItem('userName');
+            localStorage.removeItem('authToken');
+            sessionStorage.clear();
+          }
+        } catch (apiError) {
+          console.error('API error during logout:', apiError);
         }
       }
-
-      localStorage.removeItem('userRole');
-      localStorage.removeItem('userName');
-      localStorage.removeItem('authToken');
-      sessionStorage.clear();
-
-      window.location.href = '/';
-      
+      t
+      setTimeout(() => {
+        setIsLoading(false);
+        window.location.replace('/');
+      }, 300);
     } catch (error) {
       console.error('Error during logout process:', error);
       localStorage.removeItem('userRole');
       localStorage.removeItem('userName');
       localStorage.removeItem('authToken');
       sessionStorage.clear();
-      
       setIsLoading(false);
-      window.location.href = '/signin';
+      window.location.replace('/signin');
     }
   };
   
-
   return (
     <div className="fixed z-10 w-52 h-screen">
       <div className="h-full m-4 bg-white rounded-lg shadow-xl overflow-hidden flex flex-col">

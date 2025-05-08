@@ -146,26 +146,22 @@ const Home = () => {
   };
 
   const handleAccountNavigation = () => {
+
     const token = localStorage.getItem('authToken') || localStorage.getItem('token');
     const userRole = localStorage.getItem('userRole');
     
     console.log("Button clicked! Token:", token, "UserRole:", userRole); // Debugging
     
     if (token) {
-      // Jika role kosong atau undefined, coba cek status user dari API
       if (!userRole || userRole === "undefined" || userRole === "unknown") {
-        // Coba fetch user info dari API
         axios.get('/aboutMe') 
           .then(response => {
-            // Pastikan response.data.role atau equivalent sesuai dengan API
             const role = response.data.role || response.data.user?.role;
             console.log("Fetched user role:", role);
             
             if (role) {
-              // Simpan role yang baru didapat
               localStorage.setItem('userRole', role);
               
-              // Navigasi berdasarkan role yang baru didapat
               if (role === 'admin') {
                 navigate('/admin');
               } else if (role === 'pembeli') {
@@ -180,17 +176,14 @@ const Home = () => {
             }
           })
           .catch(error => {
-            // Error 404 atau kesalahan lainnya
             if (error.response && error.response.status === 404) {
               console.error("User info endpoint not found (404)", error);
             } else {
               console.error("Error fetching user info:", error);
             }
-            // Jika gagal fetch, direct ke login saja
             navigate('/login');
           });
       } else {
-        // Gunakan role yang sudah ada di localStorage
         if (userRole === 'admin') {
           navigate('/admin');
         } else if (userRole === 'pembeli') {
@@ -206,17 +199,14 @@ const Home = () => {
   };
   
   
-  // Example of what should be in your login component:
   const handleLogin = async (credentials) => {
     try {
       const response = await axios.post('/auth/login', credentials);
       
-      // Save token and user role to localStorage dengan nama yang konsisten
       localStorage.setItem('authToken', response.data.token);
-      localStorage.setItem('userRole', response.data.user.role); // Make sure this matches your API response
+      localStorage.setItem('userRole', response.data.user.role); 
       localStorage.setItem('userName', response.data.user.name || response.data.user.username);
       
-      // Redirect based on role
       if (response.data.user.role === 'admin') {
         navigate('/admin');
       } else {
@@ -224,28 +214,24 @@ const Home = () => {
       }
     } catch (error) {
       console.error("Login failed:", error);
-      // Show error message
     }
   };
 
   const handleLogout = () => {
-    // Hapus semua data autentikasi
     localStorage.removeItem('authToken');
     localStorage.removeItem('userRole');
     localStorage.removeItem('userName');
     sessionStorage.clear();
   
-    // Update UI setelah logout
-    setIsAuthenticated(false); // Jika Anda menggunakan state untuk melacak status login
-  
-    // Redirect ke halaman login
+    setIsAuthenticated(false); 
+
     navigate('/login');
   };
   
 
   return (
     <div className="min-h-screen">
-      {/* Hero Section with Gradient Background */}
+      {/* Hero Section */}
       <div className="bg-gradient-to-r from-[#EFECD7] via-[#FCFBF5] to-[#F9EAEA]">
         {/* Navbar */}
         <nav className="flex justify-between items-center px-24 py-5">
@@ -263,7 +249,6 @@ const Home = () => {
               </span>
             </Link>
             {(localStorage.getItem('authToken') || localStorage.getItem('token')) ? (
-              // Changed from Link to button with onClick handler
               <button 
                 onClick={handleAccountNavigation}
                 className="px-8 py-3 bg-yellow-500 text-white rounded-full hover:bg-yellow-600 shadow-lg transition duration-300 flex items-center"
@@ -303,7 +288,7 @@ const Home = () => {
             <img src={foto} alt="Nasi Kebuli" className="w-5/6 h-auto rounded-full shadow-xl" />
           </div>
         </section>
-        {/* Wave Divider - Smaller and with more waves */}
+
         <div className="wave-divider relative h-32">
         <svg className="absolute bottom-0 w-full" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 120" fill="none" preserveAspectRatio="none">
           <path d="M0,64 C40,80 80,48 120,64 C160,80 200,48 240,64 C280,80 320,48 360,64 C400,80 440,48 480,64 C520,80 560,48 600,64 C640,80 680,48 720,64 C760,80 800,48 840,64 C880,80 920,48 960,64 C1000,80 1040,48 1080,64 C1120,80 1160,48 1200,64 C1240,80 1280,48 1320,64 C1360,80 1400,48 1440,64 L1440,120 L0,120 Z" fill="white"></path>
@@ -322,7 +307,7 @@ const Home = () => {
       Jelajahi berbagai kategori menu kami untuk menemukan nasi kebuli favoritmu.
     </p>
     
-    {/* Display static categories */}
+    {/* Display categories */}
     <div className="flex justify-center gap-6 px-4">
       {categories.map(category => (
         <Link 
@@ -352,7 +337,7 @@ const Home = () => {
   </div>
 </section>
       
-      {/* Special Ramadhan Section - Updated with image background */}
+      {/* Special Ramadhan Section */}
       <section className="py-16 relative overflow-hidden" style={{ 
           backgroundImage: `url(${ramadhan})`, 
           backgroundSize: 'cover',
@@ -361,7 +346,6 @@ const Home = () => {
         <div className="container mx-auto px-8">
           <div className="flex justify-between items-center">
             <div className="w-1/2 relative z-10">
-              {/* Using the provided image for decorative elements */}
               <div className="absolute -left-16 -top-12">
                 <img src={ornamen} alt="Ramadhan Decorations" className="w-40 h-auto" />
               </div>
@@ -375,7 +359,6 @@ const Home = () => {
             </div>
             <div className="w-1/2 relative">
               <img src={foto} alt="Special Ramadhan Dish" className="w-full h-auto rounded-full" />
-              {/* Moved discount badge to left side of the image as shown in the photo */}
               <div className="absolute top-10 left-8 w-24 h-24 border-4 border-red-800 rounded-full flex items-center justify-center bg-yellow-400">
                 <div className="text-center">
                   <div className="text-3xl font-bold text-red-800">50%</div>
@@ -393,7 +376,7 @@ const Home = () => {
         </div>
       </section>
       
-      {/* Popular Menu Section - Updated with API data */}
+      {/* Popular Menu Section */}
       <section className="py-16 bg-gradient-to-r from-[#FCFBF5] to-[#F9EAEA]">
         <div className="container mx-auto px-8">
           <h2 className="text-5xl font-berkshire text-center mb-4">
@@ -405,7 +388,7 @@ const Home = () => {
             Temukan nasi kebuli yang paling disukai pelanggan kami.
           </p>
           <div className="flex justify-center gap-16">
-            {/* Display popular products from API */}
+    
             {popularProducts.map((product, index) => (
               <div key={product.id} className="flex flex-col items-center">
                 <div className="p-1 rounded-full border-2 border-yellow-400 mb-4">
@@ -435,7 +418,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Testimonials Section - MODIFIED: Made review boxes equal height and width */}
+      {/* Testimonials Section */}
       <section className="py-16 bg-white">
         <div className="container mx-auto px-8">
           <h2 className="text-5xl font-berkshire text-center mb-2">
@@ -448,7 +431,6 @@ const Home = () => {
           </p>
 
           <div className="flex justify-center gap-8 max-w-6xl mx-auto">
-            {/* Map through testimonials with fixed height/width containers */}
             {testimonials.map((testimonial) => (
               <div 
                 key={testimonial.id} 
@@ -537,7 +519,7 @@ const Home = () => {
                 </div>
               </div>
 
-              {/* Contact Information Section - MODIFIED: Address with social icons to the right */}
+              {/* Contact Information Section  */}
               <div className="lg:col-span-2">
                 <div className="flex flex-col md:flex-row md:justify-between">
                   {/* Address & Email Column */}
@@ -575,7 +557,7 @@ const Home = () => {
                     </div>
                   </div>
 
-                  {/* Social Media Icons Column - Moved to right side */}
+                  {/* Social Media */}
                   <div className="mt-4 md:mt-0 flex items-start md:justify-end">
                     <div className="flex space-x-3">
                       <a href="https://facebook.com/mutiaravillage" 
