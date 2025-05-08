@@ -1,35 +1,48 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaShoppingCart, FaSignOutAlt, FaUser, FaMapMarkerAlt, FaStar } from 'react-icons/fa';
+import { FaShoppingCart, FaSignOutAlt, FaUser, FaMapMarkerAlt, FaStar, FaArrowLeft } from 'react-icons/fa';
 import logo from '../assets/images/logo.png';
 
 const CustomerSidebar = ({ activePage }) => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   
-  const handleLogout = () => {
+  const handleLogout = async () => {
     try {
       setIsLoading(true);
-  
-      localStorage.removeItem('userRole');
-      localStorage.removeItem('userName');
-      localStorage.removeItem('authToken'); // Changed from 'token' to match AdminSidebar
+      const token = localStorage.getItem('token');
       
-      // Clear any additional storage that might contain auth data
-      sessionStorage.clear();
-      
-      // Add a small delay to ensure UI updates before navigation
-      setTimeout(() => {
-        // Navigate to the sign in page
-        navigate('/');
-        setIsLoading(false);
-      }, 500);
-      
+      if (token) {
+        try {
+          const response = await fetch('http://kebabmutiara.xyz/api/logout', {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            },
+          });
+          
+          if (!response.ok) {
+            console.error('Logout API call failed:', response.status);
+          } else {
+            localStorage.removeItem('userRole');
+            localStorage.removeItem('userName');
+            localStorage.removeItem('token');
+            sessionStorage.clear();
+            window.location.replace('/');
+          }
+        } catch (apiError) {
+          console.error('API error during logout:', apiError);
+        }
+      }
     } catch (error) {
       console.error('Error during logout process:', error);
+      localStorage.removeItem('userRole');
+      localStorage.removeItem('userName');
+      localStorage.removeItem('token');
+      sessionStorage.clear();
       setIsLoading(false);
-      // Still attempt to navigate even if there was an error
-      navigate('/');
     }
   };
   
@@ -41,8 +54,19 @@ const CustomerSidebar = ({ activePage }) => {
             <img src={logo} alt="Kebuli Mutiara" className="h-14 mb-2" />
           </div>
         </div>
-        <div className="p-2 flex-grow overflow-y-auto">
+        <div className="flex-grow overflow-y-auto p-2">
           <ul className="text-sm">
+            <li className="mb-2">
+              <Link
+                to="/"
+                className={`flex items-center p-2 ${activePage === 'home' ? 'bg-red-800 text-white' : 'hover:bg-gray-100'} rounded-lg`}
+              >
+                <span className={`${activePage === 'home' ? 'p-1 bg-white text-red-800 rounded' : 'text-red-800'} mr-2`}>
+                  <FaArrowLeft className="text-xs" />
+                </span>
+                <span className="text-xs">Home</span>
+              </Link>
+            </li>
             <li className="mb-2">
               <Link
                 to="/customer"
@@ -101,7 +125,7 @@ const CustomerSidebar = ({ activePage }) => {
             </li>
           </ul>
         </div>
-        <div className="p-3">
+        <div className="mt-auto p-3">
           <button
             onClick={handleLogout}
             disabled={isLoading}
