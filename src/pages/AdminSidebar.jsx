@@ -47,7 +47,6 @@ const AdminSidebar = ({ activePage }) => {
       localStorage.removeItem('token');
       sessionStorage.clear();
       setIsLoading(false);
-      
     }
   };
   

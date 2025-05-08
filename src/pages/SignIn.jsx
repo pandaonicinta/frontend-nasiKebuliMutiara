@@ -5,7 +5,6 @@ import logo from '../assets/images/logo.png';
 import bg from '../assets/images/bglogin.png';
 import axios from 'axios'; 
 
-// Mengatur interceptor untuk menangani error
 axios.interceptors.response.use(
   response => response,
   error => {
@@ -14,7 +13,6 @@ axios.interceptors.response.use(
   }
 );
 
-// Set axios defaults for API requests
 axios.defaults.baseURL = 'http://kebabmutiara.xyz/api';
 axios.defaults.headers.common['Accept'] = 'application/json';
 
@@ -36,24 +34,17 @@ const SignIn = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  // Check if user is already logged in
   useEffect(() => {
     const checkAuth = async () => {
       const token = localStorage.getItem('token');
       const userRole = localStorage.getItem('userRole');
       
       if (token) {
-        // Set authorization header for any future requests
         axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
         
         try {
-          // Optional: Validate token with your backend
-          // const response = await axios.get('/validate-token');
-          
-          // Redirect to home page instead of role-specific page
-          navigate('/');
+          navigate('/dashboard');
         } catch (err) {
-          // If token validation fails, clear storage and stay on login page
           console.error('Authentication validation error:', err);
           localStorage.removeItem('token');
           localStorage.removeItem('userRole');
@@ -159,7 +150,6 @@ const SignIn = () => {
         console.log('Login berhasil. Token:', token);
         console.log('User data:', user);
         
-        // Try to get complete user data right after login
         try {
           const userDataResponse = await axios.get('/aboutMe', {
             headers: { Authorization: `Bearer ${token}` }

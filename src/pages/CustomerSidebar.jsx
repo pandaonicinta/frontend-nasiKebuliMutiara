@@ -10,11 +10,7 @@ const CustomerSidebar = ({ activePage }) => {
   const handleLogout = () => {
     try {
       setIsLoading(true);
-      
-      // Since we're encountering CORS issues with the API, we'll handle logout locally
-      // and let the token expire on the server side
-      
-      // Clear all auth-related data from localStorage
+  
       localStorage.removeItem('userRole');
       localStorage.removeItem('userName');
       localStorage.removeItem('authToken'); // Changed from 'token' to match AdminSidebar

@@ -322,7 +322,6 @@ const CustomerProfile = () => {
           <div className="pt-12 px-6 pb-6">
             <div className="flex flex-col mb-4">
               <div className="text-xl font-bold">{userName}</div>
-              <div className="text-gray-600 text-sm">@{profile.username}</div>
               <div className="text-gray-600 text-sm">{displayEmail()}</div>
             </div>
             <div className="absolute right-10 top-32">
