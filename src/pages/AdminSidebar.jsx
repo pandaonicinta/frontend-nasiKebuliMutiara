@@ -9,12 +9,12 @@ const AdminSidebar = ({ activePage }) => {
   const handleLogout = async () => {
     try {
       setIsLoading(true);
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('token');
       
       if (token) {
         try {
           // Panggil endpoint logout dengan token yang valid
-          const response = await fetch('http://kebabmutiara.xyz/api//logout', {
+          const response = await fetch('http://kebabmutiara.xyz/api/logout', {
             method: 'GET',  // Sesuai dengan route API
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -28,26 +28,26 @@ const AdminSidebar = ({ activePage }) => {
           } else {
             localStorage.removeItem('userRole');
             localStorage.removeItem('userName');
-            localStorage.removeItem('authToken');
+            localStorage.removeItem('token');
             sessionStorage.clear();
+            window.location.replace('/signin');
           }
         } catch (apiError) {
           console.error('API error during logout:', apiError);
         }
       }
-      t
-      setTimeout(() => {
-        setIsLoading(false);
-        window.location.replace('/');
-      }, 300);
+      // setTimeout(() => {
+      //   setIsLoading(false);
+      //   window.location.replace('/');
+      // }, 300);
     } catch (error) {
       console.error('Error during logout process:', error);
       localStorage.removeItem('userRole');
       localStorage.removeItem('userName');
-      localStorage.removeItem('authToken');
+      localStorage.removeItem('token');
       sessionStorage.clear();
       setIsLoading(false);
-      window.location.replace('/signin');
+      
     }
   };
   
