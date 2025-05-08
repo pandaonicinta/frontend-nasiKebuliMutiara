@@ -46,7 +46,7 @@ const AdminSidebar = ({ activePage }) => {
   };
   
   return (
-    <div className="fixed z-10 w-52 h-screen">
+    <div className="fixed z-10 w-52 h-screen pb-8">
       <div className="h-full m-4 bg-white rounded-lg shadow-xl overflow-hidden flex flex-col">
         <div className="p-3 flex items-center justify-center">
           <div className="lg:col-span-1">
@@ -113,7 +113,7 @@ const AdminSidebar = ({ activePage }) => {
             </li>
           </ul>
         </div>
-        <div className="mt-auto p-3">
+        <div className="p-3">
           <button 
             onClick={handleLogout}
             disabled={isLoading}
