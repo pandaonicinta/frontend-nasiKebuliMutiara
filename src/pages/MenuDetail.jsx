@@ -548,4 +548,4 @@
     );
   };
 
-  export default MenuDetail;
+export default MenuDetail;
