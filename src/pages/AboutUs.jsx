@@ -1,27 +1,39 @@
-import React from 'react';
+import React, { useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FiShoppingBag } from 'react-icons/fi';
 import { HiOutlineArrowNarrowRight } from 'react-icons/hi';
 import { FaFacebookF, FaInstagram, FaYoutube } from 'react-icons/fa';
+import { CartContext } from '../contexts/CartContext';
 import logo from '../assets/images/logo.png';
 import foto from '../assets/images/foto.png';
 import ceo from '../assets/images/ceo.png';
 
 const AboutUs = () => {
+  const navigate = useNavigate();
+  const { cartCount } = useContext(CartContext);
+  
   return (
     <div className="min-h-screen bg-[#F9F7F0]">
       {/* Navigation Bar */}
       <header className="bg-white py-4 px-6 md:px-16 lg:px-24">
         <div className="flex justify-between items-center">
           <div>
-            <img src={logo} alt="Nasi Kebuli Mutiara" className="h-12" />
+            <img 
+              src={logo} 
+              alt="Nasi Kebuli Mutiara" 
+              className="h-12 cursor-pointer" 
+              onClick={() => navigate('/')}
+            />
           </div>
           <div className="flex items-center space-x-8">
             <a href="/" className="text-gray-800 hover:text-yellow-500 font-medium">Home</a>
-            <a href="/about" className="text-yellow-500 font-medium">About Us</a>
+            <a href="/about" className="text-yellow-500 font-medium">Tentang Kami</a>
             <a href="/menu" className="text-gray-800 hover:text-yellow-500 font-medium">Menu</a>
             <a href="/cart" className="text-gray-800 hover:text-yellow-500 relative">
               <FiShoppingBag size={20} />
-              <span className="absolute -top-1 -right-1 bg-yellow-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs">0</span>
+              <span className="absolute -top-1 -right-1 bg-yellow-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs">
+                {cartCount}
+              </span>
             </a>
             <a href="/login" className="px-8 py-3 bg-gradient-to-r from-yellow-400 to-yellow-300 text-white rounded-full hover:from-yellow-500 hover:to-yellow-400 shadow-lg transition duration-300 flex items-center">
               Login <HiOutlineArrowNarrowRight className="ml-2" />
@@ -32,9 +44,9 @@ const AboutUs = () => {
 
       {/* Hero Section */}
       <section className="pt-16 pb-12 px-6 md:px-16 lg:px-24 text-center">
-        <h1 className="text-6xl font-berkshire text-gray-900 mb-6">About Us</h1>
+        <h1 className="text-6xl font-berkshire text-gray-900 mb-6">Tentang <span className="text-yellow-400">Kami</span></h1>
         <div className="inline-block bg-white px-8 py-3 rounded-full shadow-sm">
-          <span className="text-gray-800">About Us</span>
+          <span className="text-gray-800">Kedai Nasi Kebuli Mutiara</span>
         </div>
       </section>
 

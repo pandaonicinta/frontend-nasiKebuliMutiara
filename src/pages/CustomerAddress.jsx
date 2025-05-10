@@ -390,7 +390,7 @@ const CustomerAddress = () => {
             <FaUserAlt className="mr-2 text-xs" />
             <span className="text-xs">{customerName}</span>
           </div>
-        </div>
+        </div> 
 
         {/* Main Content Area */}
         <div className="bg-white rounded-lg p-6">
@@ -506,9 +506,9 @@ const CustomerAddress = () => {
               )}
               <button 
                 onClick={handleAddNewAddress}
-                className="w-full bg-red-800 text-white rounded-md py-3 mt-6 hover:bg-red-900 transition-colors flex items-center justify-center"
+                className="w-full bg-red-800 text-white text-xs rounded-md py-3 mt-6 hover:bg-red-900 transition-colors flex items-center justify-center"
               >
-                <FaHome className="mr-2" /> ADD NEW ADDRESS
+                <FaHome className="mr-2" /> TAMBAH ALAMAT BARU
               </button>
             </>
           ) : (

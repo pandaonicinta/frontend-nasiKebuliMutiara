@@ -1,145 +1,205 @@
-  import React, { useState, useEffect, useContext } from 'react';
-  import { useParams, useNavigate } from 'react-router-dom';
-  import { FiShoppingBag } from 'react-icons/fi';
-  import { HiOutlineArrowNarrowRight } from 'react-icons/hi';
-  import { FaStar } from 'react-icons/fa';
-  import axios from 'axios';
-  import { CartContext } from '../contexts/CartContext';
-  import logo from '../assets/images/logo.png';
-  import foto from '../assets/images/foto.png';
+import React, { useState, useEffect, useContext } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { FiShoppingBag } from 'react-icons/fi';
+import { HiOutlineArrowNarrowRight } from 'react-icons/hi';
+import { FaStar } from 'react-icons/fa';
+import axios from 'axios';
+import { CartContext } from '../contexts/CartContext';
+import logo from '../assets/images/logo.png';
+import foto from '../assets/images/foto.png';
 
-  // API base URL
-  const API_BASE_URL = 'http://kebabmutiara.xyz';
+const API_BASE_URL = 'http://kebabmutiara.xyz';
 
-  // Fungsi untuk mengambil URL gambar yang sudah terformat
-  const getImageUrl = (imagePath) => {
-    if (!imagePath) return foto;  // Gambar fallback
+const getImageUrl = (imagePath) => {
+  if (!imagePath) return foto;  
+  if (imagePath.startsWith('http')) {
+    return imagePath;
+  }
+  return `${API_BASE_URL}/storage/${imagePath}`;
+};
 
-    // Jika path sudah memiliki domain, langsung gunakan
-    if (imagePath.startsWith('http')) {
-      return imagePath;
-    }
+const MenuDetail = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [quantity, setQuantity] = useState(1);
+  const [selectedSize, setSelectedSize] = useState('');
+  const [activeTab, setActiveTab] = useState('Description');
+  const [mainImage, setMainImage] = useState(null);
+  const [addedToCart, setAddedToCart] = useState(false);
+  const [menu, setMenu] = useState(null);
+  const [relatedMenus, setRelatedMenus] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const { addToCart, cartCount } = useContext(CartContext);
 
-    // Berdasarkan Laravel API, gambar disimpan dalam format 'produk/filename.ext'
-    return `${API_BASE_URL}/storage/${imagePath}`;
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0
+    }).format(price);
   };
 
-  const MenuDetail = () => {
-    const { id } = useParams();
-    const navigate = useNavigate();
-    const [quantity, setQuantity] = useState(1);
-    const [selectedSize, setSelectedSize] = useState('');
-    const [activeTab, setActiveTab] = useState('Description');
-    const [mainImage, setMainImage] = useState(null);
-    const [addedToCart, setAddedToCart] = useState(false);
-    const [menu, setMenu] = useState(null);
-    const [relatedMenus, setRelatedMenus] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState(null);
+  useEffect(() => {
+    const fetchMenuData = async () => {
+      try {
+        setIsLoading(true);
 
-    // Use the CartContext
-    const { addToCart, cartCount } = useContext(CartContext);
+        const response = await axios.get(`${API_BASE_URL}/api/produk/${id}`);
+        setMenu(response.data);
 
-    // Format harga menjadi Rupiah
-    const formatPrice = (price) => {
-      return new Intl.NumberFormat('id-ID', {
-        style: 'currency',
-        currency: 'IDR',
-        minimumFractionDigits: 0
-      }).format(price);
+        try {
+          const mainImageUrl = getImageUrl(response.data.gambar);
+          setMainImage(mainImageUrl);
+        } catch (imgErr) {
+          console.error('Error processing product images:', imgErr);
+          setMainImage(foto);
+        }
+        if (response.data.ukuran) {
+          const sizes = response.data.ukuran.split(',').map(size => size.trim());
+          if (sizes.length > 0) {
+            setSelectedSize(sizes[0]);
+          }
+        }
+        
+        setIsLoading(false);
+      } catch (err) {
+        console.error('Error fetching menu data:', err);
+        setError('Failed to load product data');
+        setIsLoading(false);
+      }
     };
 
-    // Mengambil data menu dan gambar
-    useEffect(() => {
-      const fetchMenuData = async () => {
+    fetchMenuData();
+  }, [id]);
+
+  useEffect(() => {
+    const fetchRelatedProducts = async () => {
+      if (menu) {
         try {
-          setIsLoading(true);
+          const response = await axios.get(`${API_BASE_URL}/api/produk`);
+          const filteredProducts = response.data
+            .filter(product => product.kategori === menu.kategori && product.produk_id !== menu.produk_id)
+            .slice(0, 3); 
 
-          // Mengambil detail produk
-          const response = await axios.get(`${API_BASE_URL}/api/produk/${id}`);
-          setMenu(response.data);
-          
-          // Mengambil gambar produk
-          try {
-            // Menggunakan fungsi getImageUrl untuk mengatur gambar utama
-            const mainImageUrl = getImageUrl(response.data.gambar);
-            setMainImage(mainImageUrl);
-          } catch (imgErr) {
-            console.error('Error processing product images:', imgErr);
-            setMainImage(foto);
-          }
-          
-          // Menyusun ukuran produk dari data
-          if (response.data.ukuran) {
-            const sizes = response.data.ukuran.split(',').map(size => size.trim());
-            if (sizes.length > 0) {
-              setSelectedSize(sizes[0]);
-            }
-          }
-          
-          setIsLoading(false);
+          setRelatedMenus(filteredProducts);
         } catch (err) {
-          console.error('Error fetching menu data:', err);
-          setError('Failed to load product data');
-          setIsLoading(false);
+          console.error('Error fetching related products:', err);
         }
-      };
+      }
+    };
 
-      fetchMenuData();
-    }, [id]);
+    fetchRelatedProducts();
+  }, [menu]);
 
-    // Mengambil produk terkait (produk dengan kategori yang sama)
-    useEffect(() => {
-      const fetchRelatedProducts = async () => {
-        if (menu) {
-          try {
-            const response = await axios.get(`${API_BASE_URL}/api/produk`);
-            const filteredProducts = response.data
-              .filter(product => product.kategori === menu.kategori && product.produk_id !== menu.produk_id)
-              .slice(0, 3); // Menampilkan 3 produk saja
+  useEffect(() => {
+    if (error) {
+      navigate('/menu');
+    }
+  }, [error, navigate]);
+  if (isLoading) {
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  }
 
-            setRelatedMenus(filteredProducts);
-          } catch (err) {
-            console.error('Error fetching related products:', err);
+  if (error) {
+    return <div className="min-h-screen flex items-center justify-center text-red-500">{error}</div>;
+  }
+
+  if (!menu) {
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  }
+
+  const increment = () => setQuantity(prev => prev + 1);
+  const decrement = () => setQuantity(prev => prev > 1 ? prev - 1 : 1);
+  const handleAddToCart = async () => {
+    if (menu.stok <= 0) {
+      alert('Maaf, produk ini sedang tidak tersedia.');
+      return;
+    }
+
+    setIsAddingToCart(true);
+    
+    try {
+      const token = localStorage.getItem('auth_token');
+      
+      if (token) {
+        try {
+          const response = await axios.post(
+            `${API_BASE_URL}/api/keranjang/add`, 
+            {
+              id_produk: menu.produk_id,
+              quantity: quantity,
+              ukuran: selectedSize 
+            },
+            {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              }
+            }
+          );
+          
+          if (response.data) {
+            console.log('Berhasil menambahkan ke keranjang:', response.data);
+
+            const cartItem = {
+              id: menu.produk_id,
+              name: menu.nama_produk,
+              price: menu.harga,
+              image: getImageUrl(menu.gambar),
+              quantity: quantity,
+              size: selectedSize
+            };
+
+            addToCart(cartItem);
+
+            setAddedToCart(true);
+            setTimeout(() => setAddedToCart(false), 3000);
+          }
+        } catch (apiError) {
+          console.error('API Error:', apiError);
+          handleLocalStorageCart();
+          
+          if (apiError.response && apiError.response.status === 401) {
+            alert('Sesi login Anda telah berakhir. Silakan login kembali.');
+          } else {
+            alert('Terjadi kesalahan saat menambahkan produk ke keranjang. Menggunakan penyimpanan lokal sebagai cadangan.');
           }
         }
-      };
-
-      fetchRelatedProducts();
-    }, [menu]);
-
-    // Mengarahkan kembali ke halaman menu jika produk tidak ditemukan
-    useEffect(() => {
-      if (error) {
-        navigate('/menu');
+      } else {
+        handleLocalStorageCart();
       }
-    }, [error, navigate]);
-
-    // Menampilkan loading state
-    if (isLoading) {
-      return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    } catch (err) {
+      console.error('Error adding product to cart:', err);
+      alert('Terjadi kesalahan saat menambahkan produk ke keranjang. Silakan coba lagi.');
+    } finally {
+      setIsAddingToCart(false);
     }
+  };
 
-    // Menampilkan error
-    if (error) {
-      return <div className="min-h-screen flex items-center justify-center text-red-500">{error}</div>;
-    }
-
-    // Jika menu tidak ditemukan
-    if (!menu) {
-      return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
-    }
-
-    const increment = () => setQuantity(prev => prev + 1);
-    const decrement = () => setQuantity(prev => prev > 1 ? prev - 1 : 1);
-
-    // Menambahkan produk ke keranjang
-    const handleAddToCart = () => {
-      if (menu.stok <= 0) {
-        alert('Maaf, produk ini sedang tidak tersedia.');
-        return;
+  const handleLocalStorageCart = () => {
+    try {
+      const existingCart = JSON.parse(localStorage.getItem('cart') || '[]');
+      const existingItemIndex = existingCart.findIndex(
+        item => item.produk_id === menu.produk_id && item.ukuran === selectedSize
+      );
+      
+      if (existingItemIndex >= 0) {
+        existingCart[existingItemIndex].jumlah += quantity;
+      } else {
+        existingCart.push({
+          produk_id: menu.produk_id,
+          nama_produk: menu.nama_produk,
+          harga: menu.harga,
+          gambar: menu.gambar,
+          jumlah: quantity,
+          ukuran: selectedSize
+        });
       }
-
+      
+      localStorage.setItem('cart', JSON.stringify(existingCart));
+      
       const cartItem = {
         id: menu.produk_id,
         name: menu.nama_produk,
@@ -148,278 +208,271 @@
         quantity: quantity,
         size: selectedSize
       };
-
+      
       addToCart(cartItem);
+      
       setAddedToCart(true);
       setTimeout(() => setAddedToCart(false), 3000);
-    };
+    } catch (localStorageErr) {
+      console.error('Error managing cart in localStorage:', localStorageErr);
+      alert('Terjadi kesalahan saat menambahkan produk ke keranjang. Silakan coba lagi.');
+    }
+  };
 
-    // Memparse ukuran produk dari field ukuran
-    const sizes = menu.ukuran ? menu.ukuran.split(',').map(size => size.trim()) : [];
+  const sizes = menu.ukuran ? menu.ukuran.split(',').map(size => size.trim()) : [];
+  const additionalInfo = {
+    'Kategori': menu.kategori || 'N/A',
+    'Ukuran': menu.ukuran || 'N/A',
+    'Stok': menu.stok ? `${menu.stok} tersedia` : 'Habis',
+    'ID Produk': menu.produk_id || 'N/A'
+  };
 
-    // Informasi tambahan produk
-    const additionalInfo = {
-      'Kategori': menu.kategori || 'N/A',
-      'Ukuran': menu.ukuran || 'N/A',
-      'Stok': menu.stok ? `${menu.stok} tersedia` : 'Habis',
-      'ID Produk': menu.produk_id || 'N/A'
-    };
-
-    return (
-      <div className="min-h-screen bg-white">
-        {/* Navigation Bar */}
-        <header className="bg-white py-4 px-6 md:px-16 lg:px-32 w-full">
-          <div className="flex justify-between items-center">
-            <div>
-              <img
-                src={logo}
-                alt="Nasi Kebuli Mutiara"
-                className="h-12 cursor-pointer"
-                onClick={() => navigate('/')}
-              />
-            </div>
-            <div className="flex items-center space-x-8">
-              <a href="/" className="text-gray-800 hover:text-[#FDC302] font-medium">Home</a>
-              <a href="/about" className="text-gray-800 hover:text-[#FDC302] font-medium">About Us</a>
-              <a href="/menu" className="text-[#FDC302] font-medium">Menu</a>
-              <a href="/cart" className="text-gray-800 hover:text-[#FDC302] relative">
-                <FiShoppingBag size={20} />
-                <span className="absolute -top-1 -right-1 bg-[#FDC302] text-white rounded-full w-4 h-4 flex items-center justify-center text-xs">
-                  {cartCount}
-                </span>
-              </a>
-              <a href="/login" className="px-6 py-2 bg-gradient-to-r from-[#FDC302] to-yellow-300 text-white rounded-full hover:from-yellow-500 hover:to-yellow-400 shadow-md transition duration-300 flex items-center">
-                Login <HiOutlineArrowNarrowRight className="ml-2" />
-              </a>
-            </div>
+  return (
+    <div className="min-h-screen bg-white">
+      {/* Navigation Bar */}
+      <header className="bg-white py-4 px-6 md:px-16 lg:px-32 w-full">
+        <div className="flex justify-between items-center">
+          <div>
+            <img
+              src={logo}
+              alt="Nasi Kebuli Mutiara"
+              className="h-12 cursor-pointer"
+              onClick={() => navigate('/')}
+            />
           </div>
-        </header>
-
-        {/* Container for consistent width */}
-        <div className="px-6 md:px-16 lg:px-32">
-          {/* Breadcrumb */}
-          <div className="container mx-auto py-4 bg-white">
-            <div className="flex items-center text-sm">
-              <a href="/menu" className="text-gray-500 hover:text-[#FDC302]">Menu</a>
-              <span className="mx-2">›</span>
-              <span className="text-gray-700">{menu.nama_produk}</span>
-            </div>
+          <div className="flex items-center space-x-8">
+            <a href="/" className="text-gray-800 hover:text-[#FDC302] font-medium">Home</a>
+            <a href="/about" className="text-gray-800 hover:text-[#FDC302] font-medium">About Us</a>
+            <a href="/menu" className="text-[#FDC302] font-medium">Menu</a>
+            <a href="/cart" className="text-gray-800 hover:text-[#FDC302] relative">
+              <FiShoppingBag size={20} />
+              <span className="absolute -top-1 -right-1 bg-[#FDC302] text-white rounded-full w-4 h-4 flex items-center justify-center text-xs">
+                {cartCount}
+              </span>
+            </a>
+            <a href="/login" className="px-6 py-2 bg-gradient-to-r from-[#FDC302] to-yellow-300 text-white rounded-full hover:from-yellow-500 hover:to-yellow-400 shadow-md transition duration-300 flex items-center">
+              Login <HiOutlineArrowNarrowRight className="ml-2" />
+            </a>
           </div>
+        </div>
+      </header>
 
-          {/* Menu Detail Section */}
-          <div className="container mx-auto py-8 bg-white">
-            <div className="flex flex-col gap-8">
-              {/* Menu Images and Info - Top Section */}
-              <div className="flex flex-col lg:flex-row gap-8">
-                {/* Menu Images - Modified for better fit */}
-                <div className="lg:w-1/2">
-                  <div className="bg-gray-100 rounded-lg mb-4 h-96 overflow-hidden">
-                    <img 
-                      src={getImageUrl(menu.gambar)}
-                      alt={menu.nama_produk}
-                      className="w-full h-full object-cover" 
-                      onError={(e) => { e.target.onerror = null; e.target.src = foto; }}
-                    />
-                  </div>
-                </div>
+      <div className="px-6 md:px-16 lg:px-32">
+        <div className="container mx-auto py-4 bg-white">
+          <div className="flex items-center text-sm">
+            <a href="/menu" className="text-gray-500 hover:text-[#FDC302]">Menu</a>
+            <span className="mx-2">›</span>
+            <span className="text-gray-700">{menu.nama_produk}</span>
+          </div>
+        </div>
 
-                {/* Menu Info */}
-                <div className="lg:w-1/2">
-                  <h1 className="text-3xl font-bold text-gray-900 mb-2">{menu.nama_produk}</h1>
-                  <div className="flex items-center mb-4">
-                    {[1, 2, 3, 4, 5].map(star => (
-                      <FaStar key={star} className="text-[#FDC302]" />
-                    ))}
-                    <span className="ml-2 text-sm text-gray-500">(5/5)</span>
-                  </div>
-                  <h2 className="text-2xl font-bold text-[#B22222] mb-6">{formatPrice(menu.harga)}</h2>
-                  <p className="text-gray-700 mb-6">{menu.deskripsi}</p>
-
-                  {/* Stock Status */}
-                  <div className="mb-4">
-                    <span className={`px-3 py-1 rounded-full text-sm ${menu.stok > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                      {menu.stok > 0 ? `Stok: ${menu.stok}` : 'Stok Habis'}
-                    </span>
-                  </div>
-
-                  {/* Size Selection */}
-                  {sizes.length > 0 && (
-                    <div className="mb-6">
-                      <h3 className="font-medium mb-2">Ukuran:</h3>
-                      <div className="flex space-x-4">
-                        {sizes.map(size => (
-                          <button 
-                            key={size}
-                            onClick={() => setSelectedSize(size)}
-                            className={`px-4 py-2 rounded-md flex items-center justify-center border ${
-                              selectedSize === size ? 'border-[#FDC302] bg-[#FDC302] text-white' : 'border-gray-300 text-gray-700'
-                            }`}
-                          >
-                            {size}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Quantity & Add to Cart */}
-                  <div className="flex items-center space-x-4 mb-6">
-                    <div className="flex items-center border border-gray-300 rounded-md">
-                      <button 
-                        onClick={decrement}
-                        className="px-4 py-2 text-gray-600 hover:bg-gray-100"
-                        aria-label="Decrease quantity"
-                      >
-                        -
-                      </button>
-                      <span className="px-4 py-2">{quantity}</span>
-                      <button 
-                        onClick={increment}
-                        className="px-4 py-2 text-gray-600 hover:bg-gray-100"
-                        aria-label="Increase quantity"
-                      >
-                        +
-                      </button>
-                    </div>
-                    <button 
-                      onClick={handleAddToCart}
-                      className={`py-2 px-6 rounded-md transition duration-300 flex items-center ${
-                        menu.stok > 0 
-                          ? 'bg-[#B22222] text-white hover:bg-red-700' 
-                          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                      }`}
-                      disabled={menu.stok <= 0}
-                    >
-                      Add to Cart <HiOutlineArrowNarrowRight className="ml-2" />
-                    </button>
-                  </div>
-                  
-                  {/* Cart Success Message */}
-                  {addedToCart && (
-                    <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-6" role="alert">
-                      <strong className="font-bold">Success! </strong>
-                      <span className="block sm:inline">{menu.nama_produk} ({selectedSize}) has been added to your cart.</span>
-                    </div>
-                  )}
+        {/* Menu Detail Section */}
+        <div className="container mx-auto py-8 bg-white">
+          <div className="flex flex-col gap-8">
+            <div className="flex flex-col lg:flex-row gap-8">
+              <div className="lg:w-1/2">
+                <div className="bg-gray-100 rounded-lg mb-4 h-96 overflow-hidden">
+                  <img 
+                    src={getImageUrl(menu.gambar)}
+                    alt={menu.nama_produk}
+                    className="w-full h-full object-cover" 
+                    onError={(e) => { e.target.onerror = null; e.target.src = foto; }}
+                  />
                 </div>
               </div>
 
-              {/* Additional Information - Bottom Section */}
-              <div className="tabs-container w-full">
-                <div className="flex justify-center">
-                  {['Description', 'Additional Information', 'Reviews'].map((tab) => (
-                    <button
-                      key={tab}
-                      onClick={() => setActiveTab(tab === 'Additional Information' ? 'Additional Info' : tab)}
-                      className={`px-6 py-3 font-bold ${
-                        activeTab === (tab === 'Additional Information' ? 'Additional Info' : tab)
-                          ? 'text-[#FDC302] border-b-2 border-[#FDC302]'
-                          : 'text-gray-500'
-                      }`}
-                    >
-                      {tab}
-                    </button>
+              {/* Menu Info */}
+              <div className="lg:w-1/2">
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">{menu.nama_produk}</h1>
+                <div className="flex items-center mb-4">
+                  {[1, 2, 3, 4, 5].map(star => (
+                    <FaStar key={star} className="text-[#FDC302]" />
                   ))}
+                  <span className="ml-2 text-sm text-gray-500">(5/5)</span>
                 </div>
-                
-                {/* Tab Content - Fixed alignment */}
-                <div className="py-6 border-t border-gray-200">
-                  {activeTab === 'Description' && (
-                    <div className="max-w-3xl mx-auto text-center">
-                      <p className="text-gray-500 font-medium">{menu.deskripsi}</p>
-                    </div>
-                  )}
-                  
-                  {activeTab === 'Additional Info' && (
-                    <div className="max-w-3xl mx-auto">
-                      <table className="w-full">
-                        <tbody>
-                          {Object.entries(additionalInfo).map(([key, value], index) => (
-                            <tr key={key} className={index < Object.entries(additionalInfo).length - 1 ? "border-b border-gray-300" : ""}>
-                              <td className="py-2 font-bold text-gray-500 capitalize w-1/3">{key}</td>
-                              <td className="py-2 text-gray-500 font-medium">{value}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                  
-                  {activeTab === 'Reviews' && (
-                    <div className="max-w-3xl mx-auto text-center">
-                      <p className="text-gray-500">No reviews yet. Be the first to leave a review!</p>
-                    </div>
-                  )}
+                <h2 className="text-2xl font-bold text-[#B22222] mb-6">{formatPrice(menu.harga)}</h2>
+                <p className="text-gray-700 mb-6">{menu.deskripsi}</p>
+
+                {/* Stock Status */}
+                <div className="mb-4">
+                  <span className={`px-3 py-1 rounded-full text-sm ${menu.stok > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                    {menu.stok > 0 ? `Stok: ${menu.stok}` : 'Stok Habis'}
+                  </span>
                 </div>
-              </div>
-            </div>
-          </div>
 
-          {/* Separator Line */}
-          <div className="w-full h-px bg-gray-300 my-8"></div>
-
-          {/* Related Products - Updated styling */}
-          <div className="container mx-auto py-12">
-            <h2 className="text-4xl font-berkshire mb-3 text-center font-bold">
-              <span className="text-black">Related </span>
-              <span className="text-[#FDC302]">Products</span>
-            </h2>
-            <p className="text-center text-gray-500 mb-8 text-sm">Choose from some of related products</p>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {relatedMenus.length > 0 ? (
-                relatedMenus.map(item => (
-                  <div
-                    key={item.produk_id}
-                    className="flex flex-col bg-white rounded-lg shadow-md overflow-hidden border border-[#FDC302] w-full max-w-xs mx-auto cursor-pointer transform transition-transform hover:scale-105"
-                    onClick={() => navigate(`/menu/${item.produk_id}`)}
-                  >
-                    <div className="relative pt-[66%] overflow-hidden">
-                      <img
-                        src={getImageUrl(item.gambar)}
-                        alt={item.nama_produk}
-                        className="absolute inset-0 w-full h-full object-contain p-2"
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.src = foto;
-                        }}
-                      />
-                    </div>
-                    <div className="p-4 flex flex-col">
-                      <h3 className="text-xl font-bold text-gray-900 mb-2 text-left">{item.nama_produk}</h3>
-                      <p className="text-gray-700 mb-4 text-left flex-grow">
-                        {item.deskripsi?.length > 100
-                          ? `${item.deskripsi.substring(0, 100)}...`
-                          : item.deskripsi || 'No description available'}
-                      </p>
-                      <div className="flex items-center justify-between w-full mb-4">
-                        <div className="flex items-center text-[#FDC302]">
-                          <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs">
-                            {item.ukuran ? item.ukuran.split(',')[0].trim() : 'M'}
-                          </span>
-                        </div>
-                        <span className="text-lg font-semibold text-gray-900">{formatPrice(item.harga)}</span>
-                      </div>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/menu/${item.produk_id}`);
-                        }}
-                        className="w-full bg-[#FDC302] text-white py-2 px-4 rounded-full hover:bg-yellow-500 transition duration-300"
-                      >
-                        Buy Now
-                      </button>
+                {/* Size Selection */}
+                {sizes.length > 0 && (
+                  <div className="mb-6">
+                    <h3 className="font-medium mb-2">Ukuran:</h3>
+                    <div className="flex space-x-4">
+                      {sizes.map(size => (
+                        <button 
+                          key={size}
+                          onClick={() => setSelectedSize(size)}
+                          className={`px-4 py-2 rounded-md flex items-center justify-center border ${
+                            selectedSize === size ? 'border-[#FDC302] bg-[#FDC302] text-white' : 'border-gray-300 text-gray-700'
+                          }`}
+                        >
+                          {size}
+                        </button>
+                      ))}
                     </div>
                   </div>
-                ))
-              ) : (
-                <div className="col-span-3 text-center text-gray-500 py-8">
-                  No related products found
+                )}
+
+                {/* Quantity & Add to Cart */}
+                <div className="flex items-center space-x-4 mb-6">
+                  <div className="flex items-center border border-gray-300 rounded-md">
+                    <button 
+                      onClick={decrement}
+                      className="px-4 py-2 text-gray-600 hover:bg-gray-100"
+                      aria-label="Decrease quantity"
+                    >
+                      -
+                    </button>
+                    <span className="px-4 py-2">{quantity}</span>
+                    <button 
+                      onClick={increment}
+                      className="px-4 py-2 text-gray-600 hover:bg-gray-100"
+                      aria-label="Increase quantity"
+                    >
+                      +
+                    </button>
+                  </div>
+                  <button 
+                    onClick={handleAddToCart}
+                    className={`py-2 px-6 rounded-md transition duration-300 flex items-center ${
+                      menu.stok > 0 
+                        ? isAddingToCart 
+                          ? 'bg-gray-400 text-white cursor-wait' 
+                          : 'bg-[#B22222] text-white hover:bg-red-700' 
+                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    }`}
+                    disabled={menu.stok <= 0 || isAddingToCart}
+                  >
+                    {isAddingToCart ? 'Adding...' : 'Add to Cart'} {!isAddingToCart && <HiOutlineArrowNarrowRight className="ml-2" />}
+                  </button>
                 </div>
-              )}
+                {addedToCart && (
+                  <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-6" role="alert">
+                    <strong className="font-bold">Success! </strong>
+                    <span className="block sm:inline">{menu.nama_produk} ({selectedSize}) has been added to your cart.</span>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="tabs-container w-full">
+              <div className="flex justify-center">
+                {['Description', 'Additional Information', 'Reviews'].map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab === 'Additional Information' ? 'Additional Info' : tab)}
+                    className={`px-6 py-3 font-bold ${
+                      activeTab === (tab === 'Additional Information' ? 'Additional Info' : tab)
+                        ? 'text-[#FDC302] border-b-2 border-[#FDC302]'
+                        : 'text-gray-500'
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </div>
+              <div className="py-6 border-t border-gray-200">
+                {activeTab === 'Description' && (
+                  <div className="max-w-3xl mx-auto text-center">
+                    <p className="text-gray-500 font-medium">{menu.deskripsi}</p>
+                  </div>
+                )}
+                
+                {activeTab === 'Additional Info' && (
+                  <div className="max-w-3xl mx-auto">
+                    <table className="w-full">
+                      <tbody>
+                        {Object.entries(additionalInfo).map(([key, value], index) => (
+                          <tr key={key} className={index < Object.entries(additionalInfo).length - 1 ? "border-b border-gray-300" : ""}>
+                            <td className="py-2 font-bold text-gray-500 capitalize w-1/3">{key}</td>
+                            <td className="py-2 text-gray-500 font-medium">{value}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+                
+                {activeTab === 'Reviews' && (
+                  <div className="max-w-3xl mx-auto text-center">
+                    <p className="text-gray-500">No reviews yet. Be the first to leave a review!</p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
+
+        <div className="w-full h-px bg-gray-300 my-8"></div>
+
+        {/* Related Products */}
+        <div className="container mx-auto py-12">
+          <h2 className="text-4xl font-berkshire mb-3 text-center font-bold">
+            <span className="text-black">Related </span>
+            <span className="text-[#FDC302]">Products</span>
+          </h2>
+          <p className="text-center text-gray-500 mb-8 text-sm">Choose from some of related products</p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {relatedMenus.length > 0 ? (
+              relatedMenus.map(item => (
+                <div
+                  key={item.produk_id}
+                  className="flex flex-col bg-white rounded-lg shadow-md overflow-hidden border border-[#FDC302] w-full max-w-xs mx-auto cursor-pointer transform transition-transform hover:scale-105"
+                  onClick={() => navigate(`/menu/${item.produk_id}`)}
+                >
+                  <div className="relative pt-[66%] overflow-hidden">
+                    <img
+                      src={getImageUrl(item.gambar)}
+                      alt={item.nama_produk}
+                      className="absolute inset-0 w-full h-full object-contain p-2"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = foto;
+                      }}
+                    />
+                  </div>
+                  <div className="p-4 flex flex-col">
+                    <h3 className="text-xl font-bold text-gray-900 mb-2 text-left">{item.nama_produk}</h3>
+                    <p className="text-gray-700 mb-4 text-left flex-grow">
+                      {item.deskripsi?.length > 100
+                        ? `${item.deskripsi.substring(0, 100)}...`
+                        : item.deskripsi || 'No description available'}
+                    </p>
+                    <div className="flex items-center justify-between w-full mb-4">
+                      <div className="flex items-center text-[#FDC302]">
+                        <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs">
+                          {item.ukuran ? item.ukuran.split(',')[0].trim() : 'M'}
+                        </span>
+                      </div>
+                      <span className="text-lg font-semibold text-gray-900">{formatPrice(item.harga)}</span>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/menu/${item.produk_id}`);
+                      }}
+                      className="w-full bg-[#FDC302] text-white py-2 px-4 rounded-full hover:bg-yellow-500 transition duration-300"
+                    >
+                      Buy Now
+                    </button>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="col-span-3 text-center text-gray-500 py-8">
+                No related products found
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
         
         {/* Footer*/}
         <footer className="bg-red-900 text-white py-8 px-6 md:px-20 lg:px-32">

@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FiShoppingBag, FiArrowRight } from 'react-icons/fi';
 import { HiOutlineArrowNarrowRight } from 'react-icons/hi';
 import { AiFillStar } from 'react-icons/ai';
+import { CartContext } from '../contexts/CartContext';
 import axios from 'axios';
 import logo from '../assets/images/logo.png';
 import foto from '../assets/images/foto.png';
@@ -30,9 +31,9 @@ const Home = () => {
   const navigate = useNavigate();
   const [popularProducts, setPopularProducts] = useState([]);
   const [testimonials, setTestimonials] = useState([]);
-  const [cartCount, setCartCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { cartCount } = useContext(CartContext);
 
 
   const categories = [
@@ -51,7 +52,6 @@ const Home = () => {
         const productsData = response.data.data || [];
         const topProducts = productsData.slice(0, 3);
         
-        // Format products for display
         const formattedProducts = topProducts.map(product => ({
           id: product.id,
           name: product.nama || "",
@@ -64,7 +64,6 @@ const Home = () => {
       } catch (err) {
         console.error("Error fetching popular products:", err);
         
-        // Fallback data
         setPopularProducts([
           { id: 1, name: "Paket Nampan Ayam", image: foto, rating: 4.9 },
           { id: 2, name: "Paket Nampan Kambing", image: foto, rating: 4.9 },
@@ -240,7 +239,7 @@ const Home = () => {
           </div>
           <div className="flex items-center space-x-10">
             <Link to="/" className="text-yellow-500 font-medium">Home</Link>
-            <Link to="/about" className="text-gray-800 font-medium hover:text-yellow-500">About Us</Link>
+            <Link to="/about" className="text-gray-800 font-medium hover:text-yellow-500">Tentang Kami</Link>
             <Link to="/menu" className="text-gray-800 font-medium hover:text-yellow-500">Menu</Link>
             <Link to="/cart" className="text-gray-800 hover:text-yellow-500 relative">
               <FiShoppingBag size={20} />
@@ -281,7 +280,7 @@ const Home = () => {
             Nasi Kebuli Mutiara menyajikan nasi kebuli autentik dengan cita rasa rempah khas Timur Tengah. Disajikan lengkap dengan daging empuk, sambal, acar, dan kerupuk renyah. Cocok untuk pecinta kuliner khas dan lezat!
             </p>
             <Link to="/menu" className="px-8 py-4 bg-yellow-500 text-white rounded-full hover:bg-yellow-600 shadow-lg transition duration-300 inline-flex items-center">
-              Browse Our Classic Flavors <HiOutlineArrowNarrowRight className="ml-2" />
+              Jelajahi Cita Rasa Autentik Kami<HiOutlineArrowNarrowRight className="ml-2" />
             </Link>
           </div>
           <div className="w-1/2 flex justify-center">
@@ -303,7 +302,7 @@ const Home = () => {
       <span className="text-gray-900">Kategori Menu </span>
       <span className="text-yellow-400">Kami</span>
     </h2>
-    <p className="text-center text-gray-600 mb-12">
+    <p className="text-center text-gray-500 mb-12">
       Jelajahi berbagai kategori menu kami untuk menemukan nasi kebuli favoritmu.
     </p>
     
@@ -365,7 +364,6 @@ const Home = () => {
                   <div className="text-lg font-bold text-red-800">OFF</div>
                 </div>
               </div>
-              {/* Dotted Line */}
               <div className="absolute top-0 right-0 w-full h-full">
                 <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
                   <path d="M40,80 Q120,40 200,120" stroke="white" strokeWidth="2" strokeDasharray="5,5" fill="none" />
@@ -384,7 +382,7 @@ const Home = () => {
             <span className="text-yellow-400">Kebuli</span>
             <span className="text-gray-900"> Paling Laris</span>
           </h2>
-          <p className="text-center text-gray-600 mb-12">
+          <p className="text-center text-gray-500 mb-12">
             Temukan nasi kebuli yang paling disukai pelanggan kami.
           </p>
           <div className="flex justify-center gap-16">
@@ -426,7 +424,7 @@ const Home = () => {
             <span className="text-yellow-400">Kebuli</span>
             <span className="text-gray-900"> Kami</span>
           </h2>
-          <p className="text-center text-gray-600 mb-12">
+          <p className="text-center text-gray-500 mb-12">
             Baca review dari mereka yang telah menikmati kebuli buatan tangan kami.
           </p>
 
@@ -455,8 +453,6 @@ const Home = () => {
               </div>
             ))}
           </div>
-
-          {/* Navigation Dots */}
           <div className="flex justify-center mt-10 space-x-2">
             <div className="w-3 h-3 bg-red-800 rounded-full"></div>
             <div className="w-3 h-3 bg-gray-300 rounded-full"></div>
@@ -486,13 +482,7 @@ const Home = () => {
                     <li>
                       <Link to="/about" className="hover:text-yellow-400 flex items-center text-xs">
                         <span className="text-yellow-400 mr-2">•</span>
-                        About
-                      </Link>
-                    </li>
-                    <li>
-                      <Link to="/menu" className="hover:text-yellow-400 flex items-center text-xs">
-                        <span className="text-yellow-400 mr-2">•</span>
-                        Shop
+                        Tentang Kami
                       </Link>
                     </li>
                   </ul>
@@ -500,19 +490,13 @@ const Home = () => {
                     <li>
                       <Link to="/menu" className="hover:text-yellow-400 flex items-center text-xs">
                         <span className="text-yellow-400 mr-2">•</span>
-                        Products
+                        Menu
                       </Link>
                     </li>
                     <li>
-                      <Link to="/blog" className="hover:text-yellow-400 flex items-center text-xs">
+                      <Link to="/cart" className="hover:text-yellow-400 flex items-center text-xs">
                         <span className="text-yellow-400 mr-2">•</span>
-                        Blog
-                      </Link>
-                    </li>
-                    <li>
-                      <Link to="/contact" className="hover:text-yellow-400 flex items-center text-xs">
-                        <span className="text-yellow-400 mr-2">•</span>
-                        Contact
+                        Keranjang
                       </Link>
                     </li>
                   </ul>
@@ -532,7 +516,7 @@ const Home = () => {
                         </svg>
                       </div>
                       <div>
-                        <h4 className="font-semibold text-xs">Address:</h4>
+                        <h4 className="font-semibold text-xs">Alamat:</h4>
                         <p className="text-xs max-w-xs">
                           Jl. Villa Mutiara Cikarang blok H10, No.37, Ciantra, Cikarang Sel. Kab. Bekasi, Jawa Barat 17530
                         </p>

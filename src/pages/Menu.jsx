@@ -1,15 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { FiSearch, FiShoppingBag } from 'react-icons/fi';
 import { HiOutlineArrowNarrowRight } from 'react-icons/hi';
+import { CartContext } from '../contexts/CartContext';
 import { FaStar } from 'react-icons/fa';
 import axios from 'axios';
 import logo from '../assets/images/logo.png';
-import foto from '../assets/images/foto.png'; // Fallback image
+import foto from '../assets/images/foto.png'; 
 
 const Menu = () => {
   const navigate = useNavigate();
   const { category } = useParams();
+  const { cartCount } = useContext(CartContext);
   const [activeCategory, setActiveCategory] = useState("all");
   const [menuItems, setMenuItems] = useState([]);
   const [filteredItems, setFilteredItems] = useState([]);
@@ -36,12 +38,10 @@ const Menu = () => {
         if (response.data && Array.isArray(response.data)) {
           setMenuItems(response.data);
           
-          // Extract unique categories from the menu items
           const uniqueCategories = [
             { id: "all", name: "All Menu", slug: "all" }
           ];
-          
-          // Create a set to track unique category IDs
+
           const categoryIds = new Set();
           
           response.data.forEach(item => {
@@ -71,7 +71,6 @@ const Menu = () => {
     fetchMenuItems();
   }, [API_URL]);
 
-  // Set active category from URL parameter
   useEffect(() => {
     if (category) {
       setActiveCategory(category);
@@ -80,24 +79,18 @@ const Menu = () => {
     }
   }, [category]);
 
-  // Filter menu items based on active category and search term
   useEffect(() => {
     let items = menuItems;
     
-    // Apply category filter if not "all"
     if (activeCategory !== "all") {
-      // Find the category object from slug
       const categoryObj = categories.find(cat => cat.slug === activeCategory);
-      
       if (categoryObj) {
-        // Filter items by the category name
         items = items.filter(item => 
           item.kategori && item.kategori.toLowerCase() === categoryObj.name.toLowerCase()
         );
       }
     }
-    
-    // Apply search filter if search term exists
+
     if (searchTerm.trim() !== '') {
       items = items.filter(item =>
         item.nama_produk?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -108,32 +101,24 @@ const Menu = () => {
     setFilteredItems(items);
   }, [activeCategory, searchTerm, menuItems, categories]);
 
-  // Handle category change
   const handleCategoryChange = (categorySlug) => {
     navigate(`/menu/${categorySlug}`);
   };
 
-  // Handle search input change
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
   };
 
-  // Format price to Indonesian Rupiah
   const formatCurrency = (price) => {
     if (!price) return 'Rp. 0';
     return `Rp. ${parseInt(price).toLocaleString('id-ID')}`;
   };
 
-  // Function to get image URL
   const getImageUrl = (imagePath) => {
     if (!imagePath) return foto;
-    
-    // If the path already has the domain, use it directly
     if (imagePath.startsWith('http')) {
       return imagePath;
     }
-    
-    // Based on the Laravel API shown, images are stored as 'produk/filename.ext'
     return `${API_URL}/storage/${imagePath}`;
   };
 
@@ -159,10 +144,12 @@ const Menu = () => {
               />
               <FiSearch size={16} className="absolute left-3 top-2 text-gray-400" />
             </div>
-            <a href="/cart" className="text-gray-800 hover:text-[#FDC302] relative">
-              <FiShoppingBag size={20} />
-              <span className="absolute -top-1 -right-1 bg-[#FDC302] text-white rounded-full w-4 h-4 flex items-center justify-center text-xs">0</span>
-            </a>
+            <a href="/cart" className="text-gray-800 hover:text-yellow-500 relative">
+                          <FiShoppingBag size={20} />
+                          <span className="absolute -top-1 -right-1 bg-yellow-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs">
+                            {cartCount}
+                          </span>
+                        </a>
             <a href="/login" className="px-8 py-3 bg-gradient-to-r from-[#FDC302] to-yellow-300 text-white rounded-full hover:from-yellow-500 hover:to-yellow-400 shadow-lg transition duration-300 flex items-center">
               Login <HiOutlineArrowNarrowRight className="ml-2" />
             </a>
@@ -209,7 +196,6 @@ const Menu = () => {
           {/* Menu Items */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {loading ? (
-              // Loading state
               Array.from({ length: 6 }, (_, index) => (
                 <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 w-full max-w-xs mx-auto">
                   <div className="animate-pulse">
@@ -228,7 +214,6 @@ const Menu = () => {
                 </div>
               ))
             ) : error ? (
-              // Error state
               <div className="col-span-3 text-center py-12">
                 <h3 className="text-xl text-red-600 mb-4">{error}</h3>
                 <button 
@@ -275,7 +260,6 @@ const Menu = () => {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        // Navigate to MenuDetail page with the product ID
                         navigate(`/menu/${menuid}`);
                       }}
                       className="w-full bg-[#FDC302] text-white py-2 px-4 rounded-full hover:bg-yellow-500 transition duration-300"
@@ -286,7 +270,6 @@ const Menu = () => {
                 </div>
               ))
             ) : (
-              // No items found
               <div className="col-span-3 text-center py-12">
                 <h3 className="text-xl text-gray-600">No menu items found. Try a different category or search term.</h3>
               </div>

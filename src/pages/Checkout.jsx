@@ -1,23 +1,107 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiSearch, FiShoppingBag } from 'react-icons/fi';
+import { FiSearch, FiShoppingBag, FiX } from 'react-icons/fi';
 import { HiOutlineArrowNarrowRight } from 'react-icons/hi';
 import { CartContext } from '../contexts/CartContext';
-import axios from 'axios'; // Make sure to install axios if not already installed
+import axios from 'axios';
 import logo from '../assets/images/logo.png';
+import foto from '../assets/images/foto.png';
 
-// Import payment method icons
-import qrisIcon from '../assets/images/qris.png';
-import bcaIcon from '../assets/images/bca.png';
-import mandiriIcon from '../assets/images/mandiri.png';
-import bniIcon from '../assets/images/bni.png';
+
+const API_BASE_URL = 'http://kebabmutiara.xyz/api';
+
+const formatPrice = (price) => {
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    minimumFractionDigits: 0
+  }).format(price);
+};
+
+const getImageUrl = (imagePath) => {
+  if (!imagePath) return foto;  
+  if (imagePath.startsWith('http')) {
+    return imagePath;
+  }
+  return `http://kebabmutiara.xyz/storage/${imagePath}`;
+};
+
+const AddressSelectionModal = ({ isOpen, onClose, addresses, selectedAddressId, onSelectAddress, onAddNewAddress }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+      <div className="bg-white rounded-lg shadow-lg w-full max-w-lg mx-4">
+        <div className="flex justify-between items-center p-4 border-b">
+          <h3 className="text-lg font-semibold">Pilih Alamat Pengiriman</h3>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+            <FiX size={20} />
+          </button>
+        </div>
+        
+        <div className="p-4">
+          <button 
+            onClick={onAddNewAddress}
+            className="w-full py-2 mb-4 bg-[#F9C847] text-black rounded-md hover:bg-[#FDC302] transition flex items-center justify-center"
+          >
+            + Tambah Alamat Baru
+          </button>
+          
+          <div className="max-h-80 overflow-y-auto">
+            {addresses && addresses.length > 0 ? (
+              addresses.map(address => (
+                <div 
+                  key={address.alamat_id} 
+                  className={`p-4 border mb-2 rounded-md cursor-pointer ${selectedAddressId === address.alamat_id ? 'border-[#FDC302] bg-yellow-50' : 'border-gray-200 hover:border-gray-300'}`}
+                  onClick={() => onSelectAddress(address.alamat_id)}
+                >
+                  <div className="flex justify-between">
+                    <div className="font-medium">{address.nama_penerima}</div>
+                    <div className="text-sm text-gray-500">{address.no_telepon}</div>
+                  </div>
+                  <div className="text-sm text-gray-700 mt-1">
+                    {address.detail}, {address.kelurahan}, {address.kecamatan}, {address.kabupaten}, {address.provinsi}
+                  </div>
+                  {address.isPrimary && (
+                    <span className="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded mt-2">
+                      Utama
+                    </span>
+                  )}
+                </div>
+              ))
+            ) : (
+              <p className="text-center text-gray-500">Tidak ada alamat tersimpan</p>
+            )}
+          </div>
+        </div>
+        
+        <div className="p-4 border-t flex justify-end">
+          <button 
+            onClick={onClose}
+            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 mr-2"
+          >
+            Batal
+          </button>
+          <button 
+            onClick={onClose}
+            className="px-4 py-2 bg-[#F9C847] text-black rounded-md hover:bg-[#FDC302]"
+          >
+            Konfirmasi
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const Checkout = () => {
   const navigate = useNavigate();
   const { cartItems, calculateTotal, clearCart, cartCount } = useContext(CartContext);
+  
   const [isProcessing, setIsProcessing] = useState(false);
   const [addresses, setAddresses] = useState([]);
   const [selectedAddress, setSelectedAddress] = useState('');
+  const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -26,56 +110,144 @@ const Checkout = () => {
     paymentMethod: ''
   });
   const [formValid, setFormValid] = useState(false);
+  const [checkoutItems, setCheckoutItems] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [cartIsReady, setCartIsReady] = useState(false);
+  const [selectedCartItemIds, setSelectedCartItemIds] = useState([]);
   
-  // Calculate subtotal
-  const subtotal = calculateTotal();
+  const subtotal = checkoutItems.reduce((total, item) => 
+    total + (parseFloat(item.harga) * item.quantity), 0);
   
-  // Fixed shipping cost
   const shippingCost = 10000;
   
-  // Calculate total
-  const total = subtotal + shippingCost;
-  
-  // Format price as Rp. XX.XXX
-  const formatPrice = (price) => {
-    return `Rp. ${price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`;
-  };
-  
-  // Fetch user's saved addresses on component mount
+  const total = subtotal + (checkoutItems.length > 0 ? shippingCost : 0);
+
   useEffect(() => {
-    const fetchAddresses = async () => {
+    const fetchData = async () => {
+      setIsLoading(true);
       try {
         const token = localStorage.getItem('token');
-        const response = await axios.get('/api/alamat', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        setAddresses(response.data);
-        
-        // If addresses exist, select the first one by default
-        if (response.data.length > 0) {
-          setSelectedAddress(response.data[0].id_alamat);
+        if (!token) {
+          navigate('/login');
+          return;
         }
+        const addressResponse = await axios.get(`${API_BASE_URL}/alamat`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (addressResponse.data && Array.isArray(addressResponse.data)) {
+          setAddresses(addressResponse.data);
+          const primaryAddress = addressResponse.data.find(addr => addr.isPrimary === 1);
+          if (primaryAddress) {
+            setSelectedAddress(primaryAddress.alamat_id);
+          } else if (addressResponse.data.length > 0) {
+            setSelectedAddress(addressResponse.data[0].alamat_id);
+          }
+        }
+
+        const selectedFromSession = sessionStorage.getItem('checkoutItems');
+        let items = [];
+        
+        const savedCartItemIds = sessionStorage.getItem('selectedCartItemIds');
+        if (savedCartItemIds) {
+          try {
+            const parsedIds = JSON.parse(savedCartItemIds);
+            if (Array.isArray(parsedIds)) {
+              setSelectedCartItemIds(parsedIds);
+            }
+          } catch (e) {
+            console.error('Error parsing selectedCartItemIds:', e);
+          }
+        }
+        
+        if (selectedFromSession) {
+          items = JSON.parse(selectedFromSession);
+        } else {
+          try {
+            const cartResponse = await axios.get(`${API_BASE_URL}/keranjang`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            if (cartResponse.data && Array.isArray(cartResponse.data) && cartResponse.data.length > 0) {
+              items = cartResponse.data.map(item => ({
+                id: item.id_produk,
+                nama: item.nama_produk,
+                harga: item.harga,
+                quantity: item.jumlah,
+                size: item.ukuran,
+                image: getImageUrl(item.gambar),
+                keranjang_id: item.keranjang_id  
+              }));
+            } else {
+              const allCartResponse = await axios.get(`${API_BASE_URL}/keranjang`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+              });
+              
+              if (allCartResponse.data && Array.isArray(allCartResponse.data) && allCartResponse.data.length > 0) {
+                items = allCartResponse.data.map(item => ({
+                  id: item.id_produk,
+                  nama: item.nama_produk,
+                  harga: item.harga,
+                  quantity: item.jumlah,
+                  size: item.ukuran,
+                  image: getImageUrl(item.gambar),
+                  keranjang_id: item.keranjang_id 
+                }));
+
+                if (!savedCartItemIds) {
+                  setSelectedCartItemIds(allCartResponse.data.map(item => item.keranjang_id));
+                }
+                
+                setCartIsReady(true);
+              } else {
+                items = cartItems.map(item => ({
+                  id: item.id,
+                  nama: item.name,
+                  harga: item.price,
+                  quantity: item.quantity,
+                  size: item.size || '',
+                  image: item.image,
+                  keranjang_id: item.cart_item_id 
+                }));
+              }
+            }
+          } catch (cartError) {
+            console.error('Error fetching cart:', cartError);
+            items = cartItems.map(item => ({
+              id: item.id,
+              nama: item.name,
+              harga: item.price,
+              quantity: item.quantity,
+              size: item.size || '',
+              image: item.image,
+              keranjang_id: item.cart_item_id 
+            }));
+          }
+        }
+        
+        setCheckoutItems(items);
+        
+        const userData = JSON.parse(localStorage.getItem('user')) || {};
+        setFormData(prevData => ({
+          ...prevData,
+          firstName: userData.first_name || '',
+          lastName: userData.last_name || '',
+          email: userData.email || '',
+          phoneNumber: userData.phone || ''
+        }));
       } catch (error) {
-        console.error('Error fetching addresses:', error);
+        console.error('Error fetching checkout data:', error);
+        if (error.response && error.response.status === 401) {
+          navigate('/login');
+        }
+      } finally {
+        setIsLoading(false);
       }
     };
     
-    // Get user data from localStorage or context
-    const userData = JSON.parse(localStorage.getItem('user')) || {};
-    setFormData(prevData => ({
-      ...prevData,
-      firstName: userData.first_name || '',
-      lastName: userData.last_name || '',
-      email: userData.email || '',
-      phoneNumber: userData.phone || ''
-    }));
-    
-    fetchAddresses();
-  }, []);
+    fetchData();
+  }, [navigate, cartItems]);
   
-  // Handle input change
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({
@@ -83,13 +255,23 @@ const Checkout = () => {
       [name]: value
     });
   };
-  
-  // Handle address selection
-  const handleAddressChange = (e) => {
-    setSelectedAddress(e.target.value);
+
+  const handleAddressSelect = (addressId) => {
+    setSelectedAddress(addressId);
   };
   
-  // Handle payment method selection
+  const openAddressModal = () => {
+    setIsAddressModalOpen(true);
+  };
+  
+  const closeAddressModal = () => {
+    setIsAddressModalOpen(false);
+  };
+  
+  const handleAddNewAddress = () => {
+    navigate('/customer/address');
+  };
+  
   const handlePaymentMethodChange = (method) => {
     setFormData({
       ...formData,
@@ -97,11 +279,9 @@ const Checkout = () => {
     });
   };
   
-  // Validate form
   useEffect(() => {
     const { firstName, lastName, email, phoneNumber, paymentMethod } = formData;
     
-    // Check if all required fields are filled
     const isValid = firstName.trim() !== '' && 
                     lastName.trim() !== '' && 
                     email.trim() !== '' && 
@@ -112,7 +292,6 @@ const Checkout = () => {
     setFormValid(isValid);
   }, [formData, selectedAddress]);
   
-  // Process midtrans payment
   const processMidtransPayment = (snapToken) => {
     window.snap.pay(snapToken, {
       onSuccess: function(result) {
@@ -130,17 +309,19 @@ const Checkout = () => {
     });
   };
   
-  // Handle successful payment
   const handlePaymentSuccess = async (transactionId) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.post(`/api/transaksi/berhasil/${transactionId}`, {}, {
+      await axios.get(`${API_BASE_URL}/bayar/berhasil/${transactionId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
       
       clearCart();
+      sessionStorage.removeItem('checkoutItems');
+      sessionStorage.removeItem('selectedCartItemIds');
+      
       alert('Payment successful! Your order has been placed.');
       navigate('/orders');
     } catch (error) {
@@ -148,11 +329,10 @@ const Checkout = () => {
     }
   };
   
-  // Handle failed payment
   const handlePaymentFailure = async (transactionId) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.post(`/api/transaksi/gagal/${transactionId}`, {}, {
+      await axios.get(`${API_BASE_URL}/bayar/gagal/${transactionId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -163,16 +343,15 @@ const Checkout = () => {
       console.error('Error updating transaction status:', error);
     }
   };
-  
-  // Handle order placement
+
   const handlePlaceOrder = async () => {
     if (!formValid) {
-      alert('Please fill all required fields');
+      alert('Mohon lengkapi semua data yang diperlukan');
       return;
     }
     
-    if (cartItems.length === 0) {
-      alert('Your cart is empty');
+    if (checkoutItems.length === 0) {
+      alert('Keranjang belanjaan Anda kosong');
       return;
     }
     
@@ -180,37 +359,93 @@ const Checkout = () => {
     
     try {
       const token = localStorage.getItem('token');
+      let cartItemIds = [];
+      if (selectedCartItemIds.length > 0) {
+        cartItemIds = selectedCartItemIds;
+      }
+      else if (checkoutItems.every(item => item.keranjang_id)) {
+        cartItemIds = checkoutItems.map(item => item.keranjang_id);
+      } 
+      else {
+        try {
+          const cartResponse = await axios.get(`${API_BASE_URL}/keranjang`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (cartResponse.data && Array.isArray(cartResponse.data)) {
+            checkoutItems.forEach(item => {
+              const prodId = String(item.id);
+              let bestMatch = cartResponse.data.find(
+                cartItem => String(cartItem.id_produk) === prodId && 
+                            (item.size ? cartItem.ukuran === item.size : true)
+              );
+              if (bestMatch) {
+                cartItemIds.push(bestMatch.keranjang_id);
+              }
+            });
+          }
+        } catch (error) {
+          console.error('Error fetching cart for ID matching:', error);
+        }
+      }
       
-      // Get cart item IDs
-      const cartItemIds = cartItems.map(item => item.id);
+      if (cartItemIds.length === 0) {
+        throw new Error('Tidak ada item keranjang yang tersedia untuk checkout. Silakan tambahkan produk ke keranjang Anda terlebih dahulu.');
+      }
       
-      const response = await axios.post('/api/transaksi', {
+      // Debugging
+      console.log('Cart Item IDs for checkout:', cartItemIds);
+      console.log('Selected Address ID:', selectedAddress);
+      
+      const payload = {
         total: total,
         id_alamat: selectedAddress,
         id_item: cartItemIds
-      }, {
+      };
+      
+      const response = await axios.post(`${API_BASE_URL}/bayar`, payload, {
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
       });
       
       const { transaksi_id, snaptoken } = response.data;
       
-      // Handle payment based on selected method
       if (formData.paymentMethod === 'cash') {
-        // For cash on delivery, just mark it as success
         handlePaymentSuccess(transaksi_id);
       } else {
-        // For online payments, use Midtrans
         processMidtransPayment(snaptoken);
       }
     } catch (error) {
       console.error('Error creating transaction:', error);
-      alert(error.response?.data?.message || 'Failed to create transaction');
+      let errorMessage = 'Gagal memproses pembayaran';
+      
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      alert(errorMessage);
     } finally {
       setIsProcessing(false);
     }
   };
+
+  const getSelectedAddressDetails = () => {
+    if (!selectedAddress || !addresses || addresses.length === 0) return null;
+    return addresses.find(addr => addr.alamat_id === selectedAddress);
+  };
+
+  const selectedAddressDetails = getSelectedAddressDetails();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#FDC302]"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white">
@@ -242,7 +477,15 @@ const Checkout = () => {
         </div>
       </header>
 
-      {/* Checkout Content */}
+      <AddressSelectionModal 
+        isOpen={isAddressModalOpen}
+        onClose={closeAddressModal}
+        addresses={addresses || []}
+        selectedAddressId={selectedAddress}
+        onSelectAddress={handleAddressSelect}
+        onAddNewAddress={handleAddNewAddress}
+      />
+
       <div className="container mx-auto py-8 px-4 md:px-8">
         <div className="mb-8 border-b pb-4">
           <h1 className="text-2xl font-bold">Checkout</h1>
@@ -310,27 +553,25 @@ const Checkout = () => {
             <div className="mb-8">
               <h2 className="text-xl font-bold mb-6">Alamat Pengiriman: <span className="text-red-500">*</span></h2>
               
-              {addresses.length > 0 ? (
-                <div className="mb-4">
-                  <select
-                    value={selectedAddress}
-                    onChange={handleAddressChange}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#FDC302]"
-                  >
-                    <option value="" disabled>Select a delivery address</option>
-                    {addresses.map(address => (
-                      <option key={address.id_alamat} value={address.id_alamat}>
-                        {address.alamat} - {address.kecamatan}, {address.kota} {address.kode_pos}
-                      </option>
-                    ))}
-                  </select>
-                  
-                  <div className="mt-4 text-right">
+              {addresses && addresses.length > 0 && selectedAddressDetails ? (
+                <div className="border border-gray-200 rounded-lg p-4">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="font-bold text-lg">
+                        {selectedAddressDetails.nama_penerima} • {selectedAddressDetails.no_telepon}
+                      </div>
+                      <div className="mt-2 text-gray-700">
+                        {selectedAddressDetails.detail}
+                      </div>
+                      <div className="text-gray-700">
+                        {selectedAddressDetails.kelurahan}, {selectedAddressDetails.kecamatan}, {selectedAddressDetails.kabupaten}, {selectedAddressDetails.provinsi}
+                      </div>
+                    </div>
                     <button 
-                      onClick={() => navigate('/profile/addresses/add')}
-                      className="text-sm text-[#FDC302] hover:underline"
+                      onClick={openAddressModal} 
+                      className="text-[#FDC302] hover:underline"
                     >
-                      + Tambah Alamat Baru
+                      Ganti
                     </button>
                   </div>
                 </div>
@@ -338,7 +579,7 @@ const Checkout = () => {
                 <div className="flex flex-col items-center justify-center py-8 border border-dashed border-gray-300 rounded-md">
                   <p className="text-gray-500 mb-4">Kamu tidak mempunyai alamat pengiriman yang tersimpan</p>
                   <button
-                    onClick={() => navigate('/profile/addresses/add')}
+                    onClick={handleAddNewAddress}
                     className="px-4 py-2 bg-[#F9C847] text-black rounded-md hover:bg-[#FDC302] transition"
                   >
                     Tambah Alamat Baru
@@ -349,24 +590,6 @@ const Checkout = () => {
             
             <div className="mb-8">
               <h2 className="text-xl font-bold mb-6">Metode Pembayaran: <span className="text-red-500">*</span></h2>
-              
-              {/* QRIS Payment */}
-              <div className="border border-gray-300 rounded-md mb-4">
-                <label className="flex items-center px-4 py-3 cursor-pointer">
-                  <input 
-                    type="radio" 
-                    name="paymentMethod" 
-                    value="qris"
-                    checked={formData.paymentMethod === 'qris'}
-                    onChange={() => handlePaymentMethodChange('qris')}
-                    className="mr-3"
-                  />
-                  <span className="flex-1">QRIS</span>
-                  <div className="flex gap-2">
-                    <img src={qrisIcon} alt="QRIS" className="h-6" />
-                  </div>
-                </label>
-              </div>
               
               {/* Virtual Account Payment */}
               <div className="border border-gray-300 rounded-md mb-4">
@@ -379,12 +602,7 @@ const Checkout = () => {
                     onChange={() => handlePaymentMethodChange('virtualAccount')}
                     className="mr-3"
                   />
-                  <span className="flex-1">Virtual Account</span>
-                  <div className="flex gap-2">
-                    <img src={bcaIcon} alt="BCA" className="h-6" />
-                    <img src={mandiriIcon} alt="Mandiri" className="h-6" />
-                    <img src={bniIcon} alt="BNI" className="h-6" />
-                  </div>
+                  <span className="flex-1 font-medium">Bank Virtual Account</span>
                 </label>
               </div>
               
@@ -399,21 +617,57 @@ const Checkout = () => {
                     onChange={() => handlePaymentMethodChange('cash')}
                     className="mr-3"
                   />
-                  <span className="flex-1">Cash on Delivery</span>
+                  <span className="flex-1 font-medium">Cash on Delivery</span>
                 </label>
               </div>
+            </div>
+          </div>
+          
+          {/* Order Summary */}
+          <div className="md:w-1/3">
+            <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm sticky top-6">
+              <h2 className="text-xl font-bold mb-4 text-center">Rincian Pembayaran</h2>
               
-              <div className="mt-8 text-center">
-                <p className="text-sm text-gray-500 mb-6">
-                  Dengan meng-klik tombol, kamu setuju dengan  
-                  <a href="/terms" className="text-[#FDC302] ml-1">Syarat dan Ketentuan</a>
-                </p>
+              <div className="space-y-3 mb-4">
+                <div className="border-b pb-3">
+                  <h3 className="font-medium mb-2 text-sm">Rincian Produk:</h3>
+                  {checkoutItems.length > 0 ? (
+                    checkoutItems.map((item, index) => (
+                      <div key={`summary-${item.id}-${item.size || 'default'}-${index}`} className="flex justify-between text-gray-700 mb-1 text-xs">
+                        <span className="truncate max-w-[150px]">
+                          {item.nama} {item.size ? `(${item.size})` : ''} ×{item.quantity}
+                        </span>
+                        <span>{formatPrice(parseFloat(item.harga) * item.quantity)}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-gray-500 text-xs italic">Keranjangmu kosong</p>
+                  )}
+                </div>
                 
+                <div className="flex justify-between py-1 text-sm">
+                  <span>Sub Total</span>
+                  <span className="font-medium">{formatPrice(subtotal)}</span>
+                </div>
+                
+                <div className="flex justify-between py-1 border-b pb-3 text-sm">
+                  <span>Pengiriman</span>
+                  <span className="font-medium">{checkoutItems.length > 0 ? formatPrice(shippingCost) : 'Rp 0'}</span>
+                </div>
+                
+                <div className="flex justify-between py-2 font-bold">
+                  <span>Total</span>
+                  <span className="text-red-700">{formatPrice(total)}</span>
+                </div>
+              </div>
+
+              {/* Checkout Button */}
+              <div className="mt-4">
                 <button 
                   onClick={handlePlaceOrder}
-                  disabled={isProcessing || cartItems.length === 0 || !formValid}
+                  disabled={isProcessing || checkoutItems.length === 0 || !formValid}
                   className={`w-full py-3 px-6 bg-[#F9C847] text-black rounded-md flex items-center justify-center transition duration-300 ${
-                    isProcessing || cartItems.length === 0 || !formValid ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#FDC302]'
+                    isProcessing || checkoutItems.length === 0 || !formValid ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#FDC302]'
                   }`}
                 >
                   {isProcessing ? 'Processing...' : (
@@ -425,55 +679,10 @@ const Checkout = () => {
               </div>
             </div>
           </div>
-          
-          {/* Order Summary */}
-          <div className="md:w-1/3">
-            <div className="bg-white border border-[#F9C847] rounded-lg p-4 shadow-sm sticky top-4">
-              <h2 className="text-xl font-bold mb-4 text-center">Rincian Pembayaran</h2>
-              
-              <div className="border-b pb-4 mb-4">
-                <h3 className="font-medium mb-2 text-sm">Rincian Produk:</h3>
-                {cartItems.length > 0 ? (
-                  cartItems.map((item) => (
-                    <div key={`summary-${item.id}`} className="flex justify-between text-gray-700 mb-1 text-xs">
-                      <span className="truncate max-w-[150px]">{item.nama} x{item.quantity}</span>
-                      <span>{formatPrice(item.harga * item.quantity)}</span>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-gray-500 text-xs italic">Keranjangmu kosong</p>
-                )}
-              </div>
-              
-              <div className="flex justify-between py-1 text-sm">
-                <span className="text-gray-700">Sub Total</span>
-                <span className="font-medium">{formatPrice(subtotal)}</span>
-              </div>
-              
-              <div className="flex justify-between py-1 border-b pb-3 text-sm">
-                <span className="text-gray-700">Pengiriman</span>
-                <span className="font-medium">{formatPrice(shippingCost)}</span>
-              </div>
-              
-              <div className="flex justify-between py-4 font-bold">
-                <span>Total</span>
-                <span className="text-red-700">{formatPrice(total)}</span>
-              </div>
-              
-              <div className="flex items-center justify-center mt-4 text-xs text-gray-500">
-                <div className="flex items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
-                  Safe and Secure Payments. Easy Returns.
-                </div>
-              </div>
-              <p className="text-center text-xs text-gray-500 mt-1">100% Authentic Products</p>
-            </div>
-          </div>
         </div>
       </div>
-      
+
+
       {/* Footer */}
       <footer className="bg-red-900 text-white py-8 px-6 md:px-20 lg:px-32 mt-16">
         <div className="container mx-auto">

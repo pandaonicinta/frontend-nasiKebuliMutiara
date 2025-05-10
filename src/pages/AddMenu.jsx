@@ -27,7 +27,6 @@ const AddMenu = () => {
   const [filePreview, setFilePreview] = useState(null);
   const API_URL = 'http://kebabmutiara.xyz';
 
-  // Load existing data if in edit mode
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -39,7 +38,6 @@ const AddMenu = () => {
     }
   }, [isEdit, menuId, navigate]);
 
-  // Function to fetch menu data for editing
   const fetchMenuData = async (id) => {
     try {
       setLoading(true);
@@ -51,8 +49,7 @@ const AddMenu = () => {
       
       if (response.data) {
         const data = response.data;
-        
-        // Set form data
+
         setMenuData({
           nama_produk: data.nama_produk || '',
           deskripsi: data.deskripsi || '',
@@ -63,7 +60,6 @@ const AddMenu = () => {
           gambar: null 
         });
         
-        // Set image preview if available
         if (data.gambar) {
           const imageUrl = data.gambar.startsWith('http')
             ? data.gambar
@@ -78,7 +74,6 @@ const AddMenu = () => {
       console.error('Error fetching menu data:', err);
       setError('Failed to load menu data for editing');
       
-      // Handle unauthorized access
       if (err.response && err.response.status === 401) {
         localStorage.removeItem('token');
         navigate('/login');
@@ -104,7 +99,6 @@ const AddMenu = () => {
         gambar: file
       });
       
-      // Create preview URL
       const reader = new FileReader();
       reader.onloadend = () => {
         setFilePreview(reader.result);
@@ -130,7 +124,6 @@ const AddMenu = () => {
         gambar: file
       });
       
-      // Create preview URL
       const reader = new FileReader();
       reader.onloadend = () => {
         setFilePreview(reader.result);
