@@ -32,6 +32,7 @@ const MenuDetail = () => {
   const [error, setError] = useState(null);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const { addToCart, cartCount } = useContext(CartContext);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('id-ID', {
@@ -40,6 +41,12 @@ const MenuDetail = () => {
       minimumFractionDigits: 0
     }).format(price);
   };
+
+  useEffect(() => {
+    // Check if user is logged in - using the same token keys as in Home.jsx
+    const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+    setIsAuthenticated(!!token);
+  }, []);
 
   useEffect(() => {
     const fetchMenuData = async () => {
@@ -98,6 +105,7 @@ const MenuDetail = () => {
       navigate('/menu');
     }
   }, [error, navigate]);
+
   if (isLoading) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
@@ -112,6 +120,56 @@ const MenuDetail = () => {
 
   const increment = () => setQuantity(prev => prev + 1);
   const decrement = () => setQuantity(prev => prev > 1 ? prev - 1 : 1);
+
+  // Add to API cart function
+  const addToApiCart = async () => {
+    const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+    
+    if (!token) {
+      throw new Error('No auth token found');
+    }
+    
+    const response = await axios.post(
+      `${API_BASE_URL}/api/keranjang/add`, 
+      {
+        id_produk: menu.produk_id,
+        quantity: quantity,
+        ukuran: selectedSize 
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    
+    return response.data;
+  };
+
+  // Add to local storage cart function 
+  const addToLocalStorageCart = () => {
+    const existingCart = JSON.parse(localStorage.getItem('cart') || '[]');
+    const existingItemIndex = existingCart.findIndex(
+      item => item.produk_id === menu.produk_id && item.ukuran === selectedSize
+    );
+    
+    if (existingItemIndex >= 0) {
+      existingCart[existingItemIndex].jumlah += quantity;
+    } else {
+      existingCart.push({
+        produk_id: menu.produk_id,
+        nama_produk: menu.nama_produk,
+        harga: menu.harga,
+        gambar: menu.gambar,
+        jumlah: quantity,
+        ukuran: selectedSize
+      });
+    }
+    
+    localStorage.setItem('cart', JSON.stringify(existingCart));
+  };
+
   const handleAddToCart = async () => {
     if (menu.stok <= 0) {
       alert('Maaf, produk ini sedang tidak tersedia.');
@@ -121,85 +179,7 @@ const MenuDetail = () => {
     setIsAddingToCart(true);
     
     try {
-      const token = localStorage.getItem('auth_token');
-      
-      if (token) {
-        try {
-          const response = await axios.post(
-            `${API_BASE_URL}/api/keranjang/add`, 
-            {
-              id_produk: menu.produk_id,
-              quantity: quantity,
-              ukuran: selectedSize 
-            },
-            {
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-              }
-            }
-          );
-          
-          if (response.data) {
-            console.log('Berhasil menambahkan ke keranjang:', response.data);
-
-            const cartItem = {
-              id: menu.produk_id,
-              name: menu.nama_produk,
-              price: menu.harga,
-              image: getImageUrl(menu.gambar),
-              quantity: quantity,
-              size: selectedSize
-            };
-
-            addToCart(cartItem);
-
-            setAddedToCart(true);
-            setTimeout(() => setAddedToCart(false), 3000);
-          }
-        } catch (apiError) {
-          console.error('API Error:', apiError);
-          handleLocalStorageCart();
-          
-          if (apiError.response && apiError.response.status === 401) {
-            alert('Sesi login Anda telah berakhir. Silakan login kembali.');
-          } else {
-            alert('Terjadi kesalahan saat menambahkan produk ke keranjang. Menggunakan penyimpanan lokal sebagai cadangan.');
-          }
-        }
-      } else {
-        handleLocalStorageCart();
-      }
-    } catch (err) {
-      console.error('Error adding product to cart:', err);
-      alert('Terjadi kesalahan saat menambahkan produk ke keranjang. Silakan coba lagi.');
-    } finally {
-      setIsAddingToCart(false);
-    }
-  };
-
-  const handleLocalStorageCart = () => {
-    try {
-      const existingCart = JSON.parse(localStorage.getItem('cart') || '[]');
-      const existingItemIndex = existingCart.findIndex(
-        item => item.produk_id === menu.produk_id && item.ukuran === selectedSize
-      );
-      
-      if (existingItemIndex >= 0) {
-        existingCart[existingItemIndex].jumlah += quantity;
-      } else {
-        existingCart.push({
-          produk_id: menu.produk_id,
-          nama_produk: menu.nama_produk,
-          harga: menu.harga,
-          gambar: menu.gambar,
-          jumlah: quantity,
-          ukuran: selectedSize
-        });
-      }
-      
-      localStorage.setItem('cart', JSON.stringify(existingCart));
-      
+      // Create cart item object that's consistent between API and localStorage
       const cartItem = {
         id: menu.produk_id,
         name: menu.nama_produk,
@@ -208,14 +188,103 @@ const MenuDetail = () => {
         quantity: quantity,
         size: selectedSize
       };
-      
-      addToCart(cartItem);
-      
-      setAddedToCart(true);
-      setTimeout(() => setAddedToCart(false), 3000);
-    } catch (localStorageErr) {
-      console.error('Error managing cart in localStorage:', localStorageErr);
+
+      if (isAuthenticated) {
+        try {
+          // Try to add to API cart first
+          await addToApiCart();
+          console.log('Successfully added to API cart');
+          
+          // Update context after API success
+          addToCart(cartItem);
+          
+          setAddedToCart(true);
+          setTimeout(() => setAddedToCart(false), 3000);
+        } catch (apiError) {
+          console.error('API Cart Error:', apiError);
+          
+          // If API fails with 401, show login message
+          if (apiError.response && apiError.response.status === 401) {
+            alert('Sesi login Anda telah berakhir. Silakan login kembali.');
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('token');
+            setIsAuthenticated(false);
+            // Redirect to login or handle as needed
+            // navigate('/login');
+            
+            // Add to localStorage as fallback
+            addToLocalStorageCart();
+            addToCart(cartItem);
+          } else {
+            // For other API errors, fall back to localStorage
+            alert('Terjadi kesalahan saat menambahkan ke keranjang. Menggunakan penyimpanan lokal.');
+            addToLocalStorageCart();
+            addToCart(cartItem);
+          }
+        }
+      } else {
+        // Not logged in, use localStorage directly
+        console.log('User not logged in, using localStorage cart');
+        addToLocalStorageCart();
+        addToCart(cartItem);
+        
+        setAddedToCart(true);
+        setTimeout(() => setAddedToCart(false), 3000);
+      }
+    } catch (err) {
+      console.error('Error in handleAddToCart:', err);
       alert('Terjadi kesalahan saat menambahkan produk ke keranjang. Silakan coba lagi.');
+    } finally {
+      setIsAddingToCart(false);
+    }
+  };
+
+  // Handle account navigation (similar to Home.jsx)
+  const handleAccountNavigation = () => {
+    const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+    const userRole = localStorage.getItem('userRole');
+    
+    console.log("Button clicked! Token:", token, "UserRole:", userRole);
+    
+    if (token) {
+      if (!userRole || userRole === "undefined" || userRole === "unknown") {
+        axios.get('/aboutMe') 
+          .then(response => {
+            const role = response.data.role || response.data.user?.role;
+            console.log("Fetched user role:", role);
+            
+            if (role) {
+              localStorage.setItem('userRole', role);
+              
+              if (role === 'admin') {
+                navigate('/admin');
+              } else if (role === 'pembeli') {
+                navigate('/customer');
+              } else {
+                console.log("Unknown user role after fetch:", role);
+                navigate('/login');
+              }
+            } else {
+              console.log("No role found in API response");
+              navigate('/login');
+            }
+          })
+          .catch(error => {
+            console.error("Error fetching user info:", error);
+            navigate('/login');
+          });
+      } else {
+        if (userRole === 'admin') {
+          navigate('/admin');
+        } else if (userRole === 'pembeli') {
+          navigate('/customer');
+        } else {
+          console.log("Unknown user role:", userRole);
+          navigate('/login');
+        }
+      }
+    } else {
+      navigate('/login');
     }
   };
 
@@ -250,9 +319,18 @@ const MenuDetail = () => {
                 {cartCount}
               </span>
             </a>
-            <a href="/login" className="px-6 py-2 bg-gradient-to-r from-[#FDC302] to-yellow-300 text-white rounded-full hover:from-yellow-500 hover:to-yellow-400 shadow-md transition duration-300 flex items-center">
-              Login <HiOutlineArrowNarrowRight className="ml-2" />
-            </a>
+            {isAuthenticated ? (
+              <button 
+                onClick={handleAccountNavigation}
+                className="px-6 py-2 bg-gradient-to-r from-[#FDC302] to-yellow-300 text-white rounded-full hover:from-yellow-500 hover:to-yellow-400 shadow-md transition duration-300 flex items-center"
+              >
+                My Account <HiOutlineArrowNarrowRight className="ml-2" />
+              </button>
+            ) : (
+              <a href="/login" className="px-6 py-2 bg-gradient-to-r from-[#FDC302] to-yellow-300 text-white rounded-full hover:from-yellow-500 hover:to-yellow-400 shadow-md transition duration-300 flex items-center">
+                Login <HiOutlineArrowNarrowRight className="ml-2" />
+              </a>
+            )}
           </div>
         </div>
       </header>
@@ -299,6 +377,16 @@ const MenuDetail = () => {
                     {menu.stok > 0 ? `Stok: ${menu.stok}` : 'Stok Habis'}
                   </span>
                 </div>
+
+                {/* Login status indicator (optional) */}
+                {!isAuthenticated && (
+                  <div className="mb-4">
+                    <p className="text-amber-600 text-sm">
+                      <span className="font-bold">Note:</span> You are not logged in. Items will be saved to local storage.
+                      <a href="/login" className="ml-1 underline">Login</a> to save to your account.
+                    </p>
+                  </div>
+                )}
 
                 {/* Size Selection */}
                 {sizes.length > 0 && (
@@ -357,6 +445,11 @@ const MenuDetail = () => {
                   <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-6" role="alert">
                     <strong className="font-bold">Success! </strong>
                     <span className="block sm:inline">{menu.nama_produk} ({selectedSize}) has been added to your cart.</span>
+                    {isAuthenticated ? (
+                      <span className="block mt-1 text-sm">Item saved to your account.</span>
+                    ) : (
+                      <span className="block mt-1 text-sm">Item saved to local storage. <a href="/login" className="underline">Login</a> to save to your account.</span>
+                    )}
                   </div>
                 )}
               </div>
@@ -473,6 +566,7 @@ const MenuDetail = () => {
           </div>
         </div>
       </div>
+
         
         {/* Footer*/}
               <footer className="bg-red-900 text-white py-8 px-6 md:px-20 lg:px-32">

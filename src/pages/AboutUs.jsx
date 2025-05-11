@@ -1,5 +1,5 @@
-import React, { useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useContext, useEffect, useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { FiShoppingBag } from 'react-icons/fi';
 import { HiOutlineArrowNarrowRight } from 'react-icons/hi';
 import { FaFacebookF, FaInstagram, FaYoutube } from 'react-icons/fa';
@@ -7,10 +7,72 @@ import { CartContext } from '../contexts/CartContext';
 import logo from '../assets/images/logo.png';
 import foto from '../assets/images/foto.png';
 import ceo from '../assets/images/ceo.png';
+import axios from 'axios';
 
 const AboutUs = () => {
   const navigate = useNavigate();
   const { cartCount } = useContext(CartContext);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  
+  useEffect(() => {
+    // Check if user is authenticated
+    const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+    if (token) {
+      setIsAuthenticated(true);
+    }
+  }, []);
+
+  const handleAccountNavigation = () => {
+    const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+    const userRole = localStorage.getItem('userRole');
+    
+    console.log("Button clicked! Token:", token, "UserRole:", userRole); // Debugging
+    
+    if (token) {
+      if (!userRole || userRole === "undefined" || userRole === "unknown") {
+        axios.get('/aboutMe') 
+          .then(response => {
+            const role = response.data.role || response.data.user?.role;
+            console.log("Fetched user role:", role);
+            
+            if (role) {
+              localStorage.setItem('userRole', role);
+              
+              if (role === 'admin') {
+                navigate('/admin');
+              } else if (role === 'pembeli') {
+                navigate('/customer');
+              } else {
+                console.log("Unknown user role after fetch:", role);
+                navigate('/login');
+              }
+            } else {
+              console.log("No role found in API response");
+              navigate('/login');
+            }
+          })
+          .catch(error => {
+            if (error.response && error.response.status === 404) {
+              console.error("User info endpoint not found (404)", error);
+            } else {
+              console.error("Error fetching user info:", error);
+            }
+            navigate('/login');
+          });
+      } else {
+        if (userRole === 'admin') {
+          navigate('/admin');
+        } else if (userRole === 'pembeli') {
+          navigate('/customer');
+        } else {
+          console.log("Unknown user role:", userRole);
+          navigate('/login');
+        }
+      }
+    } else {
+      navigate('/login');
+    }
+  };
   
   return (
     <div className="min-h-screen bg-[#F9F7F0]">
@@ -26,18 +88,27 @@ const AboutUs = () => {
             />
           </div>
           <div className="flex items-center space-x-8">
-            <a href="/" className="text-gray-800 hover:text-yellow-500 font-medium">Home</a>
-            <a href="/about" className="text-yellow-500 font-medium">Tentang Kami</a>
-            <a href="/menu" className="text-gray-800 hover:text-yellow-500 font-medium">Menu</a>
-            <a href="/cart" className="text-gray-800 hover:text-yellow-500 relative">
+            <Link to="/" className="text-gray-800 hover:text-yellow-500 font-medium">Home</Link>
+            <Link to="/about" className="text-yellow-500 font-medium">Tentang Kami</Link>
+            <Link to="/menu" className="text-gray-800 hover:text-yellow-500 font-medium">Menu</Link>
+            <Link to="/cart" className="text-gray-800 hover:text-yellow-500 relative">
               <FiShoppingBag size={20} />
               <span className="absolute -top-1 -right-1 bg-yellow-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs">
                 {cartCount}
               </span>
-            </a>
-            <a href="/login" className="px-8 py-3 bg-gradient-to-r from-yellow-400 to-yellow-300 text-white rounded-full hover:from-yellow-500 hover:to-yellow-400 shadow-lg transition duration-300 flex items-center">
-              Login <HiOutlineArrowNarrowRight className="ml-2" />
-            </a>
+            </Link>
+            {isAuthenticated ? (
+              <button 
+                onClick={handleAccountNavigation}
+                className="px-8 py-3 bg-gradient-to-r from-yellow-400 to-yellow-300 text-white rounded-full hover:from-yellow-500 hover:to-yellow-400 shadow-lg transition duration-300 flex items-center"
+              >
+                My Account <HiOutlineArrowNarrowRight className="ml-2" />
+              </button>
+            ) : (
+              <Link to="/login" className="px-8 py-3 bg-gradient-to-r from-yellow-400 to-yellow-300 text-white rounded-full hover:from-yellow-500 hover:to-yellow-400 shadow-lg transition duration-300 flex items-center">
+                Login <HiOutlineArrowNarrowRight className="ml-2" />
+              </Link>
+            )}
           </div>
         </div>
       </header>
@@ -117,6 +188,7 @@ const AboutUs = () => {
           </div>
         </div>
       </section>
+
 
        {/* Footer*/}
             <footer className="bg-red-900 text-white py-8 px-6 md:px-20 lg:px-32">

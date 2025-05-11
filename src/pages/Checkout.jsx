@@ -122,6 +122,47 @@ const Checkout = () => {
   
   const total = subtotal + (checkoutItems.length > 0 ? shippingCost : 0);
 
+  const handleAccountNavigation = () => {
+    const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+    const userRole = localStorage.getItem('userRole');
+    
+    if (token) {
+      if (!userRole || userRole === "undefined" || userRole === "unknown") {
+        axios.get(`${API_BASE_URL}/aboutMe`) 
+          .then(response => {
+            const role = response.data.role || response.data.user?.role;
+            
+            if (role) {
+              localStorage.setItem('userRole', role);
+              
+              if (role === 'admin') {
+                navigate('/admin');
+              } else if (role === 'pembeli') {
+                navigate('/customer');
+              } else {
+                navigate('/login');
+              }
+            } else {
+              navigate('/login');
+            }
+          })
+          .catch(error => {
+            navigate('/login');
+          });
+      } else {
+        if (userRole === 'admin') {
+          navigate('/admin');
+        } else if (userRole === 'pembeli') {
+          navigate('/customer');
+        } else {
+          navigate('/login');
+        }
+      }
+    } else {
+      navigate('/login');
+    }
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
@@ -473,6 +514,19 @@ const Checkout = () => {
                 {cartCount}
               </span>
             </a>
+            {/* Updated conditional rendering for login/account button */}
+            {(localStorage.getItem('authToken') || localStorage.getItem('token')) ? (
+              <button 
+                onClick={handleAccountNavigation}
+                className="px-8 py-3 bg-[#FDC302] text-black rounded-md hover:bg-yellow-600 shadow-lg transition duration-300 flex items-center"
+              >
+                My Account <HiOutlineArrowNarrowRight className="ml-2" />
+              </button>
+            ) : (
+              <a href="/login" className="px-8 py-3 bg-[#FDC302] text-black rounded-md hover:bg-yellow-600 shadow-lg transition duration-300 flex items-center">
+                Login <HiOutlineArrowNarrowRight className="ml-2" />
+              </a>
+            )}
           </div>
         </div>
       </header>
@@ -681,6 +735,7 @@ const Checkout = () => {
           </div>
         </div>
       </div>
+ 
 
 
       {/* Footer*/}

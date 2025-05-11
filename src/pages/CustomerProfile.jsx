@@ -19,10 +19,13 @@ const CustomerProfile = () => {
     password: '',
     picture: localStorage.getItem('userPicture') || ''
   });
+  
+  // For file upload
   const [profilePictureFile, setProfilePictureFile] = useState(null);
   const fileInputRef = useRef(null);
 
-  const apiUrl = 'http://kebabmutiara.xyz/api';
+  const apiUrl = 'https://kebabmutiara.xyz/api';
+  const storageUrl = 'https://kebabmutiara.xyz/storage';
 
   // Format profile picture URL properly
   const getProfilePictureUrl = (picturePath) => {
@@ -36,9 +39,13 @@ const CustomerProfile = () => {
     else if (picturePath.startsWith('data:')) {
       return picturePath;
     }
+    // If it's a path that starts with "foto_profile"
+    else if (picturePath.includes('foto_profile')) {
+      return `${storageUrl}/${picturePath}`;
+    }
     // Otherwise, append the storage path
     else {
-      return `${apiUrl}/storage/${picturePath}`;
+      return `${storageUrl}/${picturePath}`;
     }
   };
 
@@ -51,85 +58,57 @@ const CustomerProfile = () => {
         throw new Error('Authentication token not found');
       }
       
-      // First try to get user data from the aboutMe endpoint
+      // Get user data from the aboutMe endpoint
       const response = await axios.get(`${apiUrl}/aboutMe`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
       });
       
-      if (response.data && response.data.data) {
-        const userData = response.data.data;
+      if (response.data) {
+        const userData = response.data;
         
-        // Format the picture URL if it exists
-        const pictureUrl = userData.picture ? getProfilePictureUrl(userData.picture) : '';
+        // Get the picture path
+        const picturePath = userData.picture || '';
         
+        console.log('API returned picture path:', picturePath);
+        
+        // Update profile state with data from API
         setProfile({
-          username: userData.username || localStorage.getItem('userUsername') || '',
-          name: userData.name || localStorage.getItem('userName') || '',
-          email: userData.email || localStorage.getItem('userEmail') || '',
-          phone: userData.phone || localStorage.getItem('userPhone') || '',
-          gender: userData.gender || localStorage.getItem('userGender') || '',
+          username: userData.username || '',
+          name: userData.name || '',
+          email: userData.email || '',
+          phone: userData.phone || '',
+          gender: userData.gender || '',
           password: '',  // Password shouldn't be displayed for security reasons
-          picture: pictureUrl
+          picture: picturePath // Store the raw path
         });
         
         // Update localStorage with the latest data
-        if (userData.username) localStorage.setItem('userUsername', userData.username);
-        if (userData.name) localStorage.setItem('userName', userData.name);
-        if (userData.email) localStorage.setItem('userEmail', userData.email);
-        if (userData.phone) localStorage.setItem('userPhone', userData.phone);
-        if (userData.gender) localStorage.setItem('userGender', userData.gender);
-        if (userData.picture) localStorage.setItem('userPicture', userData.picture); // Store raw path for consistency
+        localStorage.setItem('userUsername', userData.username || '');
+        localStorage.setItem('userName', userData.name || '');
+        localStorage.setItem('userEmail', userData.email || '');
+        localStorage.setItem('userPhone', userData.phone || '');
+        localStorage.setItem('userGender', userData.gender || '');
+        localStorage.setItem('userPicture', userData.picture || '');
+        
+        console.log('Updated localStorage with picture path:', userData.picture || '');
       }
       setError(null);
     } catch (err) {
       console.error('Error fetching profile:', err);
       setError('Failed to load profile data. Please try again later.');
       
-      // Attempt to fetch the user info directly if aboutMe fails
-      try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          throw new Error('Authentication token not found');
-        }
-        
-        const userResponse = await axios.get(`${apiUrl}/user`, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-        
-        if (userResponse.data && userResponse.data.user) {
-          const userData = userResponse.data.user;
-          
-          // Format the picture URL if it exists
-          const pictureUrl = userData.picture ? getProfilePictureUrl(userData.picture) : '';
-          
-          setProfile({
-            username: userData.username || localStorage.getItem('userUsername') || '',
-            name: userData.name || localStorage.getItem('userName') || '',
-            email: userData.email || localStorage.getItem('userEmail') || '',
-            phone: userData.phone || localStorage.getItem('userPhone') || '',
-            gender: userData.gender || localStorage.getItem('userGender') || '',
-            password: '',  // Password shouldn't be displayed
-            picture: pictureUrl
-          });
-          
-          // Update localStorage with the latest data
-          if (userData.username) localStorage.setItem('userUsername', userData.username);
-          if (userData.name) localStorage.setItem('userName', userData.name);
-          if (userData.email) localStorage.setItem('userEmail', userData.email);
-          if (userData.phone) localStorage.setItem('userPhone', userData.phone);
-          if (userData.gender) localStorage.setItem('userGender', userData.gender);
-          if (userData.picture) localStorage.setItem('userPicture', userData.picture); // Store raw path
-          
-          setError(null);
-        }
-      } catch (userErr) {
-        console.error('Error fetching user data:', userErr);
-        // Keep the existing error message
-      }
+      // Fall back to local storage data if API fails
+      setProfile({
+        username: localStorage.getItem('userUsername') || '',
+        name: localStorage.getItem('userName') || '',
+        email: localStorage.getItem('userEmail') || '',
+        phone: localStorage.getItem('userPhone') || '',
+        gender: localStorage.getItem('userGender') || '',
+        password: '',
+        picture: localStorage.getItem('userPicture') || ''
+      });
     } finally {
       setIsLoading(false);
     }
@@ -169,6 +148,7 @@ const CustomerProfile = () => {
       // Create a preview URL
       const reader = new FileReader();
       reader.onload = (e) => {
+        // Only update the preview in the UI, not the actual path
         setProfile(prev => ({
           ...prev,
           picture: e.target.result // Just for preview
@@ -188,6 +168,103 @@ const CustomerProfile = () => {
     fetchProfileData();
     // Reset picture file
     setProfilePictureFile(null);
+  };
+
+  // Separate function to update profile picture
+  const updateProfilePicture = async () => {
+    try {
+      if (!profilePictureFile) {
+        return null; // Nothing to update
+      }
+
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Not authenticated. Please log in again.');
+      }
+      
+      // Create form data specifically for the picture
+      const formData = new FormData();
+      formData.append('picture', profilePictureFile);
+      
+      // Make the request to update the photo
+      const response = await axios.post(
+        `${apiUrl}/aboutMe/updatePhoto`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+          }
+        }
+      );
+      
+      console.log('Profile picture update response:', response.data);
+      
+      // If response contains updated picture path, update localStorage
+      if (response.data && response.data.path) {
+        localStorage.setItem('userPicture', response.data.path);
+      }
+      
+      return response;
+    } catch (err) {
+      console.error('Error updating profile picture:', err);
+      throw err;
+    }
+  };
+
+  // Function to update profile information
+  const updateProfileInfo = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Not authenticated. Please log in again.');
+      }
+      
+      // Create form data for profile info update
+      const formData = new FormData();
+      formData.append('username', profile.username.trim());
+      formData.append('name', profile.name.trim());
+      formData.append('email', profile.email.trim());
+      
+      // Only append non-empty values
+      if (profile.phone && profile.phone.trim()) {
+        formData.append('phone', profile.phone.trim());
+      }
+      
+      if (profile.gender) {
+        formData.append('gender', profile.gender);
+      }
+      
+      // Only append password if it was changed (non-empty)
+      if (profile.password) {
+        formData.append('password', profile.password);
+      }
+      
+      const response = await axios.post(
+        `${apiUrl}/aboutMe/update`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+          }
+        }
+      );
+      
+      console.log('Profile info update response:', response.data);
+      
+      // Update localStorage with profile values
+      localStorage.setItem('userUsername', profile.username);
+      localStorage.setItem('userName', profile.name);
+      localStorage.setItem('userEmail', profile.email);
+      localStorage.setItem('userPhone', profile.phone || '');
+      localStorage.setItem('userGender', profile.gender || '');
+      
+      return response;
+    } catch (err) {
+      console.error('Error updating profile info:', err);
+      throw err;
+    }
   };
 
   const handleSave = async () => {
@@ -221,80 +298,18 @@ const CustomerProfile = () => {
         return;
       }
 
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setError('Not authenticated. Please log in again.');
-        return;
-      }
-      
-      // Create a form data object to handle file uploads
-      const formData = new FormData();
-      formData.append('username', profile.username.trim());
-      formData.append('name', profile.name.trim());
-      formData.append('email', profile.email.trim());
-      
-      // Only append phone if it's not empty
-      if (profile.phone.trim()) {
-        formData.append('phone', profile.phone.trim());
-      }
-      
-      // Only append gender if it's not empty
-      if (profile.gender) {
-        formData.append('gender', profile.gender);
-      }
-      
-      // Only append password if it was changed (non-empty)
-      if (profile.password) {
-        formData.append('password', profile.password);
-      }
-      
-      // If there's a new picture file selected, append it
-      if (profilePictureFile) {
-        formData.append('picture', profilePictureFile);
-      }
-      
       setIsLoading(true);
       
-      // Debug log to check what's being sent (don't log password)
-      console.log('Updating profile with data:', {
-        username: profile.username,
-        name: profile.name,
-        email: profile.email,
-        phone: profile.phone,
-        gender: profile.gender,
-        hasPassword: !!profile.password,
-        hasPicture: !!profilePictureFile
-      });
+      // First update profile info
+      await updateProfileInfo();
       
-      const response = await axios.post(
-        `${apiUrl}/aboutMe/update`,
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data'
-          }
-        }
-      );
-      
-      console.log('Profile update response:', response.data);
-      
-      // Update localStorage with all profile values
-      localStorage.setItem('userUsername', profile.username);
-      localStorage.setItem('userName', profile.name);
-      localStorage.setItem('userEmail', profile.email);
-      localStorage.setItem('userPhone', profile.phone || '');
-      localStorage.setItem('userGender', profile.gender || '');
-      
-      // Store the raw picture path returned from API
-      if (response.data && response.data.data && response.data.data.picture) {
-        localStorage.setItem('userPicture', response.data.data.picture);
+      // Then update profile picture if a new one was selected
+      if (profilePictureFile) {
+        await updateProfilePicture();
       }
       
-      // Reset the file input
+      // Reset state
       setProfilePictureFile(null);
-      
-      // Exit edit mode
       setIsEditing(false);
       
       // Show success message
@@ -303,13 +318,13 @@ const CustomerProfile = () => {
         setSuccessMessage('');
       }, 3000);
       
-      // Refresh data to get the latest from server
+      // Refresh data
       fetchProfileData();
       
     } catch (err) {
-      console.error('Error updating profile:', err);
+      // Handle errors
+      console.error('Error in save operation:', err);
       
-      // Get a more detailed error message if available
       let errorMessage = 'Failed to update profile. Please try again.';
       if (err.response && err.response.data && err.response.data.message) {
         errorMessage = err.response.data.message;
@@ -325,8 +340,6 @@ const CustomerProfile = () => {
       // Handle authentication errors
       if (err.response && err.response.status === 401) {
         localStorage.removeItem('token');
-        // Redirect to login page if you have a redirect function
-        // navigate('/login');
         window.location.href = '/login';
       }
     } finally {
@@ -364,13 +377,18 @@ const CustomerProfile = () => {
   const displayProfilePicture = () => {
     if (!profile.picture) return '';
     
-    // If it's already a data URL (from file preview) or complete URL, use it as is
-    if (profile.picture.startsWith('data:') || profile.picture.startsWith('http')) {
+    // If it's already a data URL (from file preview), use it as is
+    if (profile.picture.startsWith('data:')) {
+      return profile.picture;
+    }
+    
+    // If it's already a complete URL, use it as is
+    if (profile.picture.startsWith('http')) {
       return profile.picture;
     }
     
     // Otherwise, append the storage path
-    return `${apiUrl}/storage/${profile.picture}`;
+    return `${storageUrl}/${profile.picture}`;
   };
 
   return (
@@ -427,8 +445,6 @@ const CustomerProfile = () => {
                       console.error("Image load error:", e);
                       e.target.onerror = null;
                       e.target.src = ''; // Fallback to default
-                      // Remove the broken image URL from state
-                      setProfile(prev => ({...prev, picture: ''}));
                     }}
                   />
                 ) : (
@@ -459,7 +475,7 @@ const CustomerProfile = () => {
           {/* Profile Content */}
           <div className="pt-12 px-6 pb-6">
             <div className="flex flex-col mb-4">
-              <div className="text-xl font-bold">{userName}</div>
+              <div className="text-xl font-bold">{profile.name}</div>
               <div className="text-gray-600 text-sm">{displayEmail()}</div>
             </div>
             <div className="absolute right-10 top-32">
@@ -503,7 +519,7 @@ const CustomerProfile = () => {
                           required
                         />
                       </div>
-                      <div className="mb-6">
+                      {/* <div className="mb-6">
                         <label className="block text-red-800 font-medium mb-2">Email<span className="text-red-600">*</span></label>
                         <input
                           type="email"
@@ -513,8 +529,8 @@ const CustomerProfile = () => {
                           className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 shadow"
                           required
                         />
-                      </div>
-                      <div className="mb-6">
+                      </div> */}
+                      {/* <div className="mb-6">
                         <label className="block text-red-800 font-medium mb-2">Password</label>
                         <div className="relative">
                           <input
@@ -538,7 +554,7 @@ const CustomerProfile = () => {
                           </button>
                         </div>
                         <p className="text-sm text-gray-500 mt-1">Min. 8 characters</p>
-                      </div>
+                      </div> */}
                       <div className="mb-6">
                         <label className="block text-red-800 font-medium mb-2">Gender</label>
                         <select
