@@ -24,11 +24,32 @@ const CustomerProfile = () => {
 
   const apiUrl = 'http://kebabmutiara.xyz/api';
 
+  // Format profile picture URL properly
+  const getProfilePictureUrl = (picturePath) => {
+    if (!picturePath) return '';
+    
+    // Check if it's already a complete URL
+    if (picturePath.startsWith('http')) {
+      return picturePath;
+    } 
+    // Check if it's a data URL (from file preview)
+    else if (picturePath.startsWith('data:')) {
+      return picturePath;
+    }
+    // Otherwise, append the storage path
+    else {
+      return `${apiUrl}/storage/${picturePath}`;
+    }
+  };
+
   // Fetch user profile data from API
   const fetchProfileData = async () => {
     setIsLoading(true);
     try {
       const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Authentication token not found');
+      }
       
       // First try to get user data from the aboutMe endpoint
       const response = await axios.get(`${apiUrl}/aboutMe`, {
@@ -39,6 +60,10 @@ const CustomerProfile = () => {
       
       if (response.data && response.data.data) {
         const userData = response.data.data;
+        
+        // Format the picture URL if it exists
+        const pictureUrl = userData.picture ? getProfilePictureUrl(userData.picture) : '';
+        
         setProfile({
           username: userData.username || localStorage.getItem('userUsername') || '',
           name: userData.name || localStorage.getItem('userName') || '',
@@ -46,7 +71,7 @@ const CustomerProfile = () => {
           phone: userData.phone || localStorage.getItem('userPhone') || '',
           gender: userData.gender || localStorage.getItem('userGender') || '',
           password: '',  // Password shouldn't be displayed for security reasons
-          picture: userData.picture || localStorage.getItem('userPicture') || ''
+          picture: pictureUrl
         });
         
         // Update localStorage with the latest data
@@ -55,7 +80,7 @@ const CustomerProfile = () => {
         if (userData.email) localStorage.setItem('userEmail', userData.email);
         if (userData.phone) localStorage.setItem('userPhone', userData.phone);
         if (userData.gender) localStorage.setItem('userGender', userData.gender);
-        if (userData.picture) localStorage.setItem('userPicture', userData.picture);
+        if (userData.picture) localStorage.setItem('userPicture', userData.picture); // Store raw path for consistency
       }
       setError(null);
     } catch (err) {
@@ -65,6 +90,10 @@ const CustomerProfile = () => {
       // Attempt to fetch the user info directly if aboutMe fails
       try {
         const token = localStorage.getItem('token');
+        if (!token) {
+          throw new Error('Authentication token not found');
+        }
+        
         const userResponse = await axios.get(`${apiUrl}/user`, {
           headers: {
             Authorization: `Bearer ${token}`
@@ -73,6 +102,10 @@ const CustomerProfile = () => {
         
         if (userResponse.data && userResponse.data.user) {
           const userData = userResponse.data.user;
+          
+          // Format the picture URL if it exists
+          const pictureUrl = userData.picture ? getProfilePictureUrl(userData.picture) : '';
+          
           setProfile({
             username: userData.username || localStorage.getItem('userUsername') || '',
             name: userData.name || localStorage.getItem('userName') || '',
@@ -80,7 +113,7 @@ const CustomerProfile = () => {
             phone: userData.phone || localStorage.getItem('userPhone') || '',
             gender: userData.gender || localStorage.getItem('userGender') || '',
             password: '',  // Password shouldn't be displayed
-            picture: userData.picture || localStorage.getItem('userPicture') || ''
+            picture: pictureUrl
           });
           
           // Update localStorage with the latest data
@@ -89,7 +122,7 @@ const CustomerProfile = () => {
           if (userData.email) localStorage.setItem('userEmail', userData.email);
           if (userData.phone) localStorage.setItem('userPhone', userData.phone);
           if (userData.gender) localStorage.setItem('userGender', userData.gender);
-          if (userData.picture) localStorage.setItem('userPicture', userData.picture);
+          if (userData.picture) localStorage.setItem('userPicture', userData.picture); // Store raw path
           
           setError(null);
         }
@@ -116,7 +149,22 @@ const CustomerProfile = () => {
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
-      setProfilePictureFile(e.target.files[0]);
+      const file = e.target.files[0];
+      
+      // Check file size (limit to 2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        setError('Profile picture must be less than 2MB');
+        return;
+      }
+      
+      // Check file type
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+      if (!allowedTypes.includes(file.type)) {
+        setError('Only JPG, JPEG, and PNG files are allowed');
+        return;
+      }
+      
+      setProfilePictureFile(file);
       
       // Create a preview URL
       const reader = new FileReader();
@@ -126,7 +174,7 @@ const CustomerProfile = () => {
           picture: e.target.result // Just for preview
         }));
       };
-      reader.readAsDataURL(e.target.files[0]);
+      reader.readAsDataURL(file);
     }
   };
 
@@ -144,15 +192,56 @@ const CustomerProfile = () => {
 
   const handleSave = async () => {
     try {
+      // Input validation
+      if (!profile.username.trim()) {
+        setError('Username is required');
+        return;
+      }
+      
+      if (!profile.name.trim()) {
+        setError('Full name is required');
+        return;
+      }
+      
+      if (!profile.email.trim()) {
+        setError('Email is required');
+        return;
+      }
+      
+      // Basic email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(profile.email)) {
+        setError('Please enter a valid email address');
+        return;
+      }
+      
+      // Phone number validation - allow empty or proper format
+      if (profile.phone && !/^[0-9+\-\s]{6,20}$/.test(profile.phone)) {
+        setError('Please enter a valid phone number');
+        return;
+      }
+
       const token = localStorage.getItem('token');
+      if (!token) {
+        setError('Not authenticated. Please log in again.');
+        return;
+      }
       
       // Create a form data object to handle file uploads
       const formData = new FormData();
-      formData.append('username', profile.username);
-      formData.append('name', profile.name);
-      formData.append('email', profile.email);
-      formData.append('phone', profile.phone);
-      formData.append('gender', profile.gender);
+      formData.append('username', profile.username.trim());
+      formData.append('name', profile.name.trim());
+      formData.append('email', profile.email.trim());
+      
+      // Only append phone if it's not empty
+      if (profile.phone.trim()) {
+        formData.append('phone', profile.phone.trim());
+      }
+      
+      // Only append gender if it's not empty
+      if (profile.gender) {
+        formData.append('gender', profile.gender);
+      }
       
       // Only append password if it was changed (non-empty)
       if (profile.password) {
@@ -163,6 +252,19 @@ const CustomerProfile = () => {
       if (profilePictureFile) {
         formData.append('picture', profilePictureFile);
       }
+      
+      setIsLoading(true);
+      
+      // Debug log to check what's being sent (don't log password)
+      console.log('Updating profile with data:', {
+        username: profile.username,
+        name: profile.name,
+        email: profile.email,
+        phone: profile.phone,
+        gender: profile.gender,
+        hasPassword: !!profile.password,
+        hasPicture: !!profilePictureFile
+      });
       
       const response = await axios.post(
         `${apiUrl}/aboutMe/update`,
@@ -181,15 +283,12 @@ const CustomerProfile = () => {
       localStorage.setItem('userUsername', profile.username);
       localStorage.setItem('userName', profile.name);
       localStorage.setItem('userEmail', profile.email);
-      localStorage.setItem('userPhone', profile.phone);
-      localStorage.setItem('userGender', profile.gender);
+      localStorage.setItem('userPhone', profile.phone || '');
+      localStorage.setItem('userGender', profile.gender || '');
       
-      // If the API returns an updated picture URL, save it
+      // Store the raw picture path returned from API
       if (response.data && response.data.data && response.data.data.picture) {
         localStorage.setItem('userPicture', response.data.data.picture);
-      } else if (profile.picture && !profile.picture.startsWith('data:')) {
-        // Keep the existing picture if it's a URL and not a data URL
-        localStorage.setItem('userPicture', profile.picture);
       }
       
       // Reset the file input
@@ -209,10 +308,29 @@ const CustomerProfile = () => {
       
     } catch (err) {
       console.error('Error updating profile:', err);
-      setError('Failed to update profile. Please try again.');
+      
+      // Get a more detailed error message if available
+      let errorMessage = 'Failed to update profile. Please try again.';
+      if (err.response && err.response.data && err.response.data.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      setError(errorMessage);
       setTimeout(() => {
         setError('');
-      }, 3000);
+      }, 5000);
+      
+      // Handle authentication errors
+      if (err.response && err.response.status === 401) {
+        localStorage.removeItem('token');
+        // Redirect to login page if you have a redirect function
+        // navigate('/login');
+        window.location.href = '/login';
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -235,11 +353,24 @@ const CustomerProfile = () => {
   };
 
   // Get first name for display
-  const userName = profile.name.split(' ')[0] || 'Customer';
+  const userName = profile.name ? profile.name.split(' ')[0] : 'Customer';
 
   // Trigger the file input click
   const triggerFileInput = () => {
     fileInputRef.current.click();
+  };
+
+  // Get properly formatted profile picture URL for display
+  const displayProfilePicture = () => {
+    if (!profile.picture) return '';
+    
+    // If it's already a data URL (from file preview) or complete URL, use it as is
+    if (profile.picture.startsWith('data:') || profile.picture.startsWith('http')) {
+      return profile.picture;
+    }
+    
+    // Otherwise, append the storage path
+    return `${apiUrl}/storage/${profile.picture}`;
   };
 
   return (
@@ -258,7 +389,7 @@ const CustomerProfile = () => {
       <CustomerSidebar activePage="profile" />
 
       {/* Main Content */}
-      <div className="relative z-10 flex-1 ml-52 mx-4 my-4 mr-6">
+      <div className="relative z-10 flex-1 ml-48 mx-4 my-4 mr-6">
         {/* Header with Title and User */}
         <div className="bg-white rounded-lg p-4 flex justify-between items-center mb-6 shadow-xl">
           <h1 className="text-red-800 font-bold">Profile</h1>
@@ -289,9 +420,16 @@ const CustomerProfile = () => {
               <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center relative">
                 {profile.picture ? (
                   <img 
-                    src={profile.picture} 
+                    src={displayProfilePicture()} 
                     alt="Profile" 
                     className="w-16 h-16 rounded-full object-cover"
+                    onError={(e) => {
+                      console.error("Image load error:", e);
+                      e.target.onerror = null;
+                      e.target.src = ''; // Fallback to default
+                      // Remove the broken image URL from state
+                      setProfile(prev => ({...prev, picture: ''}));
+                    }}
                   />
                 ) : (
                   <div className="w-16 h-16 bg-red-800 rounded-full flex items-center justify-center text-white">
@@ -308,7 +446,7 @@ const CustomerProfile = () => {
                     <input
                       type="file"
                       ref={fileInputRef}
-                      accept="image/*"
+                      accept="image/jpeg,image/png,image/jpg"
                       className="hidden"
                       onChange={handleFileChange}
                     />
@@ -344,33 +482,36 @@ const CustomerProfile = () => {
                   <div className="mt-8">
                     <div className="bg-white p-6 rounded-lg shadow-inner shadow-gray-400 mb-6">
                       <div className="mb-6">
-                        <label className="block text-red-800 font-medium mb-2">Username</label>
+                        <label className="block text-red-800 font-medium mb-2">Username<span className="text-red-600">*</span></label>
                         <input
                           type="text"
                           name="username"
                           value={profile.username}
                           onChange={handleChange}
                           className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 shadow"
+                          required
                         />
                       </div>
                       <div className="mb-6">
-                        <label className="block text-red-800 font-medium mb-2">Full Name</label>
+                        <label className="block text-red-800 font-medium mb-2">Full Name<span className="text-red-600">*</span></label>
                         <input
                           type="text"
                           name="name"
                           value={profile.name}
                           onChange={handleChange}
                           className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 shadow"
+                          required
                         />
                       </div>
                       <div className="mb-6">
-                        <label className="block text-red-800 font-medium mb-2">Email</label>
+                        <label className="block text-red-800 font-medium mb-2">Email<span className="text-red-600">*</span></label>
                         <input
                           type="email"
                           name="email"
                           value={profile.email}
                           onChange={handleChange}
                           className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 shadow"
+                          required
                         />
                       </div>
                       <div className="mb-6">
@@ -396,6 +537,7 @@ const CustomerProfile = () => {
                             )}
                           </button>
                         </div>
+                        <p className="text-sm text-gray-500 mt-1">Min. 8 characters</p>
                       </div>
                       <div className="mb-6">
                         <label className="block text-red-800 font-medium mb-2">Gender</label>
@@ -418,6 +560,7 @@ const CustomerProfile = () => {
                           value={profile.phone}
                           onChange={handleChange}
                           className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 shadow"
+                          placeholder="e.g., 08123456789"
                         />
                       </div>
                       <div className="mb-6">
@@ -426,9 +569,13 @@ const CustomerProfile = () => {
                           <div className="w-16 h-16 mr-4 bg-gray-200 rounded-full overflow-hidden flex items-center justify-center">
                             {profile.picture ? (
                               <img 
-                                src={profile.picture} 
+                                src={displayProfilePicture()} 
                                 alt="Preview" 
-                                className="w-full h-full object-cover" 
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.target.onerror = null;
+                                  e.target.src = ''; // Fallback to default
+                                }}
                               />
                             ) : (
                               <FaUser size={32} className="text-gray-400" />
@@ -442,6 +589,7 @@ const CustomerProfile = () => {
                             Change Picture
                           </button>
                         </div>
+                        <p className="text-sm text-gray-500 mt-1">Max file size: 2MB (JPG, JPEG, PNG only)</p>
                       </div>
                     </div>
                     <div className="flex justify-end space-x-4">
@@ -453,9 +601,10 @@ const CustomerProfile = () => {
                       </button>
                       <button
                         onClick={handleSave}
-                        className="px-8 py-2 bg-red-800 text-white rounded-lg text-sm uppercase"
+                        disabled={isLoading}
+                        className={`px-8 py-2 bg-red-800 text-white rounded-lg text-sm uppercase ${isLoading ? 'opacity-60 cursor-not-allowed' : ''}`}
                       >
-                        Save
+                        {isLoading ? 'Saving...' : 'Save'}
                       </button>
                     </div>
                   </div>

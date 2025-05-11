@@ -26,15 +26,15 @@ axios.interceptors.request.use(
   }
 );
 
-
 const Home = () => {
   const navigate = useNavigate();
   const [popularProducts, setPopularProducts] = useState([]);
   const [testimonials, setTestimonials] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { cartCount } = useContext(CartContext);
-
+  const { cartCount, setCartCount } = useContext(CartContext);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const API_URL = 'http://kebabmutiara.xyz';
 
   const categories = [
     { id: 1, name: "Nasi Kebuli", image: foto, slug: "nasi-kebuli" },
@@ -43,37 +43,126 @@ const Home = () => {
     { id: 4, name: "Paket Nampan Sapi", image: nampansapi, slug: "paket-nampan-sapi" }
   ];
   
+  // Get image URL helper function (same as in Menu.jsx)
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return foto;
+    if (imagePath.startsWith('http')) {
+      return imagePath;
+    }
+    return `${API_URL}/storage/${imagePath}`;
+  };
+
+  // Format currency helper function (same as in Menu.jsx)
+  const formatCurrency = (price) => {
+    if (!price) return 'Rp. 0';
+    return `Rp. ${parseInt(price).toLocaleString('id-ID')}`;
+  };
 
   useEffect(() => {
     const fetchPopularProducts = async () => {
       try {
-        const response = await axios.get('/produk');
-
-        const productsData = response.data.data || [];
-        const topProducts = productsData.slice(0, 3);
+        setIsLoading(true);
+        // Using the same API endpoint as in Menu.jsx
+        const response = await axios.get(`${API_URL}/api/produk`);
         
-        const formattedProducts = topProducts.map(product => ({
-          id: product.id,
-          name: product.nama || "",
-          image: product.gambar || foto,
-          rating: product.rating || 4.9,
-          price: product.harga || 0
-        }));
-        
-        setPopularProducts(formattedProducts);
+        if (response.data && Array.isArray(response.data)) {
+          // Filter for the specific menu items we want
+          const kebuliKambing = response.data.find(item => 
+            item.nama_produk?.toLowerCase().includes('nasi kebuli kambing'));
+          
+          const nampanAyam = response.data.find(item => 
+            item.nama_produk?.toLowerCase().includes('nampan kebuli ayam') || 
+            item.nama_produk?.toLowerCase().includes('paket nampan ayam'));
+            
+          const nampanSapi = response.data.find(item => 
+            item.nama_produk?.toLowerCase().includes('nampan kebuli sapi') || 
+            item.nama_produk?.toLowerCase().includes('paket nampan sapi'));
+          
+          // Create an array with the items we found, or use placeholders if not found
+          const featuredItems = [];
+          
+          // Add Nasi Kebuli Kambing
+          if (kebuliKambing) {
+            featuredItems.push({
+              id: kebuliKambing.produk_id,
+              name: kebuliKambing.nama_produk,
+              image: getImageUrl(kebuliKambing.gambar),
+              rating: kebuliKambing.rating || 4.9,
+              price: kebuliKambing.harga
+            });
+          } else {
+            featuredItems.push({
+              id: 1,
+              name: "Nasi Kebuli Kambing",
+              image: foto,
+              rating: 4.9,
+              price: 75000
+            });
+          }
+          
+          // Add Nampan Kebuli Ayam
+          if (nampanAyam) {
+            featuredItems.push({
+              id: nampanAyam.produk_id,
+              name: nampanAyam.nama_produk,
+              image: getImageUrl(nampanAyam.gambar),
+              rating: nampanAyam.rating || 4.8,
+              price: nampanAyam.harga
+            });
+          } else {
+            featuredItems.push({
+              id: 2,
+              name: "Paket Nampan Kebuli Ayam",
+              image: nampanayam,
+              rating: 4.8,
+              price: 150000
+            });
+          }
+          
+          // Add Nampan Kebuli Sapi
+          if (nampanSapi) {
+            featuredItems.push({
+              id: nampanSapi.produk_id,
+              name: nampanSapi.nama_produk,
+              image: getImageUrl(nampanSapi.gambar),
+              rating: nampanSapi.rating || 4.9,
+              price: nampanSapi.harga
+            });
+          } else {
+            featuredItems.push({
+              id: 3,
+              name: "Paket Nampan Kebuli Sapi",
+              image: nampansapi,
+              rating: 4.9,
+              price: 200000
+            });
+          }
+          
+          setPopularProducts(featuredItems);
+        } else {
+          // Fallback to default items if API response is invalid
+          console.error('Invalid response format:', response.data);
+          setPopularProducts([
+            { id: 1, name: "Nasi Kebuli Kambing", image: foto, rating: 4.9, price: 75000 },
+            { id: 2, name: "Paket Nampan Kebuli Ayam", image: nampanayam, rating: 4.8, price: 150000 },
+            { id: 3, name: "Paket Nampan Kebuli Sapi", image: nampansapi, rating: 4.9, price: 200000 }
+          ]);
+        }
       } catch (err) {
         console.error("Error fetching popular products:", err);
-        
+        // Fallback to default items if API call fails
         setPopularProducts([
-          { id: 1, name: "Paket Nampan Ayam", image: foto, rating: 4.9 },
-          { id: 2, name: "Paket Nampan Kambing", image: foto, rating: 4.9 },
-          { id: 3, name: "Paket Nampan Sapi", image: foto, rating: 4.9 }
+          { id: 1, name: "Nasi Kebuli Kambing", image: foto, rating: 4.9, price: 75000 },
+          { id: 2, name: "Paket Nampan Kebuli Ayam", image: nampanayam, rating: 4.8, price: 150000 },
+          { id: 3, name: "Paket Nampan Kebuli Sapi", image: nampansapi, rating: 4.9, price: 200000 }
         ]);
+      } finally {
+        setIsLoading(false);
       }
     };
 
     fetchPopularProducts();
-  }, []);
+  }, [API_URL]);
 
   useEffect(() => {
     const fetchCartCount = async () => {
@@ -92,7 +181,7 @@ const Home = () => {
     };
 
     fetchCartCount();
-  }, []);
+  }, [setCartCount]);
 
 
   useEffect(() => {
@@ -112,7 +201,7 @@ const Home = () => {
       },
       {
         id: 3,
-        text: "ENAKK. Menu favoriteku nasi kebuli kambing, bumbu kambingnya menyerap dengan pas dan ga bau sama sekali, fix nanti repeat order...",
+        text: "ENAKK. Menu favoriteku nasi kebuli kambing, fix nanti repeat order...",
         name: "Maman",
         rating: 5
       }
@@ -374,7 +463,7 @@ const Home = () => {
         </div>
       </section>
       
-      {/* Popular Menu Section */}
+      {/* Popular Menu Section - UPDATED */}
       <section className="py-16 bg-gradient-to-r from-[#FCFBF5] to-[#F9EAEA]">
         <div className="container mx-auto px-8">
           <h2 className="text-5xl font-berkshire text-center mb-4">
@@ -385,34 +474,50 @@ const Home = () => {
           <p className="text-center text-gray-500 mb-12">
             Temukan nasi kebuli yang paling disukai pelanggan kami.
           </p>
-          <div className="flex justify-center gap-16">
-    
-            {popularProducts.map((product, index) => (
-              <div key={product.id} className="flex flex-col items-center">
-                <div className="p-1 rounded-full border-2 border-yellow-400 mb-4">
-                  <div className="rounded-full overflow-hidden w-64 h-64">
-                    <img 
-                      src={product.image || foto} 
-                      alt={product.name} 
-                      className="w-full h-full object-cover"
-                      onError={(e) => { e.target.src = foto; }}
-                    />
+          
+          {isLoading ? (
+            <div className="flex justify-center gap-16">
+              {[1, 2, 3].map((_, index) => (
+                <div key={index} className="flex flex-col items-center animate-pulse">
+                  <div className="p-1 rounded-full border-2 border-yellow-400 mb-4">
+                    <div className="rounded-full bg-gray-200 w-64 h-64"></div>
                   </div>
+                  <div className="flex items-center mb-2 w-20 h-4 bg-gray-200"></div>
+                  <div className="w-40 h-6 bg-gray-200 mb-4"></div>
+                  <div className="w-32 h-10 bg-gray-200 rounded-full"></div>
                 </div>
-                <div className="flex items-center mb-2">
-                  <AiFillStar className="text-yellow-400" />
-                  <span className="ml-1 font-medium">{product.rating}/5</span>
+              ))}
+            </div>
+          ) : (
+            <div className="flex justify-center gap-16">
+              {popularProducts.map((product, index) => (
+                <div key={product.id} className="flex flex-col items-center">
+                  <div className="p-1 rounded-full border-2 border-yellow-400 mb-4">
+                    <div className="rounded-full overflow-hidden w-64 h-64">
+                      <img 
+                        src={product.image || foto} 
+                        alt={product.name} 
+                        className="w-full h-full object-cover"
+                        onError={(e) => { e.target.src = foto; }}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center mb-2">
+                    <AiFillStar className="text-yellow-400" />
+                    <span className="ml-1 font-medium">{product.rating}/5</span>
+                  </div>
+                  <h3 className="font-bold text-lg text-center mb-2">{product.name}</h3>
+                  <p className="font-semibold text-gray-700 mb-4">{formatCurrency(product.price)}</p>
+                  <button 
+                    className="px-6 py-2 bg-yellow-400 text-white rounded-full hover:bg-yellow-500 shadow-md transition duration-300 flex items-center"
+                    onClick={() => navigate(`/menu/${product.id}`)}
+                  >
+                    Lihat Menu <FiArrowRight className="ml-2" />
+                  </button>
                 </div>
-                <h3 className="font-bold text-lg text-center mb-4">{product.name}</h3>
-                <button 
-                  className="px-6 py-2 bg-yellow-400 text-white rounded-full hover:bg-yellow-500 shadow-md transition duration-300 flex items-center"
-                  onClick={() => handleAddToCart(product.id)}
-                >
-                  Add to Cart <FiArrowRight className="ml-2" />
-                </button>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -460,6 +565,7 @@ const Home = () => {
           </div>
         </div>
       </section>
+
 
 
         {/* Footer */}
@@ -540,6 +646,7 @@ const Home = () => {
                       </div>
                     </div>
                   </div>
+                
 
                   {/* Social Media x  */}
                   <div className="mt-4 md:mt-0 flex items-start md:justify-end">

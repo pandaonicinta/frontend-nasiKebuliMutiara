@@ -39,7 +39,7 @@ const Menu = () => {
           setMenuItems(response.data);
           
           const uniqueCategories = [
-            { id: "all", name: "All Menu", slug: "all" }
+            { id: "all", name: "Semua", slug: "all" }
           ];
 
           const categoryIds = new Set();
@@ -132,12 +132,12 @@ const Menu = () => {
           </div>
           <div className="flex items-center space-x-8">
             <a href="/" className="text-gray-800 hover:text-[#FDC302] font-medium">Home</a>
-            <a href="/about" className="text-gray-800 hover:text-[#FDC302] font-medium">About Us</a>
+            <a href="/about" className="text-gray-800 hover:text-[#FDC302] font-medium">Tentang Kami</a>
             <a href="/menu" className="text-[#FDC302] font-medium">Menu</a>
             <div className="relative">
               <input
                 type="text"
-                placeholder="Search..."
+                placeholder="Cari Menu..."
                 value={searchTerm}
                 onChange={handleSearchChange}
                 className="pl-8 pr-4 py-1 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#FDC302] focus:border-transparent"
@@ -160,10 +160,10 @@ const Menu = () => {
       {/* Hero Section */}
       <section className="pt-16 pb-12 px-6 md:px-16 lg:px-24 text-center">
         <h1 className="text-6xl font-berkshire mb-6">
-          <span className="text-gray-900">Our</span> <span className="text-[#FDC302]">Menu</span>
+          <span className="text-gray-900">Menu</span> <span className="text-[#FDC302]">Kami</span>
         </h1>
         <div className="inline-block bg-white px-8 py-3 rounded-full shadow-sm">
-          <span className="text-gray-800">Explore our delicious offerings</span>
+          <span className="text-gray-800">Jelajahi menu lezat kami</span>
         </div>
       </section>
 
@@ -264,7 +264,7 @@ const Menu = () => {
                       }}
                       className="w-full bg-[#FDC302] text-white py-2 px-4 rounded-full hover:bg-yellow-500 transition duration-300"
                     >
-                      Buy Now
+                      Pesan Sekarang
                     </button>
                   </div>
                 </div>
@@ -301,103 +301,109 @@ const Menu = () => {
                       About
                     </a>
                   </li>
+                  </ul>
+                <ul className="space-y-2">
                   <li>
                     <a href="/menu" className="hover:text-yellow-400 flex items-center text-xs">
                       <span className="text-yellow-400 mr-2">•</span>
                       Menu
                     </a>
                   </li>
-                </ul>
-                <ul className="space-y-2">
                   <li>
                     <a href="/cart" className="hover:text-yellow-400 flex items-center text-xs">
                       <span className="text-yellow-400 mr-2">•</span>
-                      Cart
-                    </a>
-                  </li>
-                  <li>
-                    <a href="/login" className="hover:text-yellow-400 flex items-center text-xs">
-                      <span className="text-yellow-400 mr-2">•</span>
-                      Login
-                    </a>
-                  </li>
-                  <li>
-                    <a href="/contact" className="hover:text-yellow-400 flex items-center text-xs">
-                      <span className="text-yellow-400 mr-2">•</span>
-                      Contact
+                      Keranjang
                     </a>
                   </li>
                 </ul>
               </div>
             </div>
-            {/* Address */}
-            <div className="lg:col-span-1">
-              <div className="flex items-start mb-3">
-                <div className="bg-red-800 p-1.5 rounded-full mr-2 mt-1">
-                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                    <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-                  </svg>
+
+            {/* Contact Information Section  */}
+              <div className="lg:col-span-2">
+                <div className="flex flex-col md:flex-row md:justify-between">
+                  <div className="flex-1">
+                    {/* Address */}
+                    <div className="flex items-start mb-3">
+                      <div className="bg-red-800 p-1.5 rounded-full mr-2 mt-1">
+                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                        </svg>
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-xs">Alamat:</h4>
+                        <p className="text-xs max-w-xs">
+                          Jl. Villa Mutiara Cikarang blok H10, No.37, Ciantra, Cikarang Sel. Kab. Bekasi, Jawa Barat 17530
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Email */}
+                    <div className="flex items-start mb-3">
+                      <div className="bg-red-800 p-1.5 rounded-full mr-2 mt-1">
+                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                        </svg>
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-xs">Email:</h4>
+                        <p className="text-xs">
+                          <a href="mailto:mutiara@gmail.com" className="hover:text-red-800 transition-colors">
+                            mutiara@gmail.com
+                          </a>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                
+                  {/* Social Media x  */}
+                  <div className="mt-4 md:mt-0 flex items-start md:justify-end">
+                    <div className="flex space-x-3">
+                      <a href="https://facebook.com/mutiaravillage" 
+                        className="bg-red-800 p-1.5 rounded-md hover:bg-red-700 transition-colors"
+                        aria-label="Facebook"
+                        target="_blank" 
+                        rel="noopener noreferrer">
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 2v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v7h-3v-7h-2v-3h2V7.5C13 5.57 14.57 4 16.5 4H19z"/>
+                        </svg>
+                      </a>
+                      <a href="https://instagram.com/mutiaravillage" 
+                        className="bg-red-800 p-1.5 rounded-md hover:bg-red-700 transition-colors" 
+                        aria-label="Instagram"
+                        target="_blank" 
+                        rel="noopener noreferrer">
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M7.8 2h8.4C19.4 2 22 4.6 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8C4.6 22 2 19.4 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2m-.2 2A3.6 3.6 0 0 0 4 7.6v8.8C4 18.39 5.61 20 7.6 20h8.8a3.6 3.6 0 0 0 3.6-3.6V7.6C20 5.61 18.39 4 16.4 4H7.6m9.65 1.5a1.25 1.25 0 0 1 1.25 1.25A1.25 1.25 0 0 1 17.25 8 1.25 1.25 0 0 1 16 6.75a1.25 1.25 0 0 1 1.25-1.25M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3z"/>
+                        </svg>
+                      </a>
+                      <a href="https://wa.me/6289797929390" 
+                        className="bg-red-800 p-1.5 rounded-md hover:bg-red-700 transition-colors" 
+                        aria-label="WhatsApp"
+                        target="_blank" 
+                        rel="noopener noreferrer">
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M16.75 13.96c.25.13.41.2.46.3.06.11.04.61-.21 1.18-.2.56-1.24 1.1-1.7 1.12-.46.02-.47.36-2.96-.73-2.49-1.09-3.99-3.75-4.11-3.92-.12-.17-.96-1.38-.92-2.61.05-1.22.69-1.8.95-2.04.24-.26.51-.29.68-.26h.47c.15 0 .36-.06.55.45l.69 1.87c.06.13.1.28.01.44l-.27.41-.39.42c-.12.12-.26.25-.12.5.12.26.62 1.09 1.32 1.78.91.88 1.71 1.17 1.95 1.3.24.14.39.12.54-.04l.81-.94c.19-.25.35-.19.58-.11l1.67.88M12 2a10 10 0 0 1 10 10 10 10 0 0 1-10 10c-1.97 0-3.8-.57-5.35-1.55L2 22l1.55-4.65A9.969 9.969 0 0 1 2 12 10 10 0 0 1 12 2m0 2a8 8 0 0 0-8 8c0 1.72.54 3.31 1.46 4.61L4.5 19.5l2.89-.94A7.95 7.95 0 0 0 12 20a8 8 0 0 0 8-8 8 8 0 0 0-8-8z"/>
+                        </svg>
+                      </a>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="font-semibold text-xs">Address:</h4>
-                  <p className="text-xs">
-                    Jl. Villa Mutiara Cikarang blok H10, No.37, Ciantra, Cikarang Sel. Kab. Bekasi, Jawa Barat 17530
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start">
-                <div className="bg-red-800 p-1.5 rounded-full mr-2 mt-1">
-                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                    <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-                  </svg>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-xs">Email:</h4>
-                  <p className="text-xs">mutiara@gmail.com</p>
-                </div>
-              </div>
-            </div>
-            {/* Phone */}
-            <div className="lg:col-span-1">
-              <div className="flex items-center mb-4">
-                <div className="bg-red-800 p-1.5 rounded-full mr-2">
-                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
-                  </svg>
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold">+62 897-9792-939</h4>
-                  <p className="text-xs">Got Questions? Call us 24/7</p>
-                </div>
-              </div>
-              {/*Social Media */}
-              <div className="flex justify-end space-x-3 mt-4">
-                <a href="#" className="bg-red-800 p-1.5 rounded-md hover:bg-red-700">
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" />
-                  </svg>
-                </a>
-                <a href="#" className="bg-red-800 p-1.5 rounded-md hover:bg-red-700">
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.644.069 3.204 2.163 7.298 2.163 4.095 0 4.559-.012 4.85-.07 4.915-.188 6.445-1.718 6.633-6.632.058-1.29.07-1.752.07-4.85 0-3.098-.013-3.559-.07-4.849-.188-4.92-1.724-6.454-6.633-6.632-1.29-.058-1.752-.07-4.85-.07zm0 2.16c3.203 0 3.585.016 4.85.071 2.802.128 4.049 1.393 4.176 4.175.055 1.265.07 1.644.07 4.849 0 3.205-.015 3.586-.07 4.85-.127 2.783-1.374 4.048-4.176 4.176-1.265.055-1.647.07-4.85.07-3.201 0-3.584-.015-4.848-.07-2.802-.128-4.049-1.393-4.176-4.176-.055-1.264-.07-1.645-.07-4.85 0-3.205.015-3.584.07-4.849.127-2.783 1.374-4.048 4.176-4.175 1.264-.055 1.646-.07 4.848-.07zm0 3.676a5.16 5.16 0 100 10.32 5.16 5.16 0 000-10.32zm0 8.486a3.326 3.326 0 110-6.652 3.326 3.326 0 010 6.652zm6.532-8.694a1.206 1.206 0 11-2.413 0 1.206 1.206 0 012.413 0z" />
-                  </svg>
-                </a>
               </div>
             </div>
           </div>
-        </div>
-      </footer>
-      {/* Copyright Section */}
-      <div className="bg-red-900 text-white text-center py-3 px-6 md:px-20 lg:px-32">
-        <div className="w-full h-px bg-red-800 mb-4"></div>
-        <div className="p-0 mt-0"></div>
-        <div className="container mx-auto">
-          <p className="text-xs">Copyright © 2025 Kebuli Mutiara. All rights reserved.</p>
+        </footer>
+
+        {/* Copyright Section */}
+        <div className="bg-red-900 text-white text-center py-3 px-6 md:px-20 lg:px-32">
+          <div className="w-full h-px bg-red-800 mb-4"></div> 
+          <div className="p-0 mt-0"></div>
+          <div className="container mx-auto">
+            <p className="text-xs">Copyright © 2025 Kebuli Mutiara. All rights reserved.</p>
+          </div>
         </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
 
 export default Menu;

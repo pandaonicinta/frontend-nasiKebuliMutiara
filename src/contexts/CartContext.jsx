@@ -23,7 +23,8 @@ export const CartProvider = ({ children }) => {
     if (!localStorage.getItem('auth_token')) {
       localStorage.setItem('cart', JSON.stringify(cartItems.map(item => ({
         produk_id: item.id,
-        quantity: item.quantity
+        quantity: item.quantity,
+        ukuran: item.size // Make sure to save size to localStorage
       }))));
     }
   }, [cartItems]);
@@ -63,7 +64,8 @@ export const CartProvider = ({ children }) => {
           name: item.produk.nama_produk,
           price: item.produk.harga,
           image: item.produk.gambar ? `${API_BASE_URL}/storage/${item.produk.gambar}` : null,
-          quantity: item.quantity
+          quantity: item.quantity,
+          size: item.ukuran || '' // Include size from API
         }));
         
         setCartItems(formattedItems);
@@ -93,7 +95,8 @@ export const CartProvider = ({ children }) => {
               name: product.nama_produk,
               price: product.harga,
               image: product.gambar ? `${API_BASE_URL}/storage/${product.gambar}` : null,
-              quantity: item.quantity
+              quantity: item.quantity,
+              size: item.ukuran || '' // Include size from localStorage
             };
           } catch (err) {
             console.error(`Error fetching product ${item.produk_id}:`, err);
@@ -102,7 +105,8 @@ export const CartProvider = ({ children }) => {
               name: 'Product',
               price: 0,
               image: null,
-              quantity: item.quantity
+              quantity: item.quantity,
+              size: item.ukuran || ''
             };
           }
         }));
@@ -124,7 +128,8 @@ export const CartProvider = ({ children }) => {
           `${API_BASE_URL}/api/keranjang/add`,
           {
             id_produk: item.id,
-            quantity: item.quantity
+            quantity: item.quantity,
+            ukuran: item.size || '' // Include size in API request
           },
           {
             headers: {
@@ -137,7 +142,7 @@ export const CartProvider = ({ children }) => {
         await fetchCartFromAPI(token);
       } else {
         const existingItemIndex = cartItems.findIndex(
-          cartItem => cartItem.id === item.id
+          cartItem => cartItem.id === item.id && cartItem.size === item.size
         );
         
         if (existingItemIndex !== -1) {
@@ -150,7 +155,7 @@ export const CartProvider = ({ children }) => {
 
         const existingCart = JSON.parse(localStorage.getItem('cart') || '[]');
         const existingItemLocalIndex = existingCart.findIndex(
-          cartItem => cartItem.produk_id === item.id
+          cartItem => cartItem.produk_id === item.id && cartItem.ukuran === item.size
         );
         
         if (existingItemLocalIndex !== -1) {
@@ -158,7 +163,8 @@ export const CartProvider = ({ children }) => {
         } else {
           existingCart.push({
             produk_id: item.id,
-            quantity: item.quantity
+            quantity: item.quantity,
+            ukuran: item.size || ''
           });
         }
         
@@ -173,55 +179,79 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  const removeFromCart = async (keranjang_id) => {
+  // Updated to handle size parameter and support both local and API cart removal
+  const removeFromCart = async (id, size) => {
     try {
       const token = localStorage.getItem('auth_token');
       
-      if (token) {
+      // Find the cart item using both ID and size
+      const cartItem = cartItems.find(item => 
+        item.id === id && item.size === size
+      );
+      
+      if (!cartItem) {
+        console.error('Item not found in cart');
+        return;
+      }
+      
+      if (token && cartItem.keranjang_id) {
         await axios.delete(`${API_BASE_URL}/api/keranjang/delete`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           },
           data: {
-            id_item: [keranjang_id] 
+            id_item: [cartItem.keranjang_id]
           }
         });
         
         await fetchCartFromAPI(token);
       } else {
-        const produk_id = cartItems.find(item => item.keranjang_id === keranjang_id)?.id || keranjang_id;
-        
-        const updatedItems = cartItems.filter(item => item.id !== produk_id);
+        const updatedItems = cartItems.filter(item => 
+          !(item.id === id && item.size === size)
+        );
         setCartItems(updatedItems);
         
         const existingCart = JSON.parse(localStorage.getItem('cart') || '[]');
-        const updatedCart = existingCart.filter(item => item.produk_id !== produk_id);
+        const updatedCart = existingCart.filter(item => 
+          !(item.produk_id === id && item.ukuran === size)
+        );
         localStorage.setItem('cart', JSON.stringify(updatedCart));
       }
       
-      setSelectedItems(selectedItems.filter(id => id !== keranjang_id));
+      // Update selected items
+      setSelectedItems(selectedItems.filter(itemId => 
+        itemId !== cartItem.keranjang_id
+      ));
     } catch (err) {
       console.error('Error removing item from cart:', err);
       if (err.response && err.response.status === 401) {
         localStorage.removeItem('auth_token');
-        const produk_id = cartItems.find(item => item.keranjang_id === keranjang_id)?.id || keranjang_id;
-        const updatedItems = cartItems.filter(item => item.id !== produk_id);
-        setCartItems(updatedItems);
+        // Try again without token after logout
+        removeFromCart(id, size);
       }
     }
   };
 
-  const updateQuantity = async (keranjang_id, newQuantity) => {
+  // Updated to handle size parameter
+  const updateQuantity = async (id, size, newQuantity) => {
     if (newQuantity < 1) return;
     
     try {
       const token = localStorage.getItem('auth_token');
       
-      if (token) {
-        const cartItem = cartItems.find(item => item.keranjang_id === keranjang_id);
-        if (!cartItem) return;
-
+      // Find the cart item using both ID and size
+      const cartItem = cartItems.find(item => 
+        item.id === id && item.size === size
+      );
+      
+      if (!cartItem) {
+        console.error('Item not found in cart');
+        return;
+      }
+      
+      if (token && cartItem.keranjang_id) {
+        // First remove the existing item
         await axios.delete(
           `${API_BASE_URL}/api/keranjang/delete`,
           {
@@ -230,16 +260,18 @@ export const CartProvider = ({ children }) => {
               'Content-Type': 'application/json'
             },
             data: {
-              id_item: [keranjang_id]
+              id_item: [cartItem.keranjang_id]
             }
           }
         );
         
+        // Then add with new quantity
         await axios.post(
           `${API_BASE_URL}/api/keranjang/add`,
           {
-            id_produk: cartItem.id,
-            quantity: newQuantity
+            id_produk: id,
+            quantity: newQuantity,
+            ukuran: size || ''
           },
           {
             headers: {
@@ -251,32 +283,33 @@ export const CartProvider = ({ children }) => {
         
         await fetchCartFromAPI(token);
       } else {
-        const cartItem = cartItems.find(item => item.keranjang_id === keranjang_id || item.id === keranjang_id);
-        if (!cartItem) return;
-        
+        // Update local cart
         const updatedItems = cartItems.map(item => {
-          if ((item.keranjang_id && item.keranjang_id === keranjang_id) || 
-              (!item.keranjang_id && item.id === keranjang_id)) {
+          if (item.id === id && item.size === size) {
             return { ...item, quantity: newQuantity };
           }
           return item;
         });
+        
         setCartItems(updatedItems);
         
+        // Update localStorage cart
         const existingCart = JSON.parse(localStorage.getItem('cart') || '[]');
         const updatedCart = existingCart.map(item => {
-          if (item.produk_id === cartItem.id) {
+          if (item.produk_id === id && item.ukuran === size) {
             return { ...item, quantity: newQuantity };
           }
           return item;
         });
+        
         localStorage.setItem('cart', JSON.stringify(updatedCart));
       }
     } catch (err) {
       console.error('Error updating item quantity:', err);
       if (err.response && err.response.status === 401) {
         localStorage.removeItem('auth_token');
-        updateQuantity(keranjang_id, newQuantity);
+        // Try again without token after logout
+        updateQuantity(id, size, newQuantity);
       }
     }
   };
@@ -318,7 +351,9 @@ export const CartProvider = ({ children }) => {
       const token = localStorage.getItem('auth_token');
       
       if (token) {
-        const keranjangIds = cartItems.map(item => item.keranjang_id);
+        const keranjangIds = cartItems
+          .filter(item => item.keranjang_id)
+          .map(item => item.keranjang_id);
         
         if (keranjangIds.length > 0) {
           await axios.delete(`${API_BASE_URL}/api/keranjang/delete`, {
@@ -395,7 +430,8 @@ export const CartProvider = ({ children }) => {
             `${API_BASE_URL}/api/keranjang/add`,
             {
               id_produk: item.produk_id,
-              quantity: item.quantity
+              quantity: item.quantity,
+              ukuran: item.ukuran || ''
             },
             {
               headers: {
