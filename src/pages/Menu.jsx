@@ -18,14 +18,75 @@ const Menu = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [categories, setCategories] = useState([
     { id: "all", name: "All Menu", slug: "all" },
   ]);
   const API_URL = 'http://kebabmutiara.xyz';
 
+  // Check authentication status on component mount
+  useEffect(() => {
+    const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+    if (token) {
+      setIsAuthenticated(true);
+    } else {
+      setIsAuthenticated(false);
+    }
+  }, []);
+
   // Function to handle menu item click
   const handleMenuClick = (menuId) => {
     navigate(`/menu/${menuId}`);
+  };
+
+  // Function to handle account navigation (copied from Home component)
+  const handleAccountNavigation = () => {
+    const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+    const userRole = localStorage.getItem('userRole');
+    console.log("Button clicked! Token:", token, "UserRole:", userRole); // Debugging
+    
+    if (token) {
+      if (!userRole || userRole === "undefined" || userRole === "unknown") {
+        axios.get('/aboutMe')
+          .then(response => {
+            const role = response.data.role || response.data.user?.role;
+            console.log("Fetched user role:", role);
+            if (role) {
+              localStorage.setItem('userRole', role);
+              if (role === 'admin') {
+                navigate('/admin');
+              } else if (role === 'pembeli') {
+                navigate('/customer');
+              } else {
+                console.log("Unknown user role after fetch:", role);
+                navigate('/login');
+              }
+            } else {
+              console.log("No role found in API response");
+              navigate('/login');
+            }
+          })
+          .catch(error => {
+            if (error.response && error.response.status === 404) {
+              console.error("User info endpoint not found (404)", error);
+            } else {
+              console.error("Error fetching user info:", error);
+            }
+            navigate('/login');
+          });
+      } else {
+        if (userRole === 'admin') {
+          navigate('/admin');
+        } else if (userRole === 'pembeli') {
+          navigate('/customer');
+        } else {
+          console.log("Unknown user role:", userRole);
+          navigate('/login');
+        }
+      }
+    } else {
+      navigate('/login');
+    }
   };
 
   // Fetch menu items from API
@@ -145,14 +206,23 @@ const Menu = () => {
               <FiSearch size={16} className="absolute left-3 top-2 text-gray-400" />
             </div>
             <a href="/cart" className="text-gray-800 hover:text-yellow-500 relative">
-                          <FiShoppingBag size={20} />
-                          <span className="absolute -top-1 -right-1 bg-yellow-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs">
-                            {cartCount}
-                          </span>
-                        </a>
-            <a href="/login" className="px-8 py-3 bg-gradient-to-r from-[#FDC302] to-yellow-300 text-white rounded-full hover:from-yellow-500 hover:to-yellow-400 shadow-lg transition duration-300 flex items-center">
-              Login <HiOutlineArrowNarrowRight className="ml-2" />
+              <FiShoppingBag size={20} />
+              <span className="absolute -top-1 -right-1 bg-yellow-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs">
+                {cartCount}
+              </span>
             </a>
+            {isAuthenticated ? (
+              <button
+                onClick={handleAccountNavigation}
+                className="px-8 py-3 bg-gradient-to-r from-[#FDC302] to-yellow-300 text-white rounded-full hover:from-yellow-500 hover:to-yellow-400 shadow-lg transition duration-300 flex items-center"
+              >
+                My Account <HiOutlineArrowNarrowRight className="ml-2" />
+              </button>
+            ) : (
+              <a href="/login" className="px-8 py-3 bg-gradient-to-r from-[#FDC302] to-yellow-300 text-white rounded-full hover:from-yellow-500 hover:to-yellow-400 shadow-lg transition duration-300 flex items-center">
+                Login <HiOutlineArrowNarrowRight className="ml-2" />
+              </a>
+            )}
           </div>
         </div>
       </header>
@@ -260,7 +330,7 @@ const Menu = () => {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        navigate(`/menu/${menuid}`);
+                        navigate(`/menu/${item.produk_id}`);
                       }}
                       className="w-full bg-[#FDC302] text-white py-2 px-4 rounded-full hover:bg-yellow-500 transition duration-300"
                     >

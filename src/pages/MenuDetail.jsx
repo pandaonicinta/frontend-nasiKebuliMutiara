@@ -34,6 +34,7 @@ const MenuDetail = () => {
   const { addToCart, cartCount } = useContext(CartContext);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
+
   const formatPrice = (price) => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
@@ -195,7 +196,7 @@ const MenuDetail = () => {
           await addToApiCart();
           console.log('Successfully added to API cart');
           
-          // Update context after API success
+          // FIXED: Only update context after API success, not both API and localStorage
           addToCart(cartItem);
           
           setAddedToCart(true);
@@ -209,10 +210,8 @@ const MenuDetail = () => {
             localStorage.removeItem('authToken');
             localStorage.removeItem('token');
             setIsAuthenticated(false);
-            // Redirect to login or handle as needed
-            // navigate('/login');
             
-            // Add to localStorage as fallback
+            // FIXED: Use localStorage as fallback only when API fails
             addToLocalStorageCart();
             addToCart(cartItem);
           } else {
@@ -226,6 +225,7 @@ const MenuDetail = () => {
         // Not logged in, use localStorage directly
         console.log('User not logged in, using localStorage cart');
         addToLocalStorageCart();
+        // FIXED: Call addToCart only once when using localStorage
         addToCart(cartItem);
         
         setAddedToCart(true);

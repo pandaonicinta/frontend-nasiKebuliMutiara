@@ -20,7 +20,7 @@ export const CartProvider = ({ children }) => {
     const newCount = cartItems.reduce((total, item) => total + item.quantity, 0);
     setCartCount(newCount);
 
-    if (!localStorage.getItem('auth_token')) {
+    if (!localStorage.getItem('auth_token') && !localStorage.getItem('token') && !localStorage.getItem('authToken')) {
       localStorage.setItem('cart', JSON.stringify(cartItems.map(item => ({
         produk_id: item.id,
         quantity: item.quantity,
@@ -32,7 +32,7 @@ export const CartProvider = ({ children }) => {
   const initializeCart = async () => {
     setIsLoading(true);
     try {
-      const token = localStorage.getItem('auth_token');
+      const token = localStorage.getItem('auth_token') || localStorage.getItem('token') || localStorage.getItem('authToken');
       
       if (token) {
         await fetchCartFromAPI(token);
@@ -57,27 +57,54 @@ export const CartProvider = ({ children }) => {
         }
       });
 
+      console.log("API response in context:", response.data);
+      
+      let formattedItems = [];
+      
+      // Handle different API response formats
       if (response.data && Array.isArray(response.data.data)) {
-        const formattedItems = response.data.data.map(item => ({
-          id: item.id_produk,
-          keranjang_id: item.keranjang_id, 
-          name: item.produk.nama_produk,
-          price: item.produk.harga,
-          image: item.produk.gambar ? `${API_BASE_URL}/storage/${item.produk.gambar}` : null,
-          quantity: item.quantity,
-          size: item.ukuran || '' // Include size from API
+        formattedItems = response.data.data.map(item => ({
+          id: item.produk_id || item.id_produk || item.id,
+          cart_item_id: item.id || item.keranjang_id,
+          name: item.nama_produk || (item.produk && item.produk.nama_produk) || "Unknown Item",
+          price: parseFloat(item.harga || (item.produk && item.produk.harga) || 0),
+          image: getImageUrl(item.gambar || (item.produk && item.produk.gambar)),
+          quantity: parseInt(item.quantity || item.jumlah || 1),
+          size: item.ukuran || ''
         }));
-        
-        setCartItems(formattedItems);
+      } else if (response.data && Array.isArray(response.data)) {
+        formattedItems = response.data.map(item => ({
+          id: item.produk_id || item.id_produk || item.id,
+          cart_item_id: item.id || item.keranjang_id,
+          name: item.nama_produk || (item.produk && item.produk.nama_produk) || "Unknown Item",
+          price: parseFloat(item.harga || (item.produk && item.produk.harga) || 0),
+          image: getImageUrl(item.gambar || (item.produk && item.produk.gambar)),
+          quantity: parseInt(item.quantity || item.jumlah || 1),
+          size: item.ukuran || ''
+        }));
       }
+      
+      console.log("Formatted items:", formattedItems);
+      setCartItems(formattedItems);
     } catch (err) {
       console.error('Error fetching cart from API:', err);
       if (err.response && err.response.status === 401) {
         localStorage.removeItem('auth_token');
+        localStorage.removeItem('token');
+        localStorage.removeItem('authToken');
         loadCartFromLocalStorage();
       }
       throw err;
     }
+  };
+
+  // Helper function to handle image URLs
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return null;  
+    if (imagePath.startsWith('http')) {
+      return imagePath;
+    }
+    return `${API_BASE_URL}/storage/${imagePath}`;
   };
 
   const loadCartFromLocalStorage = async () => {
@@ -93,10 +120,10 @@ export const CartProvider = ({ children }) => {
             return {
               id: item.produk_id,
               name: product.nama_produk,
-              price: product.harga,
-              image: product.gambar ? `${API_BASE_URL}/storage/${product.gambar}` : null,
-              quantity: item.quantity,
-              size: item.ukuran || '' // Include size from localStorage
+              price: parseFloat(product.harga),
+              image: getImageUrl(product.gambar),
+              quantity: parseInt(item.quantity),
+              size: item.ukuran || ''
             };
           } catch (err) {
             console.error(`Error fetching product ${item.produk_id}:`, err);
@@ -105,7 +132,7 @@ export const CartProvider = ({ children }) => {
               name: 'Product',
               price: 0,
               image: null,
-              quantity: item.quantity,
+              quantity: parseInt(item.quantity),
               size: item.ukuran || ''
             };
           }
@@ -119,17 +146,20 @@ export const CartProvider = ({ children }) => {
     }
   };
 
+  // FIX: Improved addToCart function to prevent duplicates
   const addToCart = async (item) => {
     try {
-      const token = localStorage.getItem('auth_token');
+      const token = localStorage.getItem('auth_token') || localStorage.getItem('token') || localStorage.getItem('authToken');
       
       if (token) {
+        // For authenticated users, only call the API
+        // and let the fetchCartFromAPI handle state updates
         await axios.post(
           `${API_BASE_URL}/api/keranjang/add`,
           {
             id_produk: item.id,
             quantity: item.quantity,
-            ukuran: item.size || '' // Include size in API request
+            ukuran: item.size || ''
           },
           {
             headers: {
@@ -139,8 +169,10 @@ export const CartProvider = ({ children }) => {
           }
         );
         
+        // Fetch updated cart from API
         await fetchCartFromAPI(token);
       } else {
+        // For unauthenticated users, update local state and localStorage
         const existingItemIndex = cartItems.findIndex(
           cartItem => cartItem.id === item.id && cartItem.size === item.size
         );
@@ -153,6 +185,7 @@ export const CartProvider = ({ children }) => {
           setCartItems([...cartItems, item]);
         }
 
+        // Update localStorage
         const existingCart = JSON.parse(localStorage.getItem('cart') || '[]');
         const existingItemLocalIndex = existingCart.findIndex(
           cartItem => cartItem.produk_id === item.id && cartItem.ukuran === item.size
@@ -174,15 +207,17 @@ export const CartProvider = ({ children }) => {
       console.error('Error adding item to cart:', err);
       if (err.response && err.response.status === 401) {
         localStorage.removeItem('auth_token');
+        localStorage.removeItem('token');
+        localStorage.removeItem('authToken');
+        // Try again without token after logout
         addToCart(item);
       }
     }
   };
 
-  // Updated to handle size parameter and support both local and API cart removal
   const removeFromCart = async (id, size) => {
     try {
-      const token = localStorage.getItem('auth_token');
+      const token = localStorage.getItem('auth_token') || localStorage.getItem('token') || localStorage.getItem('authToken');
       
       // Find the cart item using both ID and size
       const cartItem = cartItems.find(item => 
@@ -194,14 +229,14 @@ export const CartProvider = ({ children }) => {
         return;
       }
       
-      if (token && cartItem.keranjang_id) {
+      if (token && cartItem.cart_item_id) {
         await axios.delete(`${API_BASE_URL}/api/keranjang/delete`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           },
           data: {
-            id_item: [cartItem.keranjang_id]
+            id_item: [cartItem.cart_item_id]
           }
         });
         
@@ -221,56 +256,32 @@ export const CartProvider = ({ children }) => {
       
       // Update selected items
       setSelectedItems(selectedItems.filter(itemId => 
-        itemId !== cartItem.keranjang_id
+        itemId !== cartItem.cart_item_id
       ));
     } catch (err) {
       console.error('Error removing item from cart:', err);
       if (err.response && err.response.status === 401) {
         localStorage.removeItem('auth_token');
+        localStorage.removeItem('token');
+        localStorage.removeItem('authToken');
         // Try again without token after logout
         removeFromCart(id, size);
       }
     }
   };
 
-  // Updated to handle size parameter
-  const updateQuantity = async (id, size, newQuantity) => {
-    if (newQuantity < 1) return;
-    
+  // FIX: Improved updateQuantity function
+  const updateQuantity = async (productId, size, quantity) => {
     try {
-      const token = localStorage.getItem('auth_token');
+      const token = localStorage.getItem('auth_token') || localStorage.getItem('token') || localStorage.getItem('authToken');
       
-      // Find the cart item using both ID and size
-      const cartItem = cartItems.find(item => 
-        item.id === id && item.size === size
-      );
-      
-      if (!cartItem) {
-        console.error('Item not found in cart');
-        return;
-      }
-      
-      if (token && cartItem.keranjang_id) {
-        // First remove the existing item
-        await axios.delete(
-          `${API_BASE_URL}/api/keranjang/delete`,
-          {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            },
-            data: {
-              id_item: [cartItem.keranjang_id]
-            }
-          }
-        );
-        
-        // Then add with new quantity
+      if (token) {
+        // For authenticated users, use API
         await axios.post(
           `${API_BASE_URL}/api/keranjang/add`,
           {
-            id_produk: id,
-            quantity: newQuantity,
+            id_produk: productId,
+            quantity: quantity,
             ukuran: size || ''
           },
           {
@@ -281,45 +292,42 @@ export const CartProvider = ({ children }) => {
           }
         );
         
+        // Fetch the updated cart
         await fetchCartFromAPI(token);
       } else {
-        // Update local cart
+        // For unauthenticated users, update local state and localStorage
         const updatedItems = cartItems.map(item => {
-          if (item.id === id && item.size === size) {
-            return { ...item, quantity: newQuantity };
+          if (item.id === productId && item.size === size) {
+            return { ...item, quantity };
           }
           return item;
         });
         
         setCartItems(updatedItems);
         
-        // Update localStorage cart
-        const existingCart = JSON.parse(localStorage.getItem('cart') || '[]');
-        const updatedCart = existingCart.map(item => {
-          if (item.produk_id === id && item.ukuran === size) {
-            return { ...item, quantity: newQuantity };
+        // Update localStorage
+        const localCart = JSON.parse(localStorage.getItem('cart') || '[]');
+        const updatedLocalCart = localCart.map(item => {
+          if (item.produk_id === productId && item.ukuran === size) {
+            return { ...item, quantity };
           }
           return item;
         });
         
-        localStorage.setItem('cart', JSON.stringify(updatedCart));
+        localStorage.setItem('cart', JSON.stringify(updatedLocalCart));
       }
-    } catch (err) {
-      console.error('Error updating item quantity:', err);
-      if (err.response && err.response.status === 401) {
-        localStorage.removeItem('auth_token');
-        // Try again without token after logout
-        updateQuantity(id, size, newQuantity);
-      }
+    } catch (error) {
+      console.error('Error updating item quantity:', error);
+      throw error;
     }
   };
 
-  const toggleSelectItem = (keranjang_id) => {
+  const toggleSelectItem = (cart_item_id) => {
     setSelectedItems(prevSelected => {
-      if (prevSelected.includes(keranjang_id)) {
-        return prevSelected.filter(id => id !== keranjang_id);
+      if (prevSelected.includes(cart_item_id)) {
+        return prevSelected.filter(id => id !== cart_item_id);
       } else {
-        return [...prevSelected, keranjang_id];
+        return [...prevSelected, cart_item_id];
       }
     });
   };
@@ -328,7 +336,7 @@ export const CartProvider = ({ children }) => {
     if (selectedItems.length === cartItems.length) {
       setSelectedItems([]);
     } else {
-      setSelectedItems(cartItems.map(item => item.keranjang_id || item.id));
+      setSelectedItems(cartItems.map(item => item.cart_item_id || item.id));
     }
   };
 
@@ -340,7 +348,7 @@ export const CartProvider = ({ children }) => {
 
   const calculateSelectedTotal = () => {
     return cartItems
-      .filter(item => selectedItems.includes(item.keranjang_id || item.id))
+      .filter(item => selectedItems.includes(item.cart_item_id || item.id))
       .reduce((total, item) => {
         return total + (item.price * item.quantity);
       }, 0);
@@ -348,21 +356,21 @@ export const CartProvider = ({ children }) => {
 
   const clearCart = async () => {
     try {
-      const token = localStorage.getItem('auth_token');
+      const token = localStorage.getItem('auth_token') || localStorage.getItem('token') || localStorage.getItem('authToken');
       
       if (token) {
-        const keranjangIds = cartItems
-          .filter(item => item.keranjang_id)
-          .map(item => item.keranjang_id);
+        const cart_item_ids = cartItems
+          .filter(item => item.cart_item_id)
+          .map(item => item.cart_item_id);
         
-        if (keranjangIds.length > 0) {
+        if (cart_item_ids.length > 0) {
           await axios.delete(`${API_BASE_URL}/api/keranjang/delete`, {
             headers: {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'
             },
             data: {
-              id_item: keranjangIds
+              id_item: cart_item_ids
             }
           });
         }
@@ -376,6 +384,8 @@ export const CartProvider = ({ children }) => {
       console.error('Error clearing cart:', err);
       if (err.response && err.response.status === 401) {
         localStorage.removeItem('auth_token');
+        localStorage.removeItem('token');
+        localStorage.removeItem('authToken');
         setCartItems([]);
         setSelectedItems([]);
         localStorage.removeItem('cart');
@@ -385,7 +395,7 @@ export const CartProvider = ({ children }) => {
 
   const processCheckout = async () => {
     try {
-      const token = localStorage.getItem('auth_token');
+      const token = localStorage.getItem('auth_token') || localStorage.getItem('token') || localStorage.getItem('authToken');
       
       if (!token) {
         throw new Error('User must be logged in to checkout');

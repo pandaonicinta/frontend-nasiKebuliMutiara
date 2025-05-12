@@ -27,275 +27,188 @@ const formatPrice = (price) => {
 
 const Cart = () => {
   const navigate = useNavigate();
-  const { cartItems, removeFromCart, updateQuantity, calculateTotal, cartCount, clearCart, updateCartFromAPI } = useContext(CartContext);
-  const [selectedItems, setSelectedItems] = useState({});
-  const [selectedItemIds, setSelectedItemIds] = useState([]);
-  const [selectAll, setSelectAll] = useState(false);
+  const { 
+    cartItems, 
+    cartCount, 
+    removeFromCart, 
+    updateQuantity, 
+    toggleSelectItem,
+    selectAllItems,
+    selectedItems,
+    calculateTotal,
+    calculateSelectedTotal,
+    clearCart,
+    isLoading: contextLoading 
+  } = useContext(CartContext);
+  
   const [isLoading, setIsLoading] = useState(false);
-  const [apiCartItems, setApiCartItems] = useState([]);
-  const [error, setError] = useState(null);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [error, setError] = useState(null);
 
   const shippingCost = 10000;
 
+  // Check authentication status
   useEffect(() => {
-    const fetchCartFromAPI = async () => {
-      try {
-        const token = localStorage.getItem('auth_token') || localStorage.getItem('token') || localStorage.getItem('authToken');
-        if (!token) return;
-
-        setIsLoading(true);
-        const response = await axios.get(`${API_BASE_URL}/api/keranjang`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (response.data && Array.isArray(response.data)) {
-          setApiCartItems(response.data);
-        }
-      } catch (err) {
-        console.error('Error fetching cart from API:', err);
-        if (err.response && err.response.status === 401) {
-          localStorage.removeItem('auth_token');
-          localStorage.removeItem('token'); 
-          localStorage.removeItem('authToken');
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchCartFromAPI();
+    const token = localStorage.getItem('auth_token') || localStorage.getItem('token') || localStorage.getItem('authToken');
+    setIsAuthenticated(!!token);
   }, []);
 
-  useEffect(() => {
-    if (apiCartItems.length > 0) {
-      const formattedItems = apiCartItems.map(item => ({
-        id: item.produk_id,
-        cart_item_id: item.id,
-        name: item.nama_produk,
-        price: item.harga,
-        quantity: item.jumlah || item.quantity,
-        size: item.ukuran || '',
-        image: getImageUrl(item.gambar)
-      }));
-      
-      if (updateCartFromAPI) {
-        updateCartFromAPI(formattedItems);
-      }
-    }
-  }, [apiCartItems, updateCartFromAPI]);
+  // Calculate if all items are selected
+  const allSelected = cartItems.length > 0 && 
+    cartItems.every(item => selectedItems.includes(item.cart_item_id || item.id));
 
-  useEffect(() => {
-    const initialSelected = {};
-    cartItems.forEach(item => {
-      const key = `${item.id}-${item.size || ''}`;
-      initialSelected[key] = selectedItems[key] !== undefined ? selectedItems[key] : true;
-    });
-    setSelectedItems(initialSelected);
-    
-    const allSelected = cartItems.length > 0 && Object.values(initialSelected).every(v => v);
-    setSelectAll(allSelected);
-
-    updateSelectedItemIds(initialSelected);
-  }, [cartItems]);
-
-  const updateSelectedItemIds = (selectionState) => {
-    const selectedIds = cartItems
-      .filter(item => selectionState[`${item.id}-${item.size || ''}`])
-      .map(item => item.cart_item_id)
-      .filter(id => id);
-    
-    setSelectedItemIds(selectedIds);
+  // Handler for selecting all items
+  const handleSelectAll = () => {
+    selectAllItems();
   };
 
-  const calculateSelectedSubtotal = () => cartItems.reduce((sum, item) => {
-    const key = `${item.id}-${item.size || ''}`;
-    return selectedItems[key] ? sum + item.price * item.quantity : sum;
-  }, 0);
+  // Handler for selecting a single item
+  const handleToggleSelect = (cart_item_id) => {
+    toggleSelectItem(cart_item_id);
+  };
 
-  const getSelectedCount = () => cartItems.reduce((count, item) => {
-    const key = `${item.id}-${item.size || ''}`;
-    return count + (selectedItems[key] ? item.quantity : 0);
-  }, 0);
+  // Selected items count
+  const getSelectedCount = () => {
+    return cartItems
+      .filter(item => selectedItems.includes(item.cart_item_id || item.id))
+      .reduce((total, item) => total + item.quantity, 0);
+  };
 
-  const getTotalQuantity = () => cartItems.reduce((count, item) => count + item.quantity, 0);
+  // Total quantity count
+  const getTotalQuantity = () => {
+    return cartItems.reduce((count, item) => count + item.quantity, 0);
+  };
 
-  const subtotal = calculateSelectedSubtotal();
+  // Calculate subtotal for selected items
+  const subtotal = calculateSelectedTotal();
   const total = subtotal + (getSelectedCount() > 0 ? shippingCost : 0);
 
-  const handleQuantityChange = async (id, size, qty, cart_item_id) => {
+  // Handler for changing item quantity
+  const handleQuantityChange = async (id, size, qty) => {
     if (qty < 1) return;
     
     setIsUpdating(true);
+    setError(null);
+    
     try {
-      const token = localStorage.getItem('auth_token') || localStorage.getItem('token') || localStorage.getItem('authToken');
-      
-      if (token && cart_item_id) {
-        try {
-          const currentItem = cartItems.find(item => item.id === id && (item.size || '') === (size || ''));
-          const quantityDifference = qty - currentItem.quantity;
-          
-          // Using the exact API format expected by the backend
-          await axios.post(
-            `${API_BASE_URL}/api/keranjang/add`, 
-            {
-              id_produk: id,
-              quantity: quantityDifference
-            },
-            {
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-              }
-            }
-          );
-
-          updateQuantity(id, size, qty);
-        } catch (apiErr) {
-          console.error('API Error when updating quantity:', apiErr);
-
-          updateQuantity(id, size, qty);
-
-          if (apiErr.response && apiErr.response.status === 401) {
-            localStorage.removeItem('auth_token');
-            localStorage.removeItem('token');
-            localStorage.removeItem('authToken');
-          }
-        }
-      } else {
-        updateQuantity(id, size, qty);
-        
-        const existingCart = JSON.parse(localStorage.getItem('cart') || '[]');
-        const existingItemIndex = existingCart.findIndex(
-          item => item.produk_id === id && (item.ukuran || '') === (size || '')
-        );
-        
-        if (existingItemIndex >= 0) {
-          existingCart[existingItemIndex].jumlah = qty;
-          localStorage.setItem('cart', JSON.stringify(existingCart));
-        }
-      }
+      await updateQuantity(id, size, qty);
     } catch (err) {
       console.error('Error updating cart item quantity:', err);
+      setError('Failed to update item quantity. Please try again.');
     } finally {
       setIsUpdating(false);
     }
   };
 
-  const handleRemoveItem = async (id, size, cart_item_id) => {
-    try {
-      const token = localStorage.getItem('auth_token') || localStorage.getItem('token') || localStorage.getItem('authToken');
-      
-      if (token && cart_item_id) {
-        try {
-          await axios.delete(`${API_BASE_URL}/api/keranjang/delete`, {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            },
-            data: {
-              id_item: [cart_item_id] 
-            }
-          });
-          
-          removeFromCart(id, size);
-        } catch (apiErr) {
-          console.error('API Error when removing item:', apiErr);
-          
-          // If API fails, still remove locally
-          removeFromCart(id, size);
-          
-          if (apiErr.response && apiErr.response.status === 401) {
-            localStorage.removeItem('auth_token');
-            localStorage.removeItem('token');
-            localStorage.removeItem('authToken');
-          }
-        }
-      } else {
-        // Remove from local context
-        removeFromCart(id, size);
-        const existingCart = JSON.parse(localStorage.getItem('cart') || '[]');
-        const updatedCart = existingCart.filter(
-          item => !(item.produk_id === id && (item.ukuran || '') === (size || ''))
-        );
-        localStorage.setItem('cart', JSON.stringify(updatedCart));
-      }
-    } catch (err) {
-      console.error('Error removing cart item:', err);
-    }
-  };
-
-  const handleClearCart = async () => {
-    if(!confirm('Are you sure you want to clear your cart?')) return;
+  // Handler for decreasing quantity with separate function
+  const handleDecreaseQuantity = async (id, size, currentQty) => {
+    if (currentQty <= 1) return;
+    
+    setIsUpdating(true);
+    setError(null);
     
     try {
+      // For decreasing, we'll use a direct API call if needed
       const token = localStorage.getItem('auth_token') || localStorage.getItem('token') || localStorage.getItem('authToken');
       
       if (token) {
-        try {
-          const itemIds = cartItems
-            .map(item => item.cart_item_id)
-            .filter(id => id); 
-          if (itemIds.length > 0) {
-            await axios.delete(`${API_BASE_URL}/api/keranjang/delete`, {
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-              },
-              data: {
-                id_item: itemIds
-              }
-            });
-          }
-
-          clearCart();
-        } catch (apiErr) {
-          console.error('API Error when clearing cart:', apiErr);
-          clearCart();
-          
-          if (apiErr.response && apiErr.response.status === 401) {
-            localStorage.removeItem('auth_token');
-            localStorage.removeItem('token');
-            localStorage.removeItem('authToken');
-          }
+        // If authenticated, make the API call directly - this might bypass issues in the context
+        const cartItemId = cartItems.find(item => item.id === id && item.size === size)?.cart_item_id;
+        if (cartItemId) {
+          await axios.put(`${API_BASE_URL}/api/keranjang/${cartItemId}`, {
+            quantity: currentQty - 1
+          }, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
         }
-      } else {
-        clearCart();
-        localStorage.removeItem('cart');
       }
+      
+      // Update in context as well
+      await updateQuantity(id, size, currentQty - 1);
     } catch (err) {
-      console.error('Error clearing cart:', err);
+      console.error('Error decreasing cart item quantity:', err);
+      setError('Failed to decrease item quantity. Please try again.');
+    } finally {
+      setIsUpdating(false);
     }
   };
 
-  const toggleItemSelection = (id, size, cart_item_id) => {
-    const key = `${id}-${size || ''}`;
-    const nextSelections = { ...selectedItems, [key]: !selectedItems[key] };
-    setSelectedItems(nextSelections);
+  // Handler for increasing quantity
+  // Improved handleIncreaseQuantity that uses the POST method to /api/keranjang/add
+const handleIncreaseQuantity = async (id, size, currentQty) => {
+  setIsUpdating(true);
+  setError(null);
+  
+  try {
+    const token = localStorage.getItem('auth_token') || localStorage.getItem('token') || localStorage.getItem('authToken');
     
-    const allSelected = cartItems.every(item => 
-      nextSelections[`${item.id}-${item.size || ''}`]
-    );
-    setSelectAll(allSelected);
-    updateSelectedItemIds(nextSelections);
+    if (token) {
+      // Direct API call using POST to /api/keranjang/add
+      await axios.post(`${API_BASE_URL}/api/keranjang/add`, {
+        product_id: id,
+        quantity: currentQty + 1,
+        size: size || null
+      }, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      // Refresh the cart after direct API update
+      // This might be better than using updateQuantity which is causing errors
+      const cartResponse = await axios.get(`${API_BASE_URL}/api/keranjang`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (cartResponse.data && cartResponse.data.success) {
+        // You could potentially dispatch an action or call a method to update the cart context
+        // For now, we'll still call updateQuantity to maintain compatibility
+        await updateQuantity(id, size, currentQty + 1);
+      }
+    } else {
+      // For unauthenticated users, use the existing context method
+      await updateQuantity(id, size, currentQty + 1);
+    }
+  } catch (err) {
+    console.error('Error increasing cart item quantity:', err);
+    setError('Failed to increase item quantity. Please try again.');
+  } finally {
+    setIsUpdating(false);
+  }
+};
+
+  // Handler for removing an item
+  const handleRemoveItem = async (id, size) => {
+    setError(null);
+    try {
+      await removeFromCart(id, size);
+    } catch (err) {
+      console.error('Error removing cart item:', err);
+      setError('Failed to remove item. Please try again.');
+    }
   };
 
-  const toggleSelectAll = () => {
-    const nextSelectAll = !selectAll;
-    const nextSelections = {};
+  // Handler for clearing all items
+  const handleClearCart = async () => {
+    if(!confirm('Are you sure you want to clear your cart?')) return;
     
-    cartItems.forEach(item => {
-      nextSelections[`${item.id}-${item.size || ''}`] = nextSelectAll;
-    });
-    
-    setSelectAll(nextSelectAll);
-    setSelectedItems(nextSelections);
-    updateSelectedItemIds(nextSelections);
+    setError(null);
+    try {
+      await clearCart();
+    } catch (err) {
+      console.error('Error clearing cart:', err);
+      setError('Failed to clear cart. Please try again.');
+    }
   };
 
+  // Handler for checkout
   const handleCheckout = async () => {
     if (getSelectedCount() === 0) {
       alert('Please select at least one item to checkout');
@@ -305,19 +218,21 @@ const Cart = () => {
     setIsLoading(true);
     
     try {
-      const checkoutItems = cartItems.filter(item => 
-        selectedItems[`${item.id}-${item.size || ''}`]
-      ).map(item => ({
-        id: item.id,
-        cart_item_id: item.cart_item_id,
-        nama: item.name,
-        harga: String(item.price), 
-        quantity: item.quantity,
-        size: item.size || '',
-        image: item.image
-      }));
+      // Get selected items for checkout
+      const checkoutItems = cartItems
+        .filter(item => selectedItems.includes(item.cart_item_id || item.id))
+        .map(item => ({
+          id: item.id,
+          cart_item_id: item.cart_item_id || item.id,
+          nama: item.name,
+          harga: String(item.price), 
+          quantity: item.quantity,
+          size: item.size || '',
+          image: item.image
+        }));
 
-      sessionStorage.setItem('selectedCartItemIds', JSON.stringify(selectedItemIds));
+      // Store checkout data in session storage
+      sessionStorage.setItem('selectedCartItemIds', JSON.stringify(selectedItems));
       sessionStorage.setItem('checkoutItems', JSON.stringify(checkoutItems));
       sessionStorage.setItem('checkoutTotal', total.toString());
       sessionStorage.setItem('checkoutShipping', shippingCost.toString());
@@ -331,7 +246,7 @@ const Cart = () => {
     }
   };
 
-  // Handle navigation to account pages based on role
+  // Handler for account navigation
   const handleAccountNavigation = () => {
     const token = localStorage.getItem('auth_token') || localStorage.getItem('token') || localStorage.getItem('authToken');
     const userRole = localStorage.getItem('userRole');
@@ -360,6 +275,7 @@ const Cart = () => {
           }
         })
         .catch(error => {
+          console.error("Error fetching user info:", error);
           navigate('/login');
         });
       } else {
@@ -376,7 +292,7 @@ const Cart = () => {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || contextLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#FDC302]"></div>
@@ -405,12 +321,21 @@ const Cart = () => {
                 {cartCount}
               </span>
             </a>
-            <button
-              onClick={handleAccountNavigation}
-              className="px-6 py-2 bg-gradient-to-r from-[#FDC302] to-yellow-300 text-white rounded-full hover:from-yellow-500 hover:to-yellow-400 shadow-md transition duration-300 flex items-center"
-            >
-              My Account <HiOutlineArrowNarrowRight className="ml-2" />
-            </button>
+            {isAuthenticated ? (
+              <button
+                onClick={handleAccountNavigation}
+                className="px-6 py-2 bg-gradient-to-r from-[#FDC302] to-yellow-300 text-white rounded-full hover:from-yellow-500 hover:to-yellow-400 shadow-md transition duration-300 flex items-center"
+              >
+                My Account <HiOutlineArrowNarrowRight className="ml-2" />
+              </button>
+            ) : (
+              <a
+                href="/login"
+                className="px-6 py-2 bg-gradient-to-r from-[#FDC302] to-yellow-300 text-white rounded-full hover:from-yellow-500 hover:to-yellow-400 shadow-md transition duration-300 flex items-center"
+              >
+                Login <HiOutlineArrowNarrowRight className="ml-2" />
+              </a>
+            )}
           </div>
         </div>
       </header>
@@ -421,6 +346,24 @@ const Cart = () => {
           <h1 className="text-2xl font-bold">Shopping Cart</h1>
           <p className="text-gray-600">({cartCount} {cartCount === 1 ? 'Item' : 'Items'})</p>
         </div>
+
+        {/* Authentication status indication */}
+        {!isAuthenticated && cartCount > 0 && (
+          <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+            <p className="text-amber-700 text-sm">
+              <span className="font-bold">Note:</span> You are not logged in. Your cart items are saved locally.
+              <a href="/login" className="ml-1 text-amber-700 underline">Login</a> to save your cart items to your account.
+            </p>
+          </div>
+        )}
+
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-700 text-sm">
+              <span className="font-bold">Error:</span> {error}
+            </p>
+          </div>
+        )}
 
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Cart Items */}
@@ -442,8 +385,8 @@ const Cart = () => {
                 <div className="flex items-center mb-4 bg-gray-50 p-3 rounded-md">
                   <input
                     type="checkbox"
-                    checked={selectAll}
-                    onChange={toggleSelectAll}
+                    checked={allSelected}
+                    onChange={handleSelectAll}
                     className="w-4 h-4 text-[#FDC302] focus:ring-[#FDC302] rounded border-gray-300"
                   />
                   <label className="ml-2 text-sm font-medium text-gray-700">
@@ -466,15 +409,17 @@ const Cart = () => {
                 {/* Items List */}
                 <div className="max-h-[450px] overflow-y-auto pr-2">
                   {cartItems.map(item => {
-                    const key = `${item.id}-${item.size || ''}`;
+                    const itemId = item.cart_item_id || item.id;
+                    const isSelected = selectedItems.includes(itemId);
                     const itemTotal = item.price * item.quantity;
+                    
                     return (
-                      <div key={key} className="grid md:grid-cols-12 gap-2 py-4 border-b items-center">
+                      <div key={`${item.id}-${item.size || ''}`} className="grid md:grid-cols-12 gap-2 py-4 border-b items-center">
                         <div className="col-span-1 flex items-center justify-center">
                           <input
                             type="checkbox"
-                            checked={selectedItems[key] || false}
-                            onChange={() => toggleItemSelection(item.id, item.size, item.cart_item_id)}
+                            checked={isSelected}
+                            onChange={() => handleToggleSelect(itemId)}
                             className="w-4 h-4 text-[#FDC302] focus:ring-[#FDC302] rounded border-gray-300"
                           />
                         </div>
@@ -494,16 +439,16 @@ const Cart = () => {
                         <div className="col-span-2">
                           <div className="flex items-center border border-gray-300 rounded-md w-24">
                             <button
-                              onClick={() => handleQuantityChange(item.id, item.size, item.quantity - 1, item.cart_item_id)}
+                              onClick={() => handleDecreaseQuantity(item.id, item.size, item.quantity)}
                               className="px-2 py-1 text-gray-600 hover:bg-gray-100"
                               aria-label="Decrease quantity"
-                              disabled={isUpdating}
+                              disabled={isUpdating || item.quantity <= 1}
                             >
                               –
                             </button>
                             <span className="px-2 py-1 flex-1 text-center">{item.quantity}</span>
                             <button
-                              onClick={() => handleQuantityChange(item.id, item.size, item.quantity + 1, item.cart_item_id)}
+                              onClick={() => handleIncreaseQuantity(item.id, item.size, item.quantity)}
                               className="px-2 py-1 text-gray-600 hover:bg-gray-100"
                               aria-label="Increase quantity"
                               disabled={isUpdating}
@@ -515,7 +460,7 @@ const Cart = () => {
                         <div className="col-span-3 flex items-center justify-between">
                           <span className="font-medium text-sm">{formatPrice(itemTotal)}</span>
                           <button
-                            onClick={() => handleRemoveItem(item.id, item.size, item.cart_item_id)}
+                            onClick={() => handleRemoveItem(item.id, item.size)}
                             className="text-red-500 hover:text-red-700 bg-gray-100 p-2 rounded-full"
                             aria-label="Remove item"
                           >
@@ -554,10 +499,11 @@ const Cart = () => {
                 <div className="border-b pb-3">
                   <h3 className="font-medium mb-2 text-sm">Selected Products:</h3>
                   {cartItems.map(item => {
-                    const key = `${item.id}-${item.size || ''}`;
-                    if (!selectedItems[key]) return null;
+                    const itemId = item.cart_item_id || item.id;
+                    if (!selectedItems.includes(itemId)) return null;
+                    
                     return (
-                      <div key={key} className="flex justify-between text-gray-700 mb-1 text-xs">
+                      <div key={`summary-${item.id}-${item.size || ''}`} className="flex justify-between text-gray-700 mb-1 text-xs">
                         <span className="truncate max-w-[150px]">
                           {item.name} {item.size ? `(${item.size})` : ''} ×{item.quantity}
                         </span>
@@ -607,6 +553,8 @@ const Cart = () => {
           </div>
         </div>
       </div>
+
+
    
       
         <footer className="bg-red-900 text-white py-8 px-6 md:px-20 lg:px-32">

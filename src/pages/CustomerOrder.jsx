@@ -4,6 +4,9 @@ import { FaUser } from 'react-icons/fa';
 import CustomerSidebar from './CustomerSidebar';
 import aksen from '../assets/images/aksen.png';
 import axios from 'axios';
+import defaultImage from '../assets/images/foto.png'; // Default image for products
+
+const API_BASE_URL = 'http://kebabmutiara.xyz';
 
 const CustomerOrder = () => {
   const navigate = useNavigate();
@@ -14,13 +17,47 @@ const CustomerOrder = () => {
 
   useEffect(() => {
     const userRole = localStorage.getItem('userRole');
-    console.log("Current user role in CustomerOrder:", userRole); // Debug logging
+    console.log("Current user role in CustomerOrder:", userRole);
     
     if (!userRole || (userRole !== 'customer' && userRole !== 'pembeli')) {
-      console.log("Invalid role detected, redirecting to home"); // Debug logging
+      console.log("Invalid role detected, redirecting to home");
       navigate('/');
     }
   }, [navigate]);
+
+  // Check if we have cart items and create a temporary order if there are no orders
+  useEffect(() => {
+    const checkCartAndCreateTempOrder = async () => {
+      try {
+        const cartItems = localStorage.getItem('cartItems');
+        if (cartItems && orders.length === 0 && !loading) {
+          const parsedItems = JSON.parse(cartItems);
+          if (parsedItems && parsedItems.length > 0) {
+            console.log("Creating temporary order from cart items", parsedItems);
+            
+            // Create a temporary order from cart items
+            const tempOrder = {
+              transaksi_id: 'temp-' + Date.now(),
+              id: 'temp-' + Date.now(),
+              keranjang: parsedItems,
+              status: 'pending',
+              total: parsedItems.reduce((sum, item) => sum + (item.harga * item.quantity), 0),
+              created_at: new Date().toISOString()
+            };
+            
+            // Set this as an order to display
+            setOrders([tempOrder]);
+          }
+        }
+      } catch (err) {
+        console.error("Error processing cart items:", err);
+      }
+    };
+    
+    if (!loading && orders.length === 0) {
+      checkCartAndCreateTempOrder();
+    }
+  }, [orders.length, loading]);
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -32,14 +69,59 @@ const CustomerOrder = () => {
           throw new Error('Authentication token not found');
         }
         
-        const response = await axios.get('http://kebabmutiara.xyz/api/transaksi', {
+        const response = await axios.get(`${API_BASE_URL}/api/transaksi`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
         });
         
         console.log("Orders data received:", response.data);
-        setOrders(response.data.data || []);
+        
+        // Handle different response structures
+        let ordersData = [];
+        if (response.data && response.data.data) {
+          ordersData = response.data.data;
+        } else if (Array.isArray(response.data)) {
+          ordersData = response.data;
+        } else if (response.data && response.data.transaksi) {
+          ordersData = response.data.transaksi;
+        }
+        
+        if (ordersData && ordersData.length > 0) {
+          setOrders(ordersData);
+        } else {
+          // Try fetching from cart API as fallback
+          const cartResponse = await axios.get(`${API_BASE_URL}/api/keranjang`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          
+          console.log("Cart data received:", cartResponse.data);
+          
+          // Check if we got cart data
+          if (cartResponse.data && 
+              (cartResponse.data.data || 
+               (Array.isArray(cartResponse.data) && cartResponse.data.length > 0))) {
+            
+            const cartItems = cartResponse.data.data || cartResponse.data;
+            
+            if (cartItems.length > 0) {
+              // Create a temporary order from cart items
+              const tempOrder = {
+                transaksi_id: 'temp-' + Date.now(),
+                id: 'temp-' + Date.now(),
+                keranjang: cartItems,
+                status: 'pending',
+                total: cartItems.reduce((sum, item) => sum + (item.harga * item.quantity), 0),
+                created_at: new Date().toISOString()
+              };
+              
+              setOrders([tempOrder]);
+            }
+          }
+        }
+        
         setLoading(false);
       } catch (err) {
         console.error("Error fetching orders:", err);
@@ -51,16 +133,25 @@ const CustomerOrder = () => {
     fetchOrders();
   }, []);
 
-  // Function to format status label based on API response
+  // Function to get proper image URL
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return defaultImage;
+    if (imagePath.startsWith('http')) {
+      return imagePath;
+    }
+    return `${API_BASE_URL}/storage/${imagePath}`;
+  };
+
+  // Function to format status label based on TransaksiController status values
   const formatStatus = (status) => {
     const statusMap = {
-      'bayar': 'Payment Pending',
-      'bayar_berhasil': 'Payment Completed',
-      'bayar_gagal': 'Payment Failed',
-      'masak': 'Cooking',
-      'otw': 'On The Way',
-      'sampai': 'Delivered',
-      'selesai': 'Completed'
+      'pending': 'Payment Pending',
+      'success': 'Payment Completed',
+      'failed': 'Payment Failed',
+      'on process': 'Cooking',
+      'on deliver': 'On The Way',
+      'delivered': 'Delivered',
+      'completed': 'Completed',
     };
     
     return statusMap[status] || status;
@@ -76,13 +167,94 @@ const CustomerOrder = () => {
         year: 'numeric'
       });
     } catch (error) {
-      return dateString;
+      return dateString || new Date().toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      });
     }
   };
 
   const handleViewDetails = (orderId) => {
     navigate(`/customer/order/${orderId}`);
   };
+
+  // Helper function to extract items from order
+  const getOrderItems = (order) => {
+    if (!order) return [];
+    
+    // Based on your data format in the console log
+    if (order.keranjang && Array.isArray(order.keranjang)) {
+      return order.keranjang.map(item => ({
+        nama: item.nama_produk || item.produk?.nama || 'Unknown Product',
+        ukuran: item.ukuran || '-',
+        jumlah: item.quantity || 1,
+        harga: item.harga || 0,
+        gambar: item.gambar || null
+      }));
+    }
+    
+    // Fallback for different data structure
+    if (order.items && Array.isArray(order.items)) {
+      return order.items.map(item => ({
+        nama: item.nama_produk || item.name || 'Unknown Product',
+        ukuran: item.ukuran || '-',
+        jumlah: item.quantity || 1,
+        harga: item.harga || item.price || 0,
+        gambar: item.gambar || item.image || null
+      }));
+    }
+
+    // Last fallback - if order itself is an item
+    if (order.nama_produk || order.name) {
+      return [{
+        nama: order.nama_produk || order.name || 'Unknown Product',
+        ukuran: order.ukuran || '-',
+        jumlah: order.quantity || 1,
+        harga: order.harga || order.price || 0,
+        gambar: order.gambar || order.image || null
+      }];
+    }
+    
+    return [];
+  };
+
+  // Helper function to get order ID
+  const getOrderId = (order) => {
+    return order.transaksi_id || order.id || '';
+  };
+
+  // If no data is loaded after a while, try to use cart data
+  useEffect(() => {
+    if (!loading && orders.length === 0 && !error) {
+      console.log("No orders found. Checking cart items...");
+      
+      // Try to get cart items from localStorage
+      const cartItems = localStorage.getItem('cartItems');
+      if (cartItems) {
+        try {
+          const parsedItems = JSON.parse(cartItems);
+          if (parsedItems && parsedItems.length > 0) {
+            console.log("Creating order from localStorage cart items");
+            
+            // Create a temporary order object
+            const tempOrder = {
+              transaksi_id: 'temp-' + Date.now(),
+              id: 'temp-' + Date.now(),
+              keranjang: parsedItems,
+              status: 'pending',
+              total: parsedItems.reduce((sum, item) => sum + (item.harga * item.quantity), 0),
+              created_at: new Date().toISOString()
+            };
+            
+            setOrders([tempOrder]);
+          }
+        } catch (err) {
+          console.error("Error parsing cart items:", err);
+        }
+      }
+    }
+  }, [loading, orders, error]);
 
   return (
     <div className="flex min-h-screen bg-gray-100">
@@ -138,6 +310,12 @@ const CustomerOrder = () => {
           {error && (
             <div className="p-8 text-center">
               <p className="text-red-600">{error}</p>
+              <button 
+                onClick={() => window.location.reload()}
+                className="mt-2 bg-red-800 text-white px-4 py-2 rounded text-sm"
+              >
+                Try Again
+              </button>
             </div>
           )}
 
@@ -145,12 +323,18 @@ const CustomerOrder = () => {
           {!loading && !error && orders.length === 0 && (
             <div className="p-8 text-center">
               <p className="text-gray-600">You don't have any orders yet.</p>
+              <button 
+                onClick={() => navigate('/menu')}
+                className="mt-4 bg-red-800 text-white px-4 py-2 rounded text-sm"
+              >
+                Browse Menu
+              </button>
             </div>
           )}
 
           {/* Orders List */}
           {!loading && !error && orders.length > 0 && orders.map((order, index) => (
-            <div key={order.id} className="border-b border-gray-200 last:border-b-0">
+            <div key={getOrderId(order) || index} className="border-b border-gray-200 last:border-b-0">
               <div className="flex p-3">
                 <div className="w-16 text-center">{index + 1}</div>
                 <div className="flex-1">
@@ -160,9 +344,9 @@ const CustomerOrder = () => {
                         <div className="bg-red-800 w-6 h-6 rounded-full flex items-center justify-center mr-2">
                           <span className="text-white text-xs">✓</span>
                         </div>
-                        <span className="text-sm font-bold">{formatStatus(order.status)}</span>
+                        <span className="text-sm font-bold">{formatStatus(order.status || 'pending')}</span>
                         <span className="text-xs text-gray-500 ml-2">
-                          {order.status === 'sampai' || order.status === 'selesai' ? 'Enjoy your meal' : 'Thank you for your order'}
+                          {order.status === 'delivered' ? 'Enjoy your meal' : 'Thank you for your order'}
                         </span>
                       </div>
                       <span className="text-xs">{formatDate(order.created_at)}</span>
@@ -172,7 +356,7 @@ const CustomerOrder = () => {
                     <div className="w-full h-px bg-gray-300 my-3"></div>
 
                     {/* Order Items */}
-                    {order.items && order.items.map((item, itemIndex) => (
+                    {getOrderItems(order).map((item, itemIndex) => (
                       <div key={itemIndex} className="w-full flex items-center mt-2">
                         <div className="w-10 mr-3">
                           {/* Empty column for alignment */}
@@ -180,11 +364,11 @@ const CustomerOrder = () => {
                         <div className="w-12 h-12 mr-3">
                           <div className="w-full h-full bg-gray-200 rounded-lg overflow-hidden">
                             <img
-                              src={item.gambar || '/api/placeholder/100/100'}
+                              src={getImageUrl(item.gambar)}
                               alt={item.nama}
                               className="w-full h-full object-cover"
                               onError={(e) => {
-                                e.target.src = '/api/placeholder/100/100';
+                                e.target.src = defaultImage;
                               }}
                             />
                           </div>
@@ -198,12 +382,14 @@ const CustomerOrder = () => {
                             {item.jumlah || 1}
                           </div>
                           <div className="text-center text-xs font-bold">
-                            Rp. {item.harga?.toLocaleString('id-ID') || '0'}
+                            Rp. {(typeof item.harga === 'number' 
+                              ? item.harga.toLocaleString('id-ID') 
+                              : '0')}
                           </div>
                         </div>
                         <div className="w-28 text-right">
                           <button
-                            onClick={() => handleViewDetails(order.id)}
+                            onClick={() => handleViewDetails(getOrderId(order))}
                             className="text-xs text-white bg-red-800 px-3 py-1 rounded mt-1 inline-block"
                           >
                             VIEW DETAILS
@@ -213,7 +399,7 @@ const CustomerOrder = () => {
                     ))}
                     
                     {/* If there are no items in the order */}
-                    {(!order.items || order.items.length === 0) && (
+                    {getOrderItems(order).length === 0 && (
                       <div className="w-full text-center py-2">
                         <p className="text-sm text-gray-500">No items in this order</p>
                       </div>
@@ -222,7 +408,9 @@ const CustomerOrder = () => {
                     {/* Total amount */}
                     <div className="w-full flex justify-end mt-4 pt-2 border-t border-gray-200">
                       <div className="text-sm font-bold">
-                        Total: Rp. {order.total?.toLocaleString('id-ID') || '0'}
+                        Total: Rp. {(typeof order.total === 'number' 
+                          ? order.total.toLocaleString('id-ID') 
+                          : '0')}
                       </div>
                     </div>
                   </div>

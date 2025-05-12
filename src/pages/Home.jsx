@@ -13,6 +13,7 @@ import nampanayam from '../assets/images/PaketNampanAyam.png';
 import nampankambing from '../assets/images/PaketNampanKambing.png';
 import nampansapi from '../assets/images/PaketNampanSapi.png';
 
+// Set up axios interceptor for authentication
 axios.interceptors.request.use(
   config => {
     const token = localStorage.getItem('authToken') || localStorage.getItem('token');
@@ -32,10 +33,16 @@ const Home = () => {
   const [testimonials, setTestimonials] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { cartCount, setCartCount } = useContext(CartContext);
+  
+  // Get cart context - ensure it exists and has the required properties
+  const cartContext = useContext(CartContext);
+  // Use optional chaining to safely access context values
+  const cartCount = cartContext?.cartCount || 0;
+  const setCartCount = cartContext?.setCartCount;
+  
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const API_URL = 'http://kebabmutiara.xyz';
-
+  
   const categories = [
     { id: 1, name: "Nasi Kebuli", image: foto, slug: "nasi-kebuli" },
     { id: 2, name: "Paket Nampan Ayam", image: nampanayam, slug: "paket-nampan-ayam" },
@@ -43,7 +50,7 @@ const Home = () => {
     { id: 4, name: "Paket Nampan Sapi", image: nampansapi, slug: "paket-nampan-sapi" }
   ];
   
-  // Get image URL helper function (same as in Menu.jsx)
+  // Get image URL helper function
   const getImageUrl = (imagePath) => {
     if (!imagePath) return foto;
     if (imagePath.startsWith('http')) {
@@ -51,31 +58,28 @@ const Home = () => {
     }
     return `${API_URL}/storage/${imagePath}`;
   };
-
-  // Format currency helper function (same as in Menu.jsx)
+  
+  // Format currency helper function
   const formatCurrency = (price) => {
     if (!price) return 'Rp. 0';
     return `Rp. ${parseInt(price).toLocaleString('id-ID')}`;
   };
-
+  
   useEffect(() => {
     const fetchPopularProducts = async () => {
       try {
         setIsLoading(true);
         // Using the same API endpoint as in Menu.jsx
         const response = await axios.get(`${API_URL}/api/produk`);
-        
         if (response.data && Array.isArray(response.data)) {
           // Filter for the specific menu items we want
-          const kebuliKambing = response.data.find(item => 
+          const kebuliKambing = response.data.find(item =>
             item.nama_produk?.toLowerCase().includes('nasi kebuli kambing'));
-          
-          const nampanAyam = response.data.find(item => 
-            item.nama_produk?.toLowerCase().includes('nampan kebuli ayam') || 
+          const nampanAyam = response.data.find(item =>
+            item.nama_produk?.toLowerCase().includes('nampan kebuli ayam') ||
             item.nama_produk?.toLowerCase().includes('paket nampan ayam'));
-            
-          const nampanSapi = response.data.find(item => 
-            item.nama_produk?.toLowerCase().includes('nampan kebuli sapi') || 
+          const nampanSapi = response.data.find(item =>
+            item.nama_produk?.toLowerCase().includes('nampan kebuli sapi') ||
             item.nama_produk?.toLowerCase().includes('paket nampan sapi'));
           
           // Create an array with the items we found, or use placeholders if not found
@@ -160,15 +164,14 @@ const Home = () => {
         setIsLoading(false);
       }
     };
-
+    
     fetchPopularProducts();
   }, [API_URL]);
-
+  
   useEffect(() => {
     const fetchCartCount = async () => {
       const token = localStorage.getItem('authToken') || localStorage.getItem('token');
-      
-      if (token) {
+      if (token && setCartCount) { // Check if setCartCount exists before using it
         try {
           const response = await axios.get('/keranjang');
           const cartItems = response.data.data || [];
@@ -179,11 +182,13 @@ const Home = () => {
         }
       }
     };
-
-    fetchCartCount();
-  }, [setCartCount]);
-
-
+    
+    // Only run the fetch if setCartCount is available
+    if (setCartCount) {
+      fetchCartCount();
+    }
+  }, [setCartCount]); // Include setCartCount in dependency array
+  
   useEffect(() => {
     // Haven't fetched it from api yet
     setTestimonials([
@@ -207,10 +212,9 @@ const Home = () => {
       }
     ]);
   }, []);
-
+  
   const handleAddToCart = async (productId) => {
     const token = localStorage.getItem('authToken') || localStorage.getItem('token');
-    
     if (!token) {
       navigate('/login');
       return;
@@ -222,9 +226,12 @@ const Home = () => {
         quantity: 1
       });
       
-      const response = await axios.get('/keranjang');
-      const cartItems = response.data.data || [];
-      setCartCount(cartItems.length);
+      // Only attempt to update cart count if setCartCount exists
+      if (setCartCount) {
+        const response = await axios.get('/keranjang');
+        const cartItems = response.data.data || [];
+        setCartCount(cartItems.length);
+      }
       
       alert('Item added to cart!');
     } catch (err) {
@@ -232,24 +239,20 @@ const Home = () => {
       alert('Failed to add item to cart. Please try again.');
     }
   };
-
+  
   const handleAccountNavigation = () => {
-
     const token = localStorage.getItem('authToken') || localStorage.getItem('token');
     const userRole = localStorage.getItem('userRole');
-    
     console.log("Button clicked! Token:", token, "UserRole:", userRole); // Debugging
     
     if (token) {
       if (!userRole || userRole === "undefined" || userRole === "unknown") {
-        axios.get('/aboutMe') 
+        axios.get('/aboutMe')
           .then(response => {
             const role = response.data.role || response.data.user?.role;
             console.log("Fetched user role:", role);
-            
             if (role) {
               localStorage.setItem('userRole', role);
-              
               if (role === 'admin') {
                 navigate('/admin');
               } else if (role === 'pembeli') {
@@ -286,13 +289,11 @@ const Home = () => {
     }
   };
   
-  
   const handleLogin = async (credentials) => {
     try {
       const response = await axios.post('/auth/login', credentials);
-      
       localStorage.setItem('authToken', response.data.token);
-      localStorage.setItem('userRole', response.data.user.role); 
+      localStorage.setItem('userRole', response.data.user.role);
       localStorage.setItem('userName', response.data.user.name || response.data.user.username);
       
       if (response.data.user.role === 'admin') {
@@ -304,19 +305,16 @@ const Home = () => {
       console.error("Login failed:", error);
     }
   };
-
+  
   const handleLogout = () => {
     localStorage.removeItem('authToken');
     localStorage.removeItem('userRole');
     localStorage.removeItem('userName');
     sessionStorage.clear();
-  
-    setIsAuthenticated(false); 
-
+    setIsAuthenticated(false);
     navigate('/login');
   };
   
-
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
@@ -337,7 +335,7 @@ const Home = () => {
               </span>
             </Link>
             {(localStorage.getItem('authToken') || localStorage.getItem('token')) ? (
-              <button 
+              <button
                 onClick={handleAccountNavigation}
                 className="px-8 py-3 bg-yellow-500 text-white rounded-full hover:bg-yellow-600 shadow-lg transition duration-300 flex items-center"
               >
@@ -350,6 +348,7 @@ const Home = () => {
             )}
           </div>
         </nav>
+        
         {/* Hero Section */}
         <section className="flex justify-between items-center px-28 py-16">
           <div className="w-1/2 pr-8">
@@ -366,7 +365,7 @@ const Home = () => {
               </h2>
             </div>
             <p className="text-lg text-gray-700 mb-8 max-w-lg">
-            Nasi Kebuli Mutiara menyajikan nasi kebuli autentik dengan cita rasa rempah khas Timur Tengah. Disajikan lengkap dengan daging empuk, sambal, acar, dan kerupuk renyah. Cocok untuk pecinta kuliner khas dan lezat!
+              Nasi Kebuli Mutiara menyajikan nasi kebuli autentik dengan cita rasa rempah khas Timur Tengah. Disajikan lengkap dengan daging empuk, sambal, acar, dan kerupuk renyah. Cocok untuk pecinta kuliner khas dan lezat!
             </p>
             <Link to="/menu" className="px-8 py-4 bg-yellow-500 text-white rounded-full hover:bg-yellow-600 shadow-lg transition duration-300 inline-flex items-center">
               Jelajahi Cita Rasa Autentik Kami<HiOutlineArrowNarrowRight className="ml-2" />
@@ -376,54 +375,54 @@ const Home = () => {
             <img src={foto} alt="Nasi Kebuli" className="w-5/6 h-auto rounded-full shadow-xl" />
           </div>
         </section>
-
+        
         <div className="wave-divider relative h-32">
-        <svg className="absolute bottom-0 w-full" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 120" fill="none" preserveAspectRatio="none">
-          <path d="M0,64 C40,80 80,48 120,64 C160,80 200,48 240,64 C280,80 320,48 360,64 C400,80 440,48 480,64 C520,80 560,48 600,64 C640,80 680,48 720,64 C760,80 800,48 840,64 C880,80 920,48 960,64 C1000,80 1040,48 1080,64 C1120,80 1160,48 1200,64 C1240,80 1280,48 1320,64 C1360,80 1400,48 1440,64 L1440,120 L0,120 Z" fill="white"></path>
-        </svg>
+          <svg className="absolute bottom-0 w-full" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 120" fill="none" preserveAspectRatio="none">
+            <path d="M0,64 C40,80 80,48 120,64 C160,80 200,48 240,64 C280,80 320,48 360,64 C400,80 440,48 480,64 C520,80 560,48 600,64 C640,80 680,48 720,64 C760,80 800,48 840,64 C880,80 920,48 960,64 C1000,80 1040,48 1080,64 C1120,80 1160,48 1200,64 C1240,80 1280,48 1320,64 C1360,80 1400,48 1440,64 L1440,120 L0,120 Z" fill="white"></path>
+          </svg>
+        </div>
       </div>
-
-      </div>
-    
+      
       <section className="py-16 bg-white">
-  <div className="container mx-auto px-8">
-    <h2 className="text-5xl font-berkshire text-center mb-4">
-      <span className="text-gray-900">Kategori Menu </span>
-      <span className="text-yellow-400">Kami</span>
-    </h2>
-    <p className="text-center text-gray-500 mb-12">
-      Jelajahi berbagai kategori menu kami untuk menemukan nasi kebuli favoritmu.
-    </p>
+        <div className="container mx-auto px-8">
+          <h2 className="text-5xl font-berkshire text-center mb-4">
+            <span className="text-gray-900">Kategori Menu </span>
+            <span className="text-yellow-400">Kami</span>
+          </h2>
+          <p className="text-center text-gray-500 mb-12">
+            Jelajahi berbagai kategori menu kami untuk menemukan nasi kebuli favoritmu.
+          </p>
+          
+          {/* Display categories */}
+          <div className="flex justify-center gap-6 px-4">
+            {categories.map(category => (
+              <Link
+                key={category.id}
+                to={`/menu/${category.slug}`}
+                className="rounded-lg shadow-xl overflow-hidden w-64 transform transition-transform hover:scale-105"
+              >
+                <div className="overflow-hidden bg-gradient-to-br from-yellow-300 via-yellow-100 to-white">
+                  <img
+                    src={category.image || foto}
+                    alt={category.name}
+                    className="w-full h-48 object-cover"
+                    onError={(e) => { e.target.src = foto; }}
+                  />
+                </div>
+                <div className="relative">
+                  <div className="bg-white p-4">
+                    <div className="flex justify-between items-center bg-white border border-gray-200 rounded-md px-3 py-2">
+                      <h3 className="font-medium text-gray-800">{category.name}</h3>
+                      <FiArrowRight className="text-yellow-500" />
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
     
-    {/* Display categories */}
-    <div className="flex justify-center gap-6 px-4">
-      {categories.map(category => (
-        <Link 
-          key={category.id} 
-          to={`/menu/${category.slug}`}
-          className="rounded-lg shadow-xl overflow-hidden w-64 transform transition-transform hover:scale-105"
-        >
-          <div className="overflow-hidden bg-gradient-to-br from-yellow-300 via-yellow-100 to-white">
-            <img 
-              src={category.image || foto} 
-              alt={category.name} 
-              className="w-full h-48 object-cover" 
-              onError={(e) => { e.target.src = foto; }}
-            />
-          </div>
-          <div className="relative">
-            <div className="bg-white p-4">
-              <div className="flex justify-between items-center bg-white border border-gray-200 rounded-md px-3 py-2">
-                <h3 className="font-medium text-gray-800">{category.name}</h3>
-                <FiArrowRight className="text-yellow-500" />
-              </div>
-            </div>
-          </div>
-        </Link>
-      ))}
-    </div>
-  </div>
-</section>
       
       {/* Special Ramadhan Section */}
       <section className="py-16 relative overflow-hidden" style={{ 
