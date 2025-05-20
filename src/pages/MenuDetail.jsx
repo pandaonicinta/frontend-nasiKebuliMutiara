@@ -145,7 +145,9 @@ const MenuDetail = () => {
       }
     );
     
-    return response.data;
+    console.log("quanst", response.data);
+    console.log("sd", response.message);
+    return response.message;
   };
 
   // Add to local storage cart function 
@@ -197,7 +199,7 @@ const MenuDetail = () => {
           console.log('Successfully added to API cart');
           
           // FIXED: Only update context after API success, not both API and localStorage
-          addToCart(cartItem);
+          // addToCart(cartItem);
           
           setAddedToCart(true);
           setTimeout(() => setAddedToCart(false), 3000);

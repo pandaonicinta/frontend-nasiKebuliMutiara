@@ -23,7 +23,7 @@ const CustomerAddress = () => {
     no_telepon: '',
     latitude: '',
     longitude: '', 
-    is_utama: false
+    is_utama: 1 || 0
   });
 
   const apiUrl = 'http://kebabmutiara.xyz/api';
@@ -38,7 +38,6 @@ const CustomerAddress = () => {
         setIsLoading(false);
         return;
       }
-
       const response = await axios.get(`${apiUrl}/alamat`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -91,7 +90,7 @@ const CustomerAddress = () => {
           setError(null);
         } else if (err.response.status === 500) {
           setError('Server error. Please try again later or contact support.');
-        } else {
+        } else {ƒ
           setError(`Error (${err.response.status}): ${err.response.data?.message || 'Unknown error'}`);
         }
       } else if (err.request) {
@@ -188,6 +187,7 @@ const CustomerAddress = () => {
       longitude: address.longitude || '',
       is_utama: address.is_utama ? 1 : 0
         });
+      console.log(setCurrentAddress)
     setIsEditing(true);
   };
 
@@ -330,17 +330,21 @@ const CustomerAddress = () => {
         no_telepon: currentAddress.no_telepon || '', 
         latitude: currentAddress.latitude || '', 
         longitude: currentAddress.longitude || '', 
-        isPrimary: currentAddress.is_utama ? true : false
+        isPrimary: currentAddress.is_utama ? 1 : 0
       };
 
+      console.log("patlaods", payload.isPrimary)
+
       if (currentAddress.id !== null && currentAddress.id !== undefined) {
-        await axios.post(
+        const response = await axios.post(
           `${apiUrl}/alamat/update/${currentAddress.id}`,
           payload,
           { headers }
         );
+        console.log("Backend response message:", response.data.message);
         
-        if (currentAddress.is_utama) {
+        console.log(currentAddress.is_utama)
+        if (currentAddress.is_utama === 1) {
           await axios.get(
             `${apiUrl}/alamat/primary/${currentAddress.id}`,
             { headers }
