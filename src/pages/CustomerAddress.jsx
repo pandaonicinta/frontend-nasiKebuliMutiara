@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { FaUserAlt, FaPencilAlt, FaTrash, FaCheck, FaHome } from 'react-icons/fa';
 import axios from 'axios';
 import CustomerSidebar from './CustomerSidebar';
+import MapPicker from "./MapPicker"
 import aksen from '../assets/images/aksen.png';
+
 
 const CustomerAddress = () => {
   const [isEditing, setIsEditing] = useState(false);
@@ -18,7 +20,9 @@ const CustomerAddress = () => {
     kecamatan: '',
     kabupaten: '',
     provinsi: '',
-    no_telepon: '', 
+    no_telepon: '',
+    latitude: '',
+    longitude: '', 
     is_utama: false
   });
 
@@ -44,6 +48,8 @@ const CustomerAddress = () => {
       });
       
       let addressData;
+      console.log('asdjaksld')
+      console.log(response.data)
       if (Array.isArray(response.data)) {
         addressData = response.data;
       } else if (Array.isArray(response.data.data)) {
@@ -52,7 +58,9 @@ const CustomerAddress = () => {
         console.warn('Unexpected API response structure:', response.data);
         addressData = [];
       }
-
+      console.log(addressData);
+      console.log(addressData.id);
+      
       const transformedAddresses = addressData.map(address => ({
         id: address.alamat_id || address.id, 
         label_alamat: address.label_alamat,
@@ -62,8 +70,11 @@ const CustomerAddress = () => {
         kabupaten: address.kabupaten,
         provinsi: address.provinsi,
         no_telepon: address.no_telepon,
-        is_utama: address.isPrimary === 1 || address.isPrimary === true 
-      }));
+        latitude: address.latitude,
+        longitude: address.longitude,
+        is_utama: address.isPrimary === 1 || address.isPrimary === true || address.isPrimary === "1"
+      }
+    ));
       
       setAddresses(transformedAddresses);
       setError(null);
@@ -104,6 +115,10 @@ const CustomerAddress = () => {
     fetchAddresses();
   }, []);
 
+  const handleMapSelect = ({ latitude, longitude }) => {
+    setCurrentAddress((prev) => ({ ...prev, latitude, longitude }));
+  };
+
    const handleSetPrimary = async (addressId) => {
     if (!addressId && addressId !== 0) {
       setError('Invalid address ID for setting as primary');
@@ -131,7 +146,7 @@ const CustomerAddress = () => {
       
       setAddresses(addresses.map(addr => ({
         ...addr,
-        is_utama: addr.id === addressId
+        is_utama: addr.id === 1
       })));
 
       await fetchAddresses();
@@ -157,6 +172,9 @@ const CustomerAddress = () => {
   };
 
   const handleEditAddress = (address) => {
+    console.log(address.is_utama);
+    console.log(address);
+    console.log(address.isPrimary);
     setCurrentAddress({
       id: address.id || null,
       label_alamat: address.label_alamat || '',
@@ -166,21 +184,30 @@ const CustomerAddress = () => {
       kabupaten: address.kabupaten || '',
       provinsi: address.provinsi || '',
       no_telepon: address.no_telepon || '',
-      is_utama: address.is_utama || false
-    });
+      latitude: address.latitude || '',
+      longitude: address.longitude || '',
+      is_utama: address.is_utama ? 1 : 0
+        });
     setIsEditing(true);
   };
 
-  const handleDeleteAddress = async (addressId) => {
+  const handleDeleteAddress = async (addressId, isUtama) => {
+    console.log(addressId);
+    console.log(isUtama);
+    if(isUtama){
+      window.alert('Alamat Utama tidak bisa dihapus!');
+      return;
+    }
     if (!addressId && addressId !== 0) {
       setError('Invalid address ID for deletion');
+      window.alert('Alamat Utama tidak bisa dihapus!');
       return;
     }
-
+    
     if (!window.confirm('Are you sure you want to delete this address?')) {
       return;
-    }
-
+    }console.log("1")
+    
     try {
       const token = localStorage.getItem('token');
       if (!token) {
@@ -232,7 +259,9 @@ const CustomerAddress = () => {
       kabupaten: '',
       provinsi: '',
       no_telepon: '',
-      is_utama: addresses.length === 0 // First address will be the primary
+      latitude: '',
+      longitude: '',
+      is_utama: 1 // First address will be the primary
     });
     setIsEditing(true);
   };
@@ -251,6 +280,8 @@ const CustomerAddress = () => {
         [name]: value
       });
     }
+    
+    setCurrentAddress((prev) => ({ ...prev, [name]: value }));
   };
 
   const validateForm = () => {
@@ -297,7 +328,9 @@ const CustomerAddress = () => {
         kabupaten: currentAddress.kabupaten || '',
         provinsi: currentAddress.provinsi || '',
         no_telepon: currentAddress.no_telepon || '', 
-        isPrimary: currentAddress.is_utama ? 1 : 0
+        latitude: currentAddress.latitude || '', 
+        longitude: currentAddress.longitude || '', 
+        isPrimary: currentAddress.is_utama ? true : false
       };
 
       if (currentAddress.id !== null && currentAddress.id !== undefined) {
@@ -489,7 +522,7 @@ const CustomerAddress = () => {
                       </button>
                       
                       <button 
-                        onClick={() => handleDeleteAddress(address.id)}
+                        onClick={() => handleDeleteAddress(address.id, address.is_utama)}
                         className={`flex items-center justify-center h-8 w-8 rounded-full transition-colors ${
                           address.is_utama 
                             ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
@@ -601,6 +634,19 @@ const CustomerAddress = () => {
                   />
                   <p className="text-xs text-gray-500 mt-1">Phone number is required by the system</p>
                 </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                      <label className="block text-gray-600 text-sm mb-2">Pick Your Location</label>
+                      <MapPicker onSelect={handleMapSelect} />
+                      {currentAddress.latitude && currentAddress.longitude && (
+                        <p className="text-sm text-gray-700 mt-2">
+                          Selected Location: {currentAddress.latitude}, {currentAddress.longitude}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
   
                 <div className="flex justify-end space-x-4 mt-8">
                   <button

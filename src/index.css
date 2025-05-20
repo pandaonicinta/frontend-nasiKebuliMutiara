@@ -108,3 +108,32 @@
   .ramadhan-bg {
     background: linear-gradient(to right, #FFCB42, #FEB139);
   }
+
+  .leaflet-control.legend {
+  background: white;
+  padding: 10px;
+  line-height: 1.5;
+  font-size: 14px;
+  box-shadow: 0 0 15px rgba(0,0,0,0.2);
+  border-radius: 5px;
+}
+
+.map-wrapper {
+  position: relative;
+  height: 100vh; /* or whatever height your map needs */
+  width: 100%;
+}
+
+.filter-container {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.9);
+  padding: 6px 12px;
+  border-radius: 6px;
+  box-shadow: 0 0 6px rgba(0,0,0,0.15);
+  z-index: 1000;
+  user-select: none;
+}
+
