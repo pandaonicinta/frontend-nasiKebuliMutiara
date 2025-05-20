@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { FaChartPie, FaUsers, FaShoppingCart } from 'react-icons/fa';
 import aksen from '../assets/images/aksen.png';
 import AdminSidebar from './AdminSidebar';
+import MapComponent from './Map'
 import axios from 'axios'; 
 
 const AdminDashboard = () => {
@@ -337,6 +338,12 @@ const AdminDashboard = () => {
               </div>
             </div>
 
+
+            <div className="mt-6 bg-white rounded-lg shadow-lg">
+              <div className="flex justify-between items-center p-4 border-b border-gray-200 ">
+                <MapComponent />
+              </div>
+            </div>
             {/* Recent Orders */}
             <div className="mt-6 bg-white rounded-lg shadow-lg">
               <div className="flex justify-between items-center p-4 border-b border-gray-200 ">

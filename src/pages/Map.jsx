@@ -6,6 +6,15 @@ import "leaflet/dist/leaflet.css";
 import LegendControl from './Legend';
 import RoutingMachine from './RoutingMachine';
 import axios from 'axios';
+// image import
+import failedImg from '../assets/images/failed.png';
+import pendingImg from '../assets/images/pending.png';
+import successImg from '../assets/images/success.png';
+import shopImg from '../assets/images/shop.png';
+import otwImg from '../assets/images/otw.png';
+
+
+const API_BASE_URL = 'http://kebabmutiara.xyz';
 
 
 const MapComponent = () => {
@@ -26,14 +35,16 @@ const MapComponent = () => {
           status: "home"
         }
       ]
-    axios.get('http://127.0.0.1:8000/api/dashboard/order',{
+    axios.get(`${API_BASE_URL}/api/dashboard/order`,{
       headers: {
-        Authorization: `Bearer 2|8PBZ7APaswPCfOvcDuUEES8SY6UWf2XhtS9CkCej53318b2a`
-      }
-    })
-    .then(response => {
+        Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    }
+  })
+  .then(response => {
+      console.log(response.data)
       let responseData = response.data
-      .filter(item => item.alamat && item.alamat.latitude && item.alamat.longitude)
+      .filter(item => item.alamat && item.alamat.latitude && item.alamat.longitude && item.status !== "pending")
           .map(item => ({
             latitude: parseFloat(item.alamat.latitude),
             longitude: parseFloat(item.alamat.longitude),
@@ -62,23 +73,29 @@ const MapComponent = () => {
 
 
   
+const failedIcon = new Icon({
+  iconUrl: failedImg,
+  iconSize: [38, 38]
+});
 
-  const failedIcon = new Icon({
-    iconUrl: require("./img/failed.png"),
-    iconSize: [38, 38]
-  });
-  const defaultIcon = new Icon({
-    iconUrl: require("./img/pending.png"),
-    iconSize: [38, 38]
-  });
-  const successIcon = new Icon({
-    iconUrl: require("./img/success.png"),
-    iconSize: [38, 38]
-  });
-  const homeIcon = new Icon({
-    iconUrl: require("./img/shop.png"),
-    iconSize: [38, 38]
-  });
+const defaultIcon = new Icon({
+  iconUrl: pendingImg,
+  iconSize: [38, 38]
+});
+
+const successIcon = new Icon({
+  iconUrl: successImg,
+  iconSize: [38, 38]
+});
+
+const homeIcon = new Icon({
+  iconUrl: shopImg,
+  iconSize: [38, 38]
+});
+const ondelIcon = new Icon({
+  iconUrl: otwImg,
+  iconSize: [38, 38]
+});
 
 
   return (
@@ -86,7 +103,8 @@ const MapComponent = () => {
       <div className="filter-container">
         <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
           <option value="">All Status</option>
-          <option value="pending">On Process</option>
+          <option value="on process">On Process</option>
+          <option value="on deliver">On Deliver</option>
           <option value="success">Completed</option>
           <option value="canceled">Canceled</option>
         </select>
@@ -101,7 +119,7 @@ const MapComponent = () => {
         <Marker
           key={index}
           position={[marker.latitude, marker.longitude]}
-          icon={marker.status !== 'canceled' && marker.status !== 'success' && marker.status !== 'home' ? defaultIcon : marker.status !== 'canceled' && marker.status !== 'home' ? successIcon : marker.status !== 'home' ? failedIcon : homeIcon}
+          icon={marker.status !== 'canceled' && marker.status !== 'success' && marker.status !== 'home' && marker.status !== 'on deliver' ? defaultIcon : marker.status !== 'canceled' && marker.status !== 'home' && marker.status !== 'on deliver' ? successIcon : marker.status !== 'home' && marker.status !== 'on deliver' ? failedIcon : marker.status !== 'on deliver' ? homeIcon : ondelIcon}
           eventHandlers={{
             click: () => {
                 setDestination({lat: marker.latitude, lng: marker.longitude });
