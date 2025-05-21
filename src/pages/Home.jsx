@@ -7,13 +7,14 @@ import { CartContext } from '../contexts/CartContext';
 import axios from 'axios';
 import logo from '../assets/images/logo.png';
 import foto from '../assets/images/foto.png';
-import ramadhan from '../assets/images/ramadhan.png';
-import ornamen from '../assets/images/ornamen.png';
+import profile1 from '../assets/images/profile1.jpg';
+import profile2 from '../assets/images/profile2.jpg';
+import profile3 from '../assets/images/profile3.jpg';
+import discount from '../assets/images/diskon.png';
 import nampanayam from '../assets/images/PaketNampanAyam.png';
 import nampankambing from '../assets/images/PaketNampanKambing.png';
 import nampansapi from '../assets/images/PaketNampanSapi.png';
 
-// Set up axios interceptor for authentication
 axios.interceptors.request.use(
   config => {
     const token = localStorage.getItem('authToken') || localStorage.getItem('token');
@@ -34,9 +35,7 @@ const Home = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   
-  // Get cart context - ensure it exists and has the required properties
   const cartContext = useContext(CartContext);
-  // Use optional chaining to safely access context values
   const cartCount = cartContext?.cartCount || 0;
   const setCartCount = cartContext?.setCartCount;
   
@@ -50,7 +49,6 @@ const Home = () => {
     { id: 4, name: "Paket Nampan Sapi", image: nampansapi, slug: "paket-nampan-sapi" }
   ];
   
-  // Get image URL helper function
   const getImageUrl = (imagePath) => {
     if (!imagePath) return foto;
     if (imagePath.startsWith('http')) {
@@ -59,7 +57,6 @@ const Home = () => {
     return `${API_URL}/storage/${imagePath}`;
   };
   
-  // Format currency helper function
   const formatCurrency = (price) => {
     if (!price) return 'Rp. 0';
     return `Rp. ${parseInt(price).toLocaleString('id-ID')}`;
@@ -69,10 +66,8 @@ const Home = () => {
     const fetchPopularProducts = async () => {
       try {
         setIsLoading(true);
-        // Using the same API endpoint as in Menu.jsx
         const response = await axios.get(`${API_URL}/api/produk`);
         if (response.data && Array.isArray(response.data)) {
-          // Filter for the specific menu items we want
           const kebuliKambing = response.data.find(item =>
             item.nama_produk?.toLowerCase().includes('nasi kebuli kambing'));
           const nampanAyam = response.data.find(item =>
@@ -81,11 +76,8 @@ const Home = () => {
           const nampanSapi = response.data.find(item =>
             item.nama_produk?.toLowerCase().includes('nampan kebuli sapi') ||
             item.nama_produk?.toLowerCase().includes('paket nampan sapi'));
-          
-          // Create an array with the items we found, or use placeholders if not found
           const featuredItems = [];
           
-          // Add Nasi Kebuli Kambing
           if (kebuliKambing) {
             featuredItems.push({
               id: kebuliKambing.produk_id,
@@ -104,7 +96,6 @@ const Home = () => {
             });
           }
           
-          // Add Nampan Kebuli Ayam
           if (nampanAyam) {
             featuredItems.push({
               id: nampanAyam.produk_id,
@@ -123,7 +114,6 @@ const Home = () => {
             });
           }
           
-          // Add Nampan Kebuli Sapi
           if (nampanSapi) {
             featuredItems.push({
               id: nampanSapi.produk_id,
@@ -135,7 +125,7 @@ const Home = () => {
           } else {
             featuredItems.push({
               id: 3,
-              name: "Paket Nampan Kebuli Sapi",
+              name: "Nampan Kebuli Sapi",
               image: nampansapi,
               rating: 4.9,
               price: 200000
@@ -144,7 +134,6 @@ const Home = () => {
           
           setPopularProducts(featuredItems);
         } else {
-          // Fallback to default items if API response is invalid
           console.error('Invalid response format:', response.data);
           setPopularProducts([
             { id: 1, name: "Nasi Kebuli Kambing", image: foto, rating: 4.9, price: 75000 },
@@ -154,7 +143,6 @@ const Home = () => {
         }
       } catch (err) {
         console.error("Error fetching popular products:", err);
-        // Fallback to default items if API call fails
         setPopularProducts([
           { id: 1, name: "Nasi Kebuli Kambing", image: foto, rating: 4.9, price: 75000 },
           { id: 2, name: "Paket Nampan Kebuli Ayam", image: nampanayam, rating: 4.8, price: 150000 },
@@ -171,24 +159,21 @@ const Home = () => {
   useEffect(() => {
     const fetchCartCount = async () => {
       const token = localStorage.getItem('authToken') || localStorage.getItem('token');
-      if (token && setCartCount) { // Check if setCartCount exists before using it
+      if (token && setCartCount) {
         try {
           const response = await axios.get('/keranjang');
           const cartItems = response.data.data || [];
           setCartCount(cartItems.length);
         } catch (err) {
           console.error("Error fetching cart:", err);
-          // If unauthorized or other error, leave cart count at 0
         }
       }
     };
     
-    // Only run the fetch if setCartCount is available
     if (setCartCount) {
       fetchCartCount();
     }
-  }, [setCartCount]); // Include setCartCount in dependency array
-  
+  }, [setCartCount]);
   useEffect(() => {
     // Haven't fetched it from api yet
     setTestimonials([
@@ -196,19 +181,22 @@ const Home = () => {
         id: 1,
         text: "Enak banget, bumbunya ga pelit. Besok besok bakal beli di sini lagi pasti...",
         name: "Ciput",
-        rating: 5
+        rating: 5,
+        photo: profile1
       },
       {
         id: 2,
         text: "Gurih, enak, pas sekali dengan selera saya. Bakal jadi langganan nih...",
         name: "Asep",
-        rating: 5
+        rating: 5,
+        photo: profile2
       },
       {
         id: 3,
         text: "ENAKK. Menu favoriteku nasi kebuli kambing, fix nanti repeat order...",
         name: "Maman",
-        rating: 5
+        rating: 5,
+        photo: profile3 
       }
     ]);
   }, []);
@@ -225,8 +213,7 @@ const Home = () => {
         product_id: productId,
         quantity: 1
       });
-      
-      // Only attempt to update cart count if setCartCount exists
+    
       if (setCartCount) {
         const response = await axios.get('/keranjang');
         const cartItems = response.data.data || [];
@@ -424,45 +411,16 @@ const Home = () => {
       </section>
     
       
-      {/* Special Ramadhan Section */}
-      <section className="py-16 relative overflow-hidden" style={{ 
-          backgroundImage: `url(${ramadhan})`, 
-          backgroundSize: 'cover',
-          backgroundPosition: 'center'
-        }}>
-        <div className="container mx-auto px-8">
-          <div className="flex justify-between items-center">
-            <div className="w-1/2 relative z-10">
-              <div className="absolute -left-16 -top-12">
-                <img src={ornamen} alt="Ramadhan Decorations" className="w-40 h-auto" />
-              </div>
-              <h2 className="text-7xl font-berkshire text-red-800 leading-tight mb-4">
-                Special<br />Ramadhan!
-              </h2>
-              <p className="text-2xl text-red-800 mb-8">Pesan Secepatnya!</p>
-              <Link to="/menu/ramadhan-special" className="px-8 py-4 bg-red-800 text-white rounded-full hover:bg-red-900 shadow-lg transition duration-300 inline-flex items-center">
-                Get This Deal <FiArrowRight className="ml-2" />
-              </Link>
-            </div>
-            <div className="w-1/2 relative">
-              <img src={foto} alt="Special Ramadhan Dish" className="w-full h-auto rounded-full" />
-              <div className="absolute top-10 left-8 w-24 h-24 border-4 border-red-800 rounded-full flex items-center justify-center bg-yellow-400">
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-red-800">50%</div>
-                  <div className="text-lg font-bold text-red-800">OFF</div>
-                </div>
-              </div>
-              <div className="absolute top-0 right-0 w-full h-full">
-                <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M40,80 Q120,40 200,120" stroke="white" strokeWidth="2" strokeDasharray="5,5" fill="none" />
-                </svg>
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* Discount Photo*/}
+      <section className="w-full h-[600px]">
+        <img 
+          src={discount} 
+          alt="Special Display" 
+          className="w-full h-full object-cover"
+        />
       </section>
       
-      {/* Popular Menu Section - UPDATED */}
+      {/* Popular Menu Section */}
       <section className="py-16 bg-gradient-to-r from-[#FCFBF5] to-[#F9EAEA]">
         <div className="container mx-auto px-8">
           <h2 className="text-5xl font-berkshire text-center mb-4">
@@ -534,24 +492,28 @@ const Home = () => {
 
           <div className="flex justify-center gap-8 max-w-6xl mx-auto">
             {testimonials.map((testimonial) => (
-              <div 
-                key={testimonial.id} 
-                className="bg-gray-50 rounded-xl shadow-md p-8 flex flex-col w-96 h-72"
-              >
-                <div className="text-red-800 text-4xl font-serif mb-4">"</div>
-                <p className="text-gray-600 mb-6 flex-grow">
-                  {testimonial.text}
-                </p>
-                <div className="mt-auto flex items-center">
-                  <img src="/api/placeholder/48/48" alt="Client" className="w-12 h-12 rounded-full mr-4" />
-                  <div>
-                    <div className="flex text-yellow-400 mb-1">
-                      {[...Array(testimonial.rating)].map((_, i) => (
-                        <AiFillStar key={i} />
-                      ))}
-                    </div>
-                    <div className="font-bold text-red-800">{testimonial.name}</div>
-                    <div className="text-sm text-gray-500">Happy Client</div>
+                <div 
+                  key={testimonial.id} 
+                  className="bg-gray-50 rounded-xl shadow-md p-8 flex flex-col w-96 h-72"
+                >
+                  <div className="text-red-800 text-4xl font-serif mb-4">"</div>
+                  <p className="text-gray-600 mb-6 flex-grow">
+                    {testimonial.text}
+                  </p>
+                  <div className="mt-auto flex items-center">
+                    <img 
+                      src={testimonial.photo} 
+                      alt={`Foto ${testimonial.name}`} 
+                      className="w-12 h-12 rounded-full mr-4 object-cover" 
+                    />
+                    <div>
+                      <div className="flex text-yellow-400 mb-1">
+                        {[...Array(testimonial.rating)].map((_, i) => (
+                          <AiFillStar key={i} />
+                        ))}
+                      </div>
+                      <div className="font-bold text-red-800">{testimonial.name}</div>
+                      <div className="text-sm text-gray-500">Happy Client</div>
                   </div>
                 </div>
               </div>
@@ -611,7 +573,6 @@ const Home = () => {
               {/* Contact Information Section  */}
               <div className="lg:col-span-2">
                 <div className="flex flex-col md:flex-row md:justify-between">
-                  {/* Address & Email Column */}
                   <div className="flex-1">
                     {/* Address */}
                     <div className="flex items-start mb-3">

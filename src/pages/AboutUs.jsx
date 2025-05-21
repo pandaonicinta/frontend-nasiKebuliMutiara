@@ -100,12 +100,12 @@ const AboutUs = () => {
             {isAuthenticated ? (
               <button 
                 onClick={handleAccountNavigation}
-                className="px-8 py-3 bg-gradient-to-r from-yellow-400 to-yellow-300 text-white rounded-full hover:from-yellow-500 hover:to-yellow-400 shadow-lg transition duration-300 flex items-center"
+                className="px-8 py-3 bg-yellow-500 text-white rounded-full flex items-center"
               >
                 My Account <HiOutlineArrowNarrowRight className="ml-2" />
               </button>
             ) : (
-              <Link to="/login" className="px-8 py-3 bg-gradient-to-r from-yellow-400 to-yellow-300 text-white rounded-full hover:from-yellow-500 hover:to-yellow-400 shadow-lg transition duration-300 flex items-center">
+              <Link to="/login" className="px-8 py-3 bg-yellow-500 text-white rounded-full flex items-center">
                 Login <HiOutlineArrowNarrowRight className="ml-2" />
               </Link>
             )}
@@ -157,7 +157,7 @@ const AboutUs = () => {
                   <img src={ceo} alt="Team Member" className="w-full h-full object-cover" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-1">CEO</h3>
-                <p className="text-gray-600 mb-4">Bakery Worker</p>
+                <p className="text-gray-600 mb-4">M. Farhan Nugraha</p>
                 <div className="flex gap-2">
                   <a href="#" className="bg-red-800 text-white rounded-full p-2">
                     <FaInstagram size={16} />

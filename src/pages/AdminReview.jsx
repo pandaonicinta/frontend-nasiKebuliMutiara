@@ -5,20 +5,8 @@ import AdminSidebar from './AdminSidebar';
 
 const AdminReview = () => {
   const [reviews, setReviews] = useState([
-    { no: 1, name: 'Agus', rating: 5, review: 'Share your opinion about your shopping experience on our application here', appearance: true },
-    { no: 2, name: 'Budi', rating: 4, review: 'Share your opinion about your shopping experience on our application here', appearance: true },
-    { no: 3, name: 'Cindy', rating: 5, review: 'Share your opinion about your shopping experience on our application here', appearance: true },
-    { no: 4, name: 'Dedi', rating: 3, review: 'Share your opinion about your shopping experience on our application here', appearance: true },
-    { no: 5, name: 'Eka', rating: 5, review: 'Share your opinion about your shopping experience on our application here', appearance: true },
-    { no: 6, name: 'Fandi', rating: 4, review: 'Share your opinion about your shopping experience on our application here', appearance: true },
-    { no: 7, name: 'Gita', rating: 5, review: 'Share your opinion about your shopping experience on our application here', appearance: true },
-    { no: 8, name: 'Hadi', rating: 4, review: 'Share your opinion about your shopping experience on our application here', appearance: true },
-    { no: 9, name: 'Indra', rating: 5, review: 'Share your opinion about your shopping experience on our application here', appearance: true },
-    { no: 10, name: 'Joko', rating: 3, review: 'Share your opinion about your shopping experience on our application here', appearance: true },
-    { no: 11, name: 'Kevin', rating: 5, review: 'Share your opinion about your shopping experience on our application here', appearance: true },
-    { no: 12, name: 'Lina', rating: 4, review: 'Share your opinion about your shopping experience on our application here', appearance: true },
-    { no: 13, name: 'Maya', rating: 5, review: 'Share your opinion about your shopping experience on our application here', appearance: true },
-    { no: 14, name: 'Nico', rating: 4, review: 'Share your opinion about your shopping experience on our application here', appearance: true }
+    { no: 1, name: 'Ciput', rating: 5, review: 'Enak banget, bumbunya ga pelit. Besok besok bakal beli di sini lagi pasti', appearance: true },
+    { no: 2, name: 'Budi', rating: 4, review: 'Gurih, enak, pas sekali dengan selera saya. Bakal jadi langganan nih', appearance: true },
   ]);
 
   const toggleAppearance = (reviewNo) => {

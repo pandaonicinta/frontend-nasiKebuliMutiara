@@ -10,12 +10,21 @@ import foto from '../assets/images/foto.png';
 const API_BASE_URL = 'http://kebabmutiara.xyz';
 
 const getImageUrl = (imagePath) => {
-  if (!imagePath) return foto;  
-  if (imagePath.startsWith('http')) {
+  if (!imagePath) return foto;
+
+  // Replace local dev URL with production base URL
+  const localUrlPattern = /^http:\/\/127\.0\.0\.1:8000\/storage\//;
+  if (localUrlPattern.test(imagePath)) {
+    return imagePath.replace(localUrlPattern, `${API_BASE_URL}/storage/`);
+  }
+
+  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
     return imagePath;
   }
+
   return `${API_BASE_URL}/storage/${imagePath}`;
 };
+
 
 const formatPrice = (price) => {
   return new Intl.NumberFormat('id-ID', {
@@ -324,14 +333,14 @@ const handleIncreaseQuantity = async (id, size, currentQty) => {
             {isAuthenticated ? (
               <button
                 onClick={handleAccountNavigation}
-                className="px-6 py-2 bg-gradient-to-r from-[#FDC302] to-yellow-300 text-white rounded-full hover:from-yellow-500 hover:to-yellow-400 shadow-md transition duration-300 flex items-center"
+                className="px-8 py-3 bg-yellow-500 text-white rounded-full flex items-center"
               >
                 My Account <HiOutlineArrowNarrowRight className="ml-2" />
               </button>
             ) : (
               <a
                 href="/login"
-                className="px-6 py-2 bg-gradient-to-r from-[#FDC302] to-yellow-300 text-white rounded-full hover:from-yellow-500 hover:to-yellow-400 shadow-md transition duration-300 flex items-center"
+                className="px-8 py-3 bg-yellow-500 text-white rounded-full flex items-center"
               >
                 Login <HiOutlineArrowNarrowRight className="ml-2" />
               </a>
@@ -425,7 +434,7 @@ const handleIncreaseQuantity = async (id, size, currentQty) => {
                         </div>
                         <div className="col-span-4 flex gap-3">
                           <img 
-                            src={item.image} 
+                            src={getImageUrl(item.image)} 
                             alt={item.name} 
                             className="w-16 h-16 object-cover rounded-md"
                             onError={(e) => { e.target.onerror = null; e.target.src = foto; }}

@@ -5,20 +5,9 @@ import AdminSidebar from './AdminSidebar';
 
 const AdminCustomer = () => {
   const customers = [
-    { no: 1, name: 'Agus', address: 'Jln. Raya XXXXX XXXXXXXX XXXXX', totalSpent: 'Rp. 900.000', lastSpent: 'Rp. 50.000' },
-    { no: 2, name: 'Agus', address: 'Jln. Raya XXXXX XXXXXXXX XXXXX', totalSpent: 'Rp. 900.000', lastSpent: 'Rp. 50.000' },
-    { no: 3, name: 'Agus', address: 'Jln. Raya XXXXX XXXXXXXX XXXXX', totalSpent: 'Rp. 900.000', lastSpent: 'Rp. 50.000' },
-    { no: 4, name: 'Agus', address: 'Jln. Raya XXXXX XXXXXXXX XXXXX', totalSpent: 'Rp. 900.000', lastSpent: 'Rp. 50.000' },
-    { no: 5, name: 'Agus', address: 'Jln. Raya XXXXX XXXXXXXX XXXXX', totalSpent: 'Rp. 900.000', lastSpent: 'Rp. 50.000' },
-    { no: 6, name: 'Agus', address: 'Jln. Raya XXXXX XXXXXXXX XXXXX', totalSpent: 'Rp. 900.000', lastSpent: 'Rp. 50.000' },
-    { no: 7, name: 'Agus', address: 'Jln. Raya XXXXX XXXXXXXX XXXXX', totalSpent: 'Rp. 900.000', lastSpent: 'Rp. 50.000' },
-    { no: 8, name: 'Agus', address: 'Jln. Raya XXXXX XXXXXXXX XXXXX', totalSpent: 'Rp. 900.000', lastSpent: 'Rp. 50.000' },
-    { no: 9, name: 'Agus', address: 'Jln. Raya XXXXX XXXXXXXX XXXXX', totalSpent: 'Rp. 900.000', lastSpent: 'Rp. 50.000' },
-    { no: 10, name: 'Agus', address: 'Jln. Raya XXXXX XXXXXXXX XXXXX', totalSpent: 'Rp. 900.000', lastSpent: 'Rp. 50.000' },
-    { no: 11, name: 'Agus', address: 'Jln. Raya XXXXX XXXXXXXX XXXXX', totalSpent: 'Rp. 900.000', lastSpent: 'Rp. 50.000' },
-    { no: 12, name: 'Agus', address: 'Jln. Raya XXXXX XXXXXXXX XXXXX', totalSpent: 'Rp. 900.000', lastSpent: 'Rp. 50.000' },
-    { no: 13, name: 'Agus', address: 'Jln. Raya XXXXX XXXXXXXX XXXXX', totalSpent: 'Rp. 900.000', lastSpent: 'Rp. 50.000' },
-    { no: 14, name: 'Agus', address: 'Jln. Raya XXXXX XXXXXXXX XXXXX', totalSpent: 'Rp. 900.000', lastSpent: 'Rp. 50.000' }
+    { no: 1, name: 'Pandaoni', address: 'Jalan Sunter, Babakan, Bogor Tengah, Kota Bogor, Jawa Barat', totalSpent: 'Rp. 55.000', lastSpent: 'Rp. 55.000' },
+    { no: 2, name: 'Ario Elnino', address: 'Jalan Padjajaran, Babakan, Bogor Tengah, Kota Bogor, Jawa Barat', totalSpent: 'Rp. 350.000', lastSpent: 'Rp. 350.000' },
+
   ];
 
   return (

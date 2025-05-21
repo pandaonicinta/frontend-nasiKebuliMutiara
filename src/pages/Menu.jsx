@@ -214,12 +214,12 @@ const Menu = () => {
             {isAuthenticated ? (
               <button
                 onClick={handleAccountNavigation}
-                className="px-8 py-3 bg-gradient-to-r from-[#FDC302] to-yellow-300 text-white rounded-full hover:from-yellow-500 hover:to-yellow-400 shadow-lg transition duration-300 flex items-center"
+                className="px-8 py-3 bg-yellow-500 text-white rounded-full flex items-center"
               >
                 My Account <HiOutlineArrowNarrowRight className="ml-2" />
               </button>
             ) : (
-              <a href="/login" className="px-8 py-3 bg-gradient-to-r from-[#FDC302] to-yellow-300 text-white rounded-full hover:from-yellow-500 hover:to-yellow-400 shadow-lg transition duration-300 flex items-center">
+              <a href="/login" className="px-8 py-3 bg-yellow-500 text-white rounded-full flex items-center">
                 Login <HiOutlineArrowNarrowRight className="ml-2" />
               </a>
             )}

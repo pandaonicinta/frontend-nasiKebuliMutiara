@@ -520,7 +520,6 @@ const CustomerAddress = () => {
                       <button 
                         onClick={() => handleEditAddress(address)}
                         className="flex items-center justify-center h-8 w-8 rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors"
-                        title="Edit address"
                       >
                         <FaPencilAlt size={14} />
                       </button>
@@ -551,7 +550,7 @@ const CustomerAddress = () => {
           ) : (
             <>
               <h2 className="text-xl font-bold text-red-800 mb-6">
-                {currentAddress.id ? 'Edit Address' : 'Add New Address'}
+                {currentAddress.id ? 'Edit Alamat' : 'Add New Address'}
               </h2>
               <div className="space-y-6">
                 <div>
