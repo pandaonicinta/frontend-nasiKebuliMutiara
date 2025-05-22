@@ -346,17 +346,6 @@ export const CartProvider = ({ children }) => {
           .filter(item => item.cart_item_id)
           .map(item => item.cart_item_id);
         
-        if (cart_item_ids.length > 0) {
-          await axios.delete(`${API_BASE_URL}/api/keranjang/delete`, {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            },
-            data: {
-              id_item: cart_item_ids
-            }
-          });
-        }
       }
       
       setCartItems([]);
