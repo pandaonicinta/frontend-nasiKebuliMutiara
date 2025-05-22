@@ -10,6 +10,7 @@ import foto from '../assets/images/foto.png';
 
 const API_BASE_URL = 'http://kebabmutiara.xyz';
 
+
 const getImageUrl = (imagePath) => {
   if (!imagePath) return foto;  
   if (imagePath.startsWith('http')) {
@@ -21,6 +22,8 @@ const getImageUrl = (imagePath) => {
 const MenuDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [ulasanList, setUlasanList] = useState([]);
+  const [loadingUlasan, setLoadingUlasan] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [selectedSize, setSelectedSize] = useState('');
   const [activeTab, setActiveTab] = useState('Deskripsi');
@@ -48,6 +51,23 @@ const MenuDetail = () => {
     const token = localStorage.getItem('authToken') || localStorage.getItem('token');
     setIsAuthenticated(!!token);
   }, []);
+
+  useEffect(() => {
+  if (activeTab === 'Ulasan') {
+    const fetchUlasan = async () => {
+      try {
+        const response = await axios.get(`${API_BASE_URL}/api/allulasan`);
+        setUlasanList(response.data); // Make sure response.data is already the array from map
+      } catch (error) {
+        console.error('Gagal mengambil ulasan:', error);
+      } finally {
+        setLoadingUlasan(false);
+      }
+    };
+
+    fetchUlasan();
+  }
+}, [activeTab]);
 
   useEffect(() => {
     const fetchMenuData = async () => {
@@ -494,8 +514,25 @@ const MenuDetail = () => {
                 )}
                 
                 {activeTab === 'Ulasan' && (
-                  <div className="max-w-3xl mx-auto text-center">
-                    <p className="text-gray-500">Belum ada ulasan, jadilah yang pertama meninggalkan ulasan!</p>
+                  <div className="max-w-3xl mx-auto">
+                    {loadingUlasan ? (
+                      <p className="text-center text-gray-500">Memuat ulasan...</p>
+                    ) : ulasanList.length === 0 ? (
+                      <p className="text-center text-gray-500">Belum ada ulasan, jadilah yang pertama meninggalkan ulasan!</p>
+                    ) : (
+                      <div className="space-y-4">
+                        {ulasanList.map((ulasan) => (
+                          <div key={ulasan.rating_id} className="p-4 border rounded shadow-sm">
+                            <div className="flex justify-between items-center mb-1">
+                              <h3 className="font-semibold">{ulasan.nama_produk || 'Produk tidak diketahui'}</h3>
+                              <span className="text-yellow-500">⭐ {ulasan.rating_value}/5</span>
+                            </div>
+                            <p className="text-gray-700">{ulasan.comment}</p>
+                            <p className="text-sm text-gray-400 mt-1">{ulasan.created_at}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
