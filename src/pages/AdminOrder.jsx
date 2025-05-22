@@ -148,10 +148,10 @@ const AdminOrder = () => {
     if (!status) return 'UNKNOWN';
 
     const s = status.toLowerCase().trim();
-    if (s === 'sampai' || s === 'delivered') return 'DELIVERED';
-    if (['otw', 'on delivery', 'on deliver'].includes(s)) return 'ON DELIVERY';
-    if (['masak', 'cooking', 'on process'].includes(s)) return 'COOKING';
-    if (['pending', 'paid', 'new order'].includes(s)) return 'NEW ORDER';
+    if (s === 'sampai' || s === 'delivered') return 'SELESAI';
+    if (['otw', 'on delivery', 'on deliver'].includes(s)) return 'SEDANG DIANTAR';
+    if (['masak', 'cooking', 'on process'].includes(s)) return 'DIMASAK';
+    if (['pending', 'paid', 'new order'].includes(s)) return 'PESANAN BARU';
     return status.toUpperCase();
   };
 
@@ -216,7 +216,7 @@ const AdminOrder = () => {
 
       <div className="relative z-10 flex-1 ml-52 p-6">
         <div className="flex justify-between items-center mb-6 bg-white p-4 rounded-lg shadow-lg">
-          <h1 className="text-xl font-bold text-red-800">Order Management</h1>
+          <h1 className="text-xl font-bold text-red-800">Manajemen Pesanan</h1>
           <div className="flex items-center bg-red-800 text-white px-4 py-2 rounded-lg">
             <FaUsers className="mr-2 text-sm" />
             <span className="text-sm font-medium">Admin</span>
@@ -226,7 +226,7 @@ const AdminOrder = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
           <div className="bg-white rounded-lg shadow-lg">
             <div className="p-3">
-              <p className="text-xs text-gray-500">TOTAL ORDERS</p>
+              <p className="text-xs text-gray-500">TOTAL PESANAN</p>
               <div className="flex justify-between items-center mt-2">
                 <h2 className="text-lg font-bold text-gray-800">{summaryData.totalOrders}</h2>
                 <div className="p-2 bg-gray-800 text-white rounded">
@@ -238,7 +238,7 @@ const AdminOrder = () => {
 
           <div className="bg-white rounded-lg shadow-lg">
             <div className="p-3">
-              <p className="text-xs text-gray-500">NEW ORDERS</p>
+              <p className="text-xs text-gray-500">PESANAN BARU</p>
               <div className="flex justify-between items-center mt-2">
                 <h2 className="text-lg font-bold text-gray-800">{summaryData.pending}</h2>
                 <div className="p-2 bg-red-500 text-white rounded">
@@ -250,7 +250,7 @@ const AdminOrder = () => {
 
           <div className="bg-white rounded-lg shadow-lg">
             <div className="p-3">
-              <p className="text-xs text-gray-500">COOKING</p>
+              <p className="text-xs text-gray-500">DIMASAK</p>
               <div className="flex justify-between items-center mt-2">
                 <h2 className="text-lg font-bold text-gray-800">{summaryData.cooking}</h2>
                 <div className="p-2 bg-yellow-500 text-white rounded">
@@ -262,7 +262,7 @@ const AdminOrder = () => {
 
           <div className="bg-white rounded-lg shadow-lg">
             <div className="p-3">
-              <p className="text-xs text-gray-500">ON DELIVERY</p>
+              <p className="text-xs text-gray-500">SEDANG DIANTAR</p>
               <div className="flex justify-between items-center mt-2">
                 <h2 className="text-lg font-bold text-gray-800">{summaryData.onDelivery}</h2>
                 <div className="p-2 bg-blue-500 text-white rounded">
@@ -274,7 +274,7 @@ const AdminOrder = () => {
 
           <div className="bg-white rounded-lg shadow-lg">
             <div className="p-3">
-              <p className="text-xs text-gray-500">DELIVERED</p>
+              <p className="text-xs text-gray-500">SELESAI</p>
               <div className="flex justify-between items-center mt-2">
                 <h2 className="text-lg font-bold text-gray-800">{summaryData.delivered}</h2>
                 <div className="p-2 bg-green-500 text-white rounded">
@@ -287,7 +287,7 @@ const AdminOrder = () => {
 
         <div className="bg-white rounded-lg shadow-lg">
           <div className="flex justify-between items-center p-4 border-b border-gray-200">
-            <h3 className="font-bold text-gray-800">Order List</h3>
+            <h3 className="font-bold text-gray-800">Daftar Pesanan</h3>
             <div>
               {error && <span className="text-red-500 text-xs mr-4">{error}</span>}
               <button
@@ -312,12 +312,12 @@ const AdminOrder = () => {
               <table className="min-w-full">
                 <thead>
                   <tr className="bg-red-800 text-white text-center">
-                    <th className="py-2 px-3 text-xs">ORDER ID</th>
-                    <th className="py-2 px-3 text-xs">DATE</th>
-                    <th className="py-2 px-3 text-xs">CUSTOMER NAME</th>
-                    <th className="py-2 px-3 text-xs">AMOUNT</th>
-                    <th className="py-2 px-3 text-xs">ORDER STATUS</th>
-                    <th className="py-2 px-3 text-xs">DETAILS</th>
+                    <th className="py-2 px-3 text-xs">ID PESANAN</th>
+                    <th className="py-2 px-3 text-xs">TANGGAL</th>
+                    <th className="py-2 px-3 text-xs">NAMA PEMBELI</th>
+                    <th className="py-2 px-3 text-xs">JUMLAH</th>
+                    <th className="py-2 px-3 text-xs">STATUS PESANAN</th>
+                    <th className="py-2 px-3 text-xs">DETAIL</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -359,9 +359,9 @@ const AdminOrder = () => {
                                 className="bg-red-800 text-white text-xs px-2 py-1 rounded-md hover:bg-red-900 transition"
                               >
                                 {(() => {
-                                  if (['pending', 'new order', 'paid'].includes(status)) return 'Start Cooking';
-                                  if (['masak', 'cooking', 'on process'].includes(status)) return 'Send Delivery';
-                                  if (['otw', 'on delivery', 'on deliver'].includes(status)) return 'Mark Delivered';
+                                  if (['pending', 'new order', 'paid'].includes(status)) return 'Mulai Memasak';
+                                  if (['masak', 'cooking', 'on process'].includes(status)) return 'Kirim';
+                                  if (['otw', 'on delivery', 'on deliver'].includes(status)) return 'Tandai Selesai';
                                   return '';
                                 })()}
                               </button>
@@ -370,7 +370,7 @@ const AdminOrder = () => {
                               onClick={() => handleOrderClick(order.transaksi_id)}
                               className="bg-gray-200 text-gray-800 text-xs px-2 py-1 rounded-md ml-2 hover:bg-gray-300 transition"
                             >
-                              <FaEye className="inline text-xs mr-1" /> View
+                              <FaEye className="inline text-xs mr-1" /> Lihat
                             </button>
                           </td>
                         </tr>

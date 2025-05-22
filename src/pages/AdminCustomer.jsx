@@ -55,7 +55,7 @@ const AdminCustomer = () => {
 
       <div className="relative z-10 flex-1 ml-52 p-6">
         <div className="flex justify-between items-center mb-6 bg-white p-4 rounded-lg shadow-lg">
-          <h1 className="text-xl font-bold text-red-800">Customer</h1>
+          <h1 className="text-xl font-bold text-red-800">Pembeli</h1>
           <div className="flex items-center bg-red-800 text-white px-4 py-2 rounded-lg">
             <FaUsers className="mr-2 text-sm" />
             <span className="text-sm font-medium">Admin</span>
@@ -64,7 +64,7 @@ const AdminCustomer = () => {
 
         <div className="bg-white rounded-lg shadow-lg">
           <div className="flex justify-between items-center p-4 border-b border-gray-200">
-            <h3 className="font-bold text-gray-800">Customer List</h3>
+            <h3 className="font-bold text-gray-800">Daftar Pembeli</h3>
             {error && <span className="text-red-500 text-xs">{error}</span>}
           </div>
           <div className="overflow-x-auto">
@@ -77,17 +77,17 @@ const AdminCustomer = () => {
                 <thead>
                   <tr className="bg-red-800 text-white text-center">
                     <th className="py-2 px-3 text-xs">NO</th>
-                    <th className="py-2 px-3 text-xs">NAME</th>
-                    <th className="py-2 px-3 text-xs">ADDRESS</th>
-                    <th className="py-2 px-3 text-xs">TOTAL SPENT</th>
-                    <th className="py-2 px-3 text-xs">LAST SPENT</th>
+                    <th className="py-2 px-3 text-xs">NAMA</th>
+                    <th className="py-2 px-3 text-xs">ALAMAT</th>
+                    <th className="py-2 px-3 text-xs">TOTAL PEMBELIAN</th>
+                    <th className="py-2 px-3 text-xs">TERAKHIR PEMBELIAN</th>
                   </tr>
                 </thead>
                 <tbody>
                   {customers.length === 0 ? (
                     <tr>
                       <td colSpan="5" className="text-center py-4">
-                        No customers found.
+                        Tidak ada pembeli ditemukan.
                       </td>
                     </tr>
                   ) : (

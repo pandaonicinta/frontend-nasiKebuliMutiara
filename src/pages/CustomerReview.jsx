@@ -114,7 +114,7 @@ const CustomerReview = () => {
 
       <div className="relative z-10 flex-1 ml-52 mx-4 my-4 mr-6">
         <div className="flex justify-between items-center mb-6 bg-white p-4 rounded-lg shadow-lg">
-          <h1 className="text-base font-bold text-red-800">Review</h1>
+          <h1 className="text-base font-bold text-red-800">Ulasan</h1>
           <div className="flex items-center bg-red-800 text-white px-4 py-2 rounded-lg">
             <FaUser className="mr-2 text-xs" />
             <span className="text-xs font-medium">{customerName}</span>
@@ -123,13 +123,13 @@ const CustomerReview = () => {
 
         <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-6">
           <div className="p-4">
-            <h2 className="text-base font-bold text-gray-800">My Review</h2>
+            <h2 className="text-base font-bold text-gray-800">Lihat Ulasan Saya</h2>
           </div>
           <div className="h-0.5 bg-red-800"></div>
 
           <div className="flex bg-red-800 text-white p-3 text-sm">
             <div className="w-16 text-center">NO</div>
-            <div className="flex-1">ORDER</div>
+            <div className="flex-1">PESANAN</div>
           </div>
 
           {loading ? (
@@ -168,8 +168,8 @@ const CustomerReview = () => {
                             <div className="bg-red-800 w-6 h-6 rounded-full flex items-center justify-center mr-2">
                               <span className="text-white text-xs">✓</span>
                             </div>
-                            <span className="text-sm font-bold">Delivered</span>
-                            <span className="text-xs text-gray-500 ml-2">Enjoy your meal</span>
+                            <span className="text-sm font-bold">Selesai</span>
+                            <span className="text-xs text-gray-500 ml-2">Selamat makan~</span>
                           </div>
                           <span className="text-xs text-gray-500">{formatDate(order.tanggal_pembelian)}</span>
                         </div>
@@ -191,7 +191,7 @@ const CustomerReview = () => {
                             </div>
                             <div className="flex-1">
                               <h4 className="text-xs font-bold">{item.nama}</h4>
-                              <p className="text-xs text-gray-500">Size: {item.ukuran}</p>
+                              <p className="text-xs text-gray-500">Ukuran: {item.ukuran}</p>
                             </div>
                             <div className="w-28 text-right">
                               {item.rating ? (

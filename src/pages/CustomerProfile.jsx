@@ -117,7 +117,7 @@ const CustomerProfile = () => {
       
       // Check file size (limit to 2MB)
       if (file.size > 2 * 1024 * 1024) {
-        setError('Profile picture must be less than 2MB');
+        setError('Foto Profil harus kurang dari 2MB');
         return;
       }
       
@@ -276,7 +276,7 @@ const CustomerProfile = () => {
       setProfilePictureFile(null);
       setIsEditing(false);
       
-      setSuccessMessage('Profile updated successfully!');
+      setSuccessMessage('Profil berhasil diperbaharui!');
       setTimeout(() => {
         setSuccessMessage('');
       }, 3000);
@@ -355,10 +355,10 @@ const CustomerProfile = () => {
       {/* Sidebar */}
       <CustomerSidebar activePage="profile" />
 
-      {/* Main Content */}
-      <div className="relative z-10 flex-1 ml-48 mx-4 my-4 mr-6">
+      {/* Main Content - Fixed spacing */}
+      <div className="relative z-10 flex-1 ml-46 p-6">
         <div className="bg-white rounded-lg p-4 flex justify-between items-center mb-6 shadow-xl">
-          <h1 className="text-red-800 font-bold">Profile</h1>
+          <h1 className="text-red-800 font-bold">Profil</h1>
           <div className="flex items-center bg-red-800 text-white px-4 py-2 rounded-lg">
             <FaUserAlt className="mr-2 text-xs" />
             <span className="text-xs">{userName}</span>
@@ -423,13 +423,13 @@ const CustomerProfile = () => {
             </div>
             <div className="absolute right-10 top-32">
               <div className="text-sm bg-white text-black border border-gray-300 rounded px-3 py-1 shadow-lg">
-                <span className="drop-shadow-md">Customer</span>
+                <span className="drop-shadow-md">Pembeli</span>
               </div>
             </div>
             {isLoading ? (
               <div className="text-center py-8">
                 <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-red-800"></div>
-                <p className="mt-2 text-gray-600">Loading profile...</p>
+                <p className="mt-2 text-gray-600">Memuat Profile...</p>
               </div>
             ) : (
               <>
@@ -448,7 +448,7 @@ const CustomerProfile = () => {
                         />
                       </div>
                       <div className="mb-6">
-                        <label className="block text-red-800 font-medium mb-2">Full Name<span className="text-red-600">*</span></label>
+                        <label className="block text-red-800 font-medium mb-2">Nama Lengkap<span className="text-red-600">*</span></label>
                         <input
                           type="text"
                           name="name"
@@ -495,20 +495,20 @@ const CustomerProfile = () => {
                         <p className="text-sm text-gray-500 mt-1">Min. 8 characters</p>
                       </div> */}
                       <div className="mb-6">
-                        <label className="block text-red-800 font-medium mb-2">Gender</label>
+                        <label className="block text-red-800 font-medium mb-2">Jenis Kelamin</label>
                         <select
                           name="gender"
                           value={profile.gender || ''}
                           onChange={handleChange}
                           className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 shadow"
                         >
-                          <option value="">Select gender</option>
+                          <option value="">Pilih Jenis Kelamin</option>
                           <option value="male">Laki-laki</option>
                           <option value="female">Perempuan</option>
                         </select>
                       </div>
                       <div className="mb-6">
-                        <label className="block text-red-800 font-medium mb-2">Phone Number</label>
+                        <label className="block text-red-800 font-medium mb-2">No. HP</label>
                         <input
                           type="tel"
                           name="phone"
@@ -519,7 +519,7 @@ const CustomerProfile = () => {
                         />
                       </div>
                       <div className="mb-6">
-                        <label className="block text-red-800 font-medium mb-2">Profile Picture</label>
+                        <label className="block text-red-800 font-medium mb-2">Foto Profil</label>
                         <div className="flex items-center">
                           <div className="w-16 h-16 mr-4 bg-gray-200 rounded-full overflow-hidden flex items-center justify-center">
                             {profile.picture ? (
@@ -541,10 +541,10 @@ const CustomerProfile = () => {
                             onClick={triggerFileInput}
                             className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
                           >
-                            Change Picture
+                            Ganti Foto
                           </button>
                         </div>
-                        <p className="text-sm text-gray-500 mt-1">Max file size: 2MB (JPG, JPEG, PNG only)</p>
+                        <p className="text-sm text-gray-500 mt-1">Maksimal ukuran file: 2MB (hanya  JPG, JPEG, PNG)</p>
                       </div>
                     </div>
                     <div className="flex justify-end space-x-4">
@@ -552,14 +552,14 @@ const CustomerProfile = () => {
                         onClick={handleBack}
                         className="px-6 py-2 border border-red-800 text-red-800 rounded-lg text-sm"
                       >
-                        BACK
+                        KEMBALI
                       </button>
                       <button
                         onClick={handleSave}
                         disabled={isLoading}
                         className={`px-8 py-2 bg-red-800 text-white rounded-lg text-sm uppercase ${isLoading ? 'opacity-60 cursor-not-allowed' : ''}`}
                       >
-                        {isLoading ? 'Saving...' : 'Save'}
+                        {isLoading ? 'Menyimpan...' : 'Simpan'}
                       </button>
                     </div>
                   </div>
@@ -574,7 +574,7 @@ const CustomerProfile = () => {
                         </div>
                       </div>
                       <div className="mb-6">
-                        <h3 className="text-red-800 font-medium mb-2">Full Name</h3>
+                        <h3 className="text-red-800 font-medium mb-2">Nama Lengkap</h3>
                         <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 shadow">
                           {profile.name}
                         </div>
@@ -586,19 +586,19 @@ const CustomerProfile = () => {
                         </div>
                       </div>
                       <div className="mb-6">
-                        <h3 className="text-red-800 font-medium mb-2">Password</h3>
+                        <h3 className="text-red-800 font-medium mb-2">Kata Sandi</h3>
                         <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 shadow">
-                          <span className="text-gray-500 italic">Password is encrypted</span>
+                          <span className="text-gray-500 italic">Kata Sandi dienskripsi</span>
                         </div>
                       </div>
                       <div className="mb-6">
-                        <h3 className="text-red-800 font-medium mb-2">Gender</h3>
+                        <h3 className="text-red-800 font-medium mb-2">Jenis Kelamin</h3>
                         <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 shadow">
                           {displayGender()}
                         </div>
                       </div>
                       <div className="mb-6">
-                        <h3 className="text-red-800 font-medium mb-2">Phone Number</h3>
+                        <h3 className="text-red-800 font-medium mb-2">No. HP</h3>
                         <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 shadow">
                           {profile.phone || 'Not provided'}
                         </div>

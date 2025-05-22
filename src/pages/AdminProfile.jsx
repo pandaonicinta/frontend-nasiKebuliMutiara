@@ -52,7 +52,7 @@ const AdminProfile = () => {
       {/* Main Content */}
       <div className="relative z-10 flex-1 ml-52 p-6">
         <div className="flex justify-between items-center mb-6 bg-white p-4 rounded-lg shadow-xl">
-          <h1 className="text-xl font-bold text-red-800">Profile</h1>
+          <h1 className="text-xl font-bold text-red-800">Profil</h1>
         </div>
 
         {/* Profile and Details Card */}
@@ -82,7 +82,7 @@ const AdminProfile = () => {
             <div className="p-6">
               <div className="bg-white p-6 rounded-lg shadow-inner shadow-gray-400 mb-6">
                 <div className="mb-6">
-                  <label className="block text-red-800 font-medium mb-2">Shop Name</label>
+                  <label className="block text-red-800 font-medium mb-2">Nama Restoran</label>
                   <input
                     type="text"
                     name="shopName"
@@ -92,7 +92,7 @@ const AdminProfile = () => {
                   />
                 </div>
                 <div className="mb-6">
-                  <label className="block text-red-800 font-medium mb-2">Address</label>
+                  <label className="block text-red-800 font-medium mb-2">Alamat</label>
                   <input
                     type="text"
                     name="address"
@@ -102,7 +102,7 @@ const AdminProfile = () => {
                   />
                 </div>
                 <div className="mb-6">
-                  <label className="block text-red-800 font-medium mb-2">Description</label>
+                  <label className="block text-red-800 font-medium mb-2">Deskripsi</label>
                   <textarea
                     name="description"
                     value={editedData.description}
@@ -116,13 +116,13 @@ const AdminProfile = () => {
                   onClick={handleBackClick}
                   className="px-6 py-2 border border-red-800 text-red-800 rounded-lg font-medium"
                 >
-                  BACK
+                  KEMBALI
                 </button>
                 <button
                   onClick={handleSaveClick}
                   className="px-8 py-2 bg-red-800 text-white rounded-lg text-sm uppercase"
                 >
-                  Save
+                  SIMPAN
                 </button>
               </div>
             </div>
@@ -131,19 +131,19 @@ const AdminProfile = () => {
             <div className="p-6">
               <div className="bg-white p-6 rounded-lg shadow-inner shadow-gray-400 mb-6">
                 <div className="mb-6">
-                  <h3 className="text-red-800 font-medium mb-2">Shop Name</h3>
+                  <h3 className="text-red-800 font-medium mb-2">Nama Restoran</h3>
                   <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 shadow">
                     {profileData.shopName}
                   </div>
                 </div>
                 <div className="mb-6">
-                  <h3 className="text-red-800 font-medium mb-2">Address</h3>
+                  <h3 className="text-red-800 font-medium mb-2">Alamat</h3>
                   <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 shadow">
                     {profileData.address}
                   </div>
                 </div>
                 <div className="mb-6">
-                  <h3 className="text-red-800 font-medium mb-2">Description</h3>
+                  <h3 className="text-red-800 font-medium mb-2">Deskripsi</h3>
                   <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 shadow min-h-32">
                     {profileData.description}
                   </div>

@@ -368,7 +368,7 @@ const Menu = () => {
                   <li>
                     <a href="/about" className="hover:text-yellow-400 flex items-center text-xs">
                       <span className="text-yellow-400 mr-2">•</span>
-                      About
+                      Tentang Kami
                     </a>
                   </li>
                   </ul>

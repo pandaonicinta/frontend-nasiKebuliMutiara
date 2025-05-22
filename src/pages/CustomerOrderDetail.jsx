@@ -180,7 +180,7 @@ const CustomerOrderDetail = () => {
         <div className="relative z-10 flex-1 ml-52 mx-4 my-4 mr-6 flex items-center justify-center">
           <div className="p-8 text-center">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-red-800"></div>
-            <p className="mt-2 text-gray-600">Loading order details...</p>
+            <p className="mt-2 text-gray-600">Memuat Detail Pesanan...</p>
           </div>
         </div>
       </div>
@@ -244,7 +244,7 @@ const CustomerOrderDetail = () => {
             </button>
 
             <div className="flex-grow border-2 border-red-800 rounded-lg h-10 px-4 text-xs flex justify-between items-center">
-              <span className="font-semibold text-sm whitespace-nowrap">Order Status</span>
+              <span className="font-semibold text-sm whitespace-nowrap">Status Pemesanan</span>
               <span
                 className={`${formatStatusClass(
                   orderDetails.status
@@ -258,7 +258,7 @@ const CustomerOrderDetail = () => {
           <div className="flex flex-wrap gap-6">
             <div className="w-full md:w-3/5 flex-1">
               <div className="bg-white p-3 rounded-lg border-2 border-red-800">
-                <h3 className="text-sm font-bold text-gray-800 mb-3">Details</h3>
+                <h3 className="text-sm font-bold text-gray-800 mb-3">Detail</h3>
                 <div className="border-2 border-red-800 rounded-lg p-3">
                   <div className="mb-3">
                     <div className="flex justify-between mb-2">
@@ -266,11 +266,11 @@ const CustomerOrderDetail = () => {
                       <span className="text-xs font-bold text-gray-700">#{orderDetails.transaksi_id}</span>
                     </div>
                     <div className="flex justify-between mb-2">
-                      <span className="text-xs font-bold text-gray-700">Date</span>
+                      <span className="text-xs font-bold text-gray-700">Tanggal</span>
                       <span className="text-xs font-bold text-gray-700">{formatDate(getOrderDate())}</span>
                     </div>
                     <div className="flex justify-between mb-2">
-                      <span className="text-xs font-bold text-gray-700">Item</span>
+                      <span className="text-xs font-bold text-gray-700">Menu</span>
                       <span className="text-xs font-bold text-gray-700">{orderDetails.keranjang.length}</span>
                     </div>
                   </div>
@@ -295,7 +295,7 @@ const CustomerOrderDetail = () => {
                         </div>
                         <div className="flex-1">
                           <h4 className="text-xs font-bold">{item.nama_produk}</h4>
-                          <p className="text-xs text-gray-500">Size: {item.ukuran}</p>
+                          <p className="text-xs text-gray-500">Ukuran: {item.ukuran}</p>
                         </div>
                         <div className="flex flex-col items-end">
                           <span className="text-xs text-gray-500">{item.quantity}x</span>
@@ -312,7 +312,7 @@ const CustomerOrderDetail = () => {
                   )}
 
                   <div className="mt-3">
-                    <h4 className="text-xs font-bold mb-2">Payment</h4>
+                    <h4 className="text-xs font-bold mb-2">Pembayaran</h4>
                     <div className="flex justify-between mb-1 text-xs">
                       <span>Subtotal</span>
                       <span>
@@ -320,7 +320,7 @@ const CustomerOrderDetail = () => {
                       </span>
                     </div>
                     <div className="flex justify-between mb-1 text-xs">
-                      <span>Delivery Fee</span>
+                      <span>Biaya Pengiriman</span>
                       <span>
                         Rp. {(Number(orderDetails.deliveryFee) || 0).toLocaleString('id-ID')}
                       </span>

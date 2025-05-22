@@ -326,8 +326,8 @@ const handleIncreaseQuantity = async (id, size, currentQty) => {
       {/* Cart Content */}
       <div className="container mx-auto px-4 md:px-8 py-8">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-2xl font-bold">Shopping Cart</h1>
-          <p className="text-gray-600">({cartCount} {cartCount === 1 ? 'Item' : 'Items'})</p>
+          <h1 className="text-2xl font-bold">Keranjang Belanja</h1>
+          <p className="text-gray-600">({cartCount} {cartCount === 1 ? 'Item' : 'Menu'})</p>
         </div>
 
         {/* Authentication status indication */}
@@ -373,19 +373,19 @@ const handleIncreaseQuantity = async (id, size, currentQty) => {
                     className="w-4 h-4 text-[#FDC302] focus:ring-[#FDC302] rounded border-gray-300"
                   />
                   <label className="ml-2 text-sm font-medium text-gray-700">
-                    Select All Items ({cartCount})
+                    Pilih Semua Menu ({cartCount})
                   </label>
                   <span className="ml-auto text-sm text-gray-500">
-                    {getSelectedCount()} of {getTotalQuantity()} selected
+                    {getSelectedCount()} of {getTotalQuantity()} terpilih
                   </span>
                 </div>
 
                 {/* Table Header */}
                 <div className="hidden md:grid md:grid-cols-12 gap-2 mb-4 pb-2 border-b">
                   <div className="col-span-1"></div>
-                  <div className="col-span-4 font-semibold">Product Details</div>
-                  <div className="col-span-2 font-semibold">Price</div>
-                  <div className="col-span-2 font-semibold">Quantity</div>
+                  <div className="col-span-4 font-semibold">Detail Menu</div>
+                  <div className="col-span-2 font-semibold">Harga</div>
+                  <div className="col-span-2 font-semibold">Jumlah</div>
                   <div className="col-span-3 font-semibold">Total</div>
                 </div>
 
@@ -415,7 +415,7 @@ const handleIncreaseQuantity = async (id, size, currentQty) => {
                           />
                           <div className="pr-2">
                             <h3 className="font-semibold text-gray-800 text-sm">{item.name}</h3>
-                            {item.size && <p className="text-xs text-gray-500">Size: {item.size}</p>}
+                            {item.size && <p className="text-xs text-gray-500">Ukuran: {item.size}</p>}
                           </div>
                         </div>
                         <div className="col-span-2 text-gray-700 text-sm">{formatPrice(item.price)}</div>
@@ -461,13 +461,13 @@ const handleIncreaseQuantity = async (id, size, currentQty) => {
                     onClick={() => navigate('/menu')}
                     className="flex items-center bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 px-4 rounded-md transition duration-300"
                   >
-                    <HiOutlineArrowNarrowLeft className="mr-2" /> Continue Shopping
+                    <HiOutlineArrowNarrowLeft className="mr-2" /> Lanjutkan Belanja
                   </button>
                   <button
                     onClick={handleClearCart}
                     className="flex items-center bg-red-100 text-red-600 py-2 px-4 rounded-md hover:bg-red-200 transition duration-300"
                   >
-                    <FiTrash2 className="mr-2" /> Clear Cart
+                    <FiTrash2 className="mr-2" /> Hapus Keranjang
                   </button>
                 </div>
               </>
@@ -477,10 +477,10 @@ const handleIncreaseQuantity = async (id, size, currentQty) => {
           {/* Order Summary */}
           <div className="lg:w-1/3">
             <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm sticky top-6">
-              <h2 className="text-xl font-bold mb-4 text-center">Order Summary</h2>
+              <h2 className="text-xl font-bold mb-4 text-center">Rincian Pembayaran</h2>
               <div className="space-y-3 mb-4">
                 <div className="border-b pb-3">
-                  <h3 className="font-medium mb-2 text-sm">Selected Products:</h3>
+                  <h3 className="font-medium mb-2 text-sm">Menu Terpilih:</h3>
                   {cartItems.map(item => {
                     const itemId = item.cart_item_id || item.id;
                     if (!selectedItems.includes(itemId)) return null;
@@ -495,7 +495,7 @@ const handleIncreaseQuantity = async (id, size, currentQty) => {
                     );
                   })}
                   {getSelectedCount() === 0 && (
-                    <div className="text-gray-500 text-xs italic">No items selected</div>
+                    <div className="text-gray-500 text-xs italic">Tidak ada menu terpilih</div>
                   )}
                 </div>
 
@@ -504,7 +504,7 @@ const handleIncreaseQuantity = async (id, size, currentQty) => {
                   <span className="font-medium">{formatPrice(subtotal)}</span>
                 </div>
                 <div className="flex justify-between py-1 border-b pb-3 text-sm">
-                  <span>Shipping</span>
+                  <span>Pengiriman</span>
                   <span className="font-medium">{getSelectedCount() > 0 ? formatPrice(shippingCost) : 'Rp. 0'}</span>
                 </div>
                 <div className="flex justify-between py-2 font-bold">
@@ -520,18 +520,8 @@ const handleIncreaseQuantity = async (id, size, currentQty) => {
                   getSelectedCount() === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-yellow-500'
                 }`}
               >
-                Checkout Selected Items ({getSelectedCount()}) <HiOutlineArrowNarrowRight className="ml-2" />
-              </button>
-              
-              <div className="mt-4 text-center text-xs text-gray-500">
-                <div className="flex items-center justify-center mb-1">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
-                  Safe and Secure Payments. Easy Returns.
-                </div>
-                <p>100% Authentic Products</p>
-              </div>
+                Buat Pesanan ({getSelectedCount()}) <HiOutlineArrowNarrowRight className="ml-2" />
+              </button>                
             </div>
           </div>
         </div>

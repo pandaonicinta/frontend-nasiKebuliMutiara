@@ -76,7 +76,7 @@ const AdminSidebar = ({ activePage }) => {
                 <span className={`${activePage === 'orders' ? 'p-1 bg-white text-red-800 rounded' : 'text-red-800'} mr-2`}>
                   <FaShoppingCart className="text-xs" />
                 </span>
-                <span className="text-xs">Order</span>
+                <span className="text-xs">Pesanan</span>
               </Link>
             </li>
             <li className="mb-2">
@@ -84,7 +84,7 @@ const AdminSidebar = ({ activePage }) => {
                 <span className={`${activePage === 'review' ? 'p-1 bg-white text-red-800 rounded' : 'text-red-800'} mr-2`}>
                   <FaInfo className="text-xs" />
                 </span>
-                <span className="text-xs">Review</span>
+                <span className="text-xs">Ulasan</span>
               </Link>
             </li>
             <li className="mb-2">
@@ -92,7 +92,7 @@ const AdminSidebar = ({ activePage }) => {
                 <span className={`${activePage === 'customers' ? 'p-1 bg-white text-red-800 rounded' : 'text-red-800'} mr-2`}>
                   <FaUsers className="text-xs" />
                 </span>
-                <span className="text-xs">Customer</span>
+                <span className="text-xs">Pembeli</span>
               </Link>
             </li>
             <li className="mb-2">
@@ -100,7 +100,7 @@ const AdminSidebar = ({ activePage }) => {
                 <span className={`${activePage === 'profile' ? 'p-1 bg-white text-red-800 rounded' : 'text-red-800'} mr-2`}>
                   <FaHome className="text-xs" />
                 </span>
-                <span className="text-xs">Profile</span>
+                <span className="text-xs">Profil</span>
               </Link>
             </li>
             <li className="mb-2">

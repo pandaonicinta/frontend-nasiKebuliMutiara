@@ -180,7 +180,7 @@ const AdminDashboard = () => {
               {/* Income Card */}
               <div className="bg-white rounded-lg shadow-lg">
                 <div className="p-3">
-                  <p className="text-xs text-gray-500">INCOME MONEY</p>
+                  <p className="text-xs text-gray-500">UANG PENDAPATAN</p>
                   <div className="flex justify-between items-center mt-2">
                     <h2 className="text-lg font-bold text-gray-800">{summaryData.incomeToday}</h2>
                     <div className="p-2 bg-red-800 text-white rounded">
@@ -193,7 +193,7 @@ const AdminDashboard = () => {
               {/* Total Order Card */}
               <div className="bg-white rounded-lg shadow-lg">
                 <div className="p-3">
-                  <p className="text-xs text-gray-500">TOTAL ORDER</p>
+                  <p className="text-xs text-gray-500">TOTAL PESANAN</p>
                   <div className="flex justify-between items-center mt-2">
                     <h2 className="text-lg font-bold text-gray-800">{summaryData.totalOrders}</h2>
                     <div className="p-2 bg-red-800 text-white rounded">
@@ -206,7 +206,7 @@ const AdminDashboard = () => {
               {/* Total Delivered */}
               <div className="bg-white rounded-lg shadow-lg">
                 <div className="p-3">
-                  <p className="text-xs text-gray-500">TOTAL DELIVERED</p>
+                  <p className="text-xs text-gray-500">PESANAN SELESAI</p>
                   <div className="flex justify-between items-center mt-2">
                     <h2 className="text-lg font-bold text-gray-800">{summaryData.delivered}</h2>
                     <div className="p-2 bg-red-800 text-white rounded">
@@ -219,7 +219,7 @@ const AdminDashboard = () => {
               {/* Total Customer Card */}
               <div className="bg-white rounded-lg shadow-lg">
                 <div className="p-3">
-                  <p className="text-xs text-gray-500">TOTAL CUSTOMER</p>
+                  <p className="text-xs text-gray-500">TOTAL PEMBELI</p>
                   <div className="flex justify-between items-center mt-2">
                     <h2 className="text-lg font-bold text-gray-800">{summaryData.totalCustomers}</h2>
                     <div className="p-2 bg-red-800 text-white rounded">
@@ -234,8 +234,8 @@ const AdminDashboard = () => {
               {/* Order Summary */}
               <div className="lg:col-span-2 bg-white p-4 rounded-lg shadow-lg">
                 <div className="mb-3">
-                  <p className="text-xs text-gray-500">ORDERS</p>
-                  <h4 className="font-medium text-gray-800">Order Summary</h4>
+                  <p className="text-xs text-gray-500">PESANAN</p>
+                  <h4 className="font-medium text-gray-800">Ringkasan Pesanan</h4>
                 </div>
                 <div className="grid grid-cols-3 gap-4 mb-3">
                   <div className="border border-red-800 rounded-lg p-2 text-center">
@@ -243,11 +243,11 @@ const AdminDashboard = () => {
                     <p className="text-lg font-bold text-gray-800">{orderSummary.totalOrder}</p>
                   </div>
                   <div className="border border-red-800 rounded-lg p-2 text-center">
-                    <h5 className="text-gray-500 text-xs">ON DELIVERY</h5>
+                    <h5 className="text-gray-500 text-xs">SEDANG DIANTAR</h5>
                     <p className="text-lg font-bold text-gray-800">{orderSummary.onDelivery}</p>
                   </div>
                   <div className="border border-red-800 rounded-lg p-2 text-center">
-                    <h5 className="text-gray-500 text-xs">DELIVERED</h5>
+                    <h5 className="text-gray-500 text-xs">SELESAI</h5>
                     <p className="text-lg font-bold text-gray-800">{orderSummary.delivered}</p>
                   </div>
                 </div>
@@ -304,11 +304,11 @@ const AdminDashboard = () => {
                         </div>
                         <div className="flex items-center">
                           <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
-                          <p className="text-xs">On Delivery: {orderSummary.onDelivery}</p>
+                          <p className="text-xs">Sedang Diantar: {orderSummary.onDelivery}</p>
                         </div>
                         <div className="flex items-center">
                           <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                          <p className="text-xs">Delivered: {orderSummary.delivered}</p>
+                          <p className="text-xs">Selesai: {orderSummary.delivered}</p>
                         </div>
                       </div>
                     </div>
@@ -319,8 +319,8 @@ const AdminDashboard = () => {
               {/* Performance Chart */}
               <div className="bg-white p-4 rounded-lg shadow-lg">
                 <div className="mb-3">
-                  <p className="text-xs text-gray-500">PERFORMANCE</p>
-                  <h4 className="font-medium text-gray-800">Total orders</h4>
+                  <p className="text-xs text-gray-500">PERFORMA</p>
+                  <h4 className="font-medium text-gray-800">Total Pesanan</h4>
                 </div>
                 
                 {/* Bar chart */}
@@ -347,18 +347,18 @@ const AdminDashboard = () => {
             {/* Recent Orders */}
             <div className="mt-6 bg-white rounded-lg shadow-lg">
               <div className="flex justify-between items-center p-4 border-b border-gray-200 ">
-                <h3 className="font-bold text-gray-800">Recent Order</h3>
-                <a href="/admin/orders" className="text-white bg-red-800 px-3 py-1 rounded text-xs font-bold">SEE ALL</a>
+                <h3 className="font-bold text-gray-800">Pesanan Terbaru</h3>
+                <a href="/admin/orders" className="text-white bg-red-800 px-3 py-1 rounded text-xs font-bold">LIHAT SEMUA</a>
               </div>
               <div className="overflow-x-auto">
                 <table className="min-w-full">
                   <thead>
                     <tr className="bg-red-800 text-white text-center">
-                      <th className="py-2 px-3 text-xs">ORDER ID</th>
-                      <th className="py-2 px-3 text-xs">DATE</th>
-                      <th className="py-2 px-3 text-xs">CUSTOMER NAME</th>
-                      <th className="py-2 px-3 text-xs">AMOUNT</th>
-                      <th className="py-2 px-3 text-xs">ORDER STATUS</th>
+                      <th className="py-2 px-3 text-xs">ID PESANAN</th>
+                      <th className="py-2 px-3 text-xs">TANGGAL</th>
+                      <th className="py-2 px-3 text-xs">NAMA PEMBELI</th>
+                      <th className="py-2 px-3 text-xs">JUMLAH</th>
+                      <th className="py-2 px-3 text-xs">STATUS PESANAN</th>
                     </tr>
                   </thead>
                   <tbody>

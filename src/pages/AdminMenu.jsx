@@ -130,10 +130,10 @@ const AdminMenu = () => {
         {/* Menu Section */}
         <div className="bg-white rounded-lg shadow-lg">
           <div className="flex justify-between items-center p-4 border-b border-gray-200">
-            <h2 className="font-bold text-gray-800">Menu</h2>
+            <h2 className="font-bold text-gray-800">Daftar Menu</h2>
             <Link to="/admin/menu/add" className="flex items-center bg-red-800 text-white px-3 py-1 rounded-lg text-sm">
               <FaPlus className="mr-1" />
-              <span>Add Menu</span>
+              <span>Tambah Menu</span>
             </Link>
           </div>
 
@@ -159,13 +159,13 @@ const AdminMenu = () => {
                 <thead>
                   <tr className="bg-red-800 text-white text-center">
                     <th className="py-2 px-3 text-xs">NO</th>
-                    <th className="py-2 px-3 text-xs">NAME</th>
-                    <th className="py-2 px-3 text-xs">CATEGORY</th>
-                    <th className="py-2 px-3 text-xs">DESCRIPTION</th>
-                    <th className="py-2 px-3 text-xs">SIZE</th>
-                    <th className="py-2 px-3 text-xs">PRICE</th>
-                    <th className="py-2 px-3 text-xs">STOCK</th>
-                    <th className="py-2 px-3 text-xs">PICTURE</th>
+                    <th className="py-2 px-3 text-xs">NAMA</th>
+                    <th className="py-2 px-3 text-xs">KATEGORI</th>
+                    <th className="py-2 px-3 text-xs">DESKRIPSI</th>
+                    <th className="py-2 px-3 text-xs">UKURAN</th>
+                    <th className="py-2 px-3 text-xs">HARGA</th>
+                    <th className="py-2 px-3 text-xs">STOK</th>
+                    <th className="py-2 px-3 text-xs">FOTO</th>
                     <th className="py-2 px-3 text-xs">EDIT</th>
                   </tr>
                 </thead>
@@ -227,7 +227,7 @@ const AdminMenu = () => {
                                 />
                               ) : (
                                 <div className="h-full w-full bg-gray-200 flex items-center justify-center text-gray-500 text-xs">
-                                  No image
+                                  Tidak ada foto
                                 </div>
                               )}
                             </div>

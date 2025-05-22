@@ -223,7 +223,7 @@ const AddMenu = () => {
           )}
           
           <div className="mb-6">
-            <label className="block text-red-800 font-medium mb-2">Menu Name*</label>
+            <label className="block text-red-800 font-medium mb-2">Nama Menu*</label>
             <input
               type="text"
               name="nama_produk"
@@ -235,7 +235,7 @@ const AddMenu = () => {
           </div>
           
           <div className="mb-6">
-            <label className="block text-red-800 font-medium mb-2">Category*</label>
+            <label className="block text-red-800 font-medium mb-2">Kategori*</label>
             <select
               name="kategori"
               value={menuData.kategori}
@@ -250,7 +250,7 @@ const AddMenu = () => {
           </div>
           
           <div className="mb-6">
-            <label className="block text-red-800 font-medium mb-2">Description*</label>
+            <label className="block text-red-800 font-medium mb-2">Deskripsi*</label>
             <textarea
               name="deskripsi"
               value={menuData.deskripsi}
@@ -261,7 +261,7 @@ const AddMenu = () => {
           </div>
           
           <div className="mb-6">
-            <label className="block text-red-800 font-medium mb-2">Price*</label>
+            <label className="block text-red-800 font-medium mb-2">Harga*</label>
             <input
               type="number"
               name="harga"
@@ -274,21 +274,21 @@ const AddMenu = () => {
           </div>
           
           <div className="mb-6">
-            <label className="block text-red-800 font-medium mb-2">Size*</label>
+            <label className="block text-red-800 font-medium mb-2">Ukuran*</label>
             <select
               name="ukuran"
               value={menuData.ukuran}
               onChange={handleInputChange}
               className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg"
             >
-              <option value="S">Small (S)</option>
-              <option value="M">Medium (M)</option>
-              <option value="L">Large (L)</option>
+              <option value="S">Kecil (S)</option>
+              <option value="M">Sedang (M)</option>
+              <option value="L">Besar (L)</option>
             </select>
           </div>
           
           <div className="mb-6">
-            <label className="block text-red-800 font-medium mb-2">Stock*</label>
+            <label className="block text-red-800 font-medium mb-2">Stok*</label>
             <input
               type="number"
               name="stok"
@@ -300,7 +300,7 @@ const AddMenu = () => {
           </div>
           
           <div className="mb-6">
-            <label className="block text-red-800 font-medium mb-2">Picture</label>
+            <label className="block text-red-800 font-medium mb-2">Foto</label>
             <div 
               className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center"
               onDragOver={handleDragOver}
@@ -321,9 +321,9 @@ const AddMenu = () => {
                     className="bg-red-800 text-white px-4 py-2 rounded-lg mb-3 flex items-center"
                     onClick={() => fileInputRef.current.click()}
                   >
-                    <FaUpload className="mr-2" /> {isEdit ? 'Change Image' : 'Add File'}
+                    <FaUpload className="mr-2" /> {isEdit ? 'Ganti Foto' : 'Tambahkan File'}
                   </button>
-                  <p className="text-gray-500 text-sm">Or drag and drop files</p>
+                  <p className="text-gray-500 text-sm">Atau seret dan lepas file</p>
                 </div>
               </label>
               
@@ -339,7 +339,7 @@ const AddMenu = () => {
                       if (fileInputRef.current) fileInputRef.current.value = '';
                     }}
                   >
-                    Remove Image
+                    Hapus Foto
                   </button>
                 </div>
               )}
@@ -354,14 +354,14 @@ const AddMenu = () => {
               to="/admin/menu"
               className="px-8 py-2 border border-red-800 text-red-800 rounded-lg"
             >
-              BACK
+              KEMBALI
             </Link>
             <button
               onClick={handleSaveClick}
               disabled={loading}
               className={`px-8 py-2 bg-red-800 text-white rounded-lg ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
             >
-              {loading ? 'SAVING...' : isEdit ? 'UPDATE' : 'SAVE'}
+              {loading ? 'MENYIMPAN...' : isEdit ? 'PERBARUI' : 'SIMPAN'}
             </button>
           </div>
         </div>

@@ -4,7 +4,7 @@ import aksen from '../assets/images/aksen.png';
 import AdminSidebar from './AdminSidebar';
 import axios from 'axios';
 
-const API_BASE_URL = 'http://kebabmutiara.xyz/api';
+const API_BASE_URL = 'http://kebabmutiara.xyz/api/allulasan';
 
 const AdminReview = () => {
   const [reviews, setReviews] = useState([]);
@@ -18,7 +18,7 @@ const AdminReview = () => {
         const token = localStorage.getItem('token');
         console.log('Token:', token);
 
-        const response = await axios.get(`${API_BASE_URL}/ulasan`, {
+        const response = await axios.get(API_BASE_URL, {
           headers: token ? { Authorization: `Bearer ${token}` } : undefined,
         });
 
@@ -29,21 +29,20 @@ const AdminReview = () => {
         let allReviews = [];
         let counter = 1;
 
-        data.forEach((transaksi, i) => {
-          console.log(`Transaksi ${i}:`, transaksi);
-          transaksi.keranjang.forEach((item, j) => {
-            console.log(`Keranjang ${j}:`, item);
-            if (item.israted === "1" || item.israted === 1) {
-              allReviews.push({
-                no: counter++,
-                keranjang_id: item.keranjang_id,
-                name: item.nama_produk,
-                rating: Number(item.rating?.rating_value) || 0,
-                review: item.rating?.comment || '',
-                appearance: true,
-              });
-            }
-          });
+        // Check the structure of the response data
+        data.forEach((item) => {
+          console.log('Item:', item);
+
+          if (item.rating_value && item.comment) {
+            allReviews.push({
+              no: counter++,
+              keranjang_id: item.id_keranjang,
+              name: item.nama_produk,
+              rating: Number(item.rating_value) || 0,
+              review: item.comment || '',
+              appearance: true,  // Default appearance value
+            });
+          }
         });
 
         console.log('Filtered reviews:', allReviews);
@@ -66,10 +65,13 @@ const AdminReview = () => {
     fetchReviews();
   }, []);
 
+  // Toggle appearance of a specific review based on keranjang_id
   const toggleAppearance = (keranjang_id) => {
     setReviews((prev) =>
       prev.map((rev) =>
-        rev.keranjang_id === keranjang_id ? { ...rev, appearance: !rev.appearance } : rev
+        rev.keranjang_id === keranjang_id
+          ? { ...rev, appearance: !rev.appearance } // Toggle only the clicked review's appearance
+          : rev // Keep the other reviews unchanged
       )
     );
   };
@@ -108,7 +110,7 @@ const AdminReview = () => {
 
       <div className="relative z-10 flex-1 ml-52 p-6">
         <div className="flex justify-between items-center mb-6 bg-white p-4 rounded-lg shadow-lg">
-          <h1 className="text-xl font-bold text-red-800">Review</h1>
+          <h1 className="text-xl font-bold text-red-800">Ulasan</h1>
           <div className="flex items-center bg-red-800 text-white px-4 py-2 rounded-lg">
             <FaUsers className="mr-2 text-sm" />
             <span className="text-sm font-medium">Admin</span>
@@ -117,17 +119,17 @@ const AdminReview = () => {
 
         <div className="bg-white rounded-lg shadow-lg">
           <div className="flex justify-between items-center p-4 border-b border-gray-200">
-            <h3 className="font-bold text-gray-800">Review</h3>
+            <h3 className="font-bold text-gray-800">Semua Ulasan</h3>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full">
               <thead>
                 <tr className="bg-red-800 text-white text-center">
                   <th className="py-2 px-3 text-xs">NO</th>
-                  <th className="py-2 px-3 text-xs">NAME</th>
-                  <th className="py-2 px-3 text-xs">RATE</th>
-                  <th className="py-2 px-3 text-xs">REVIEW</th>
-                  <th className="py-2 px-3 text-xs">APPEARANCE</th>
+                  <th className="py-2 px-3 text-xs">NAMA</th>
+                  <th className="py-2 px-3 text-xs">PENILAIAN</th>
+                  <th className="py-2 px-3 text-xs">ULASAN</th>
+                  <th className="py-2 px-3 text-xs">DITAMPILKAN</th>
                 </tr>
               </thead>
               <tbody>
@@ -155,7 +157,7 @@ const AdminReview = () => {
                           }`}
                         >
                           {review.appearance && <FaCheck className="inline mr-1" />}
-                          {review.appearance ? 'YES' : 'NO'}
+                          {review.appearance ? 'YA' : 'JANGAN'}
                         </button>
                       </td>
                     </tr>

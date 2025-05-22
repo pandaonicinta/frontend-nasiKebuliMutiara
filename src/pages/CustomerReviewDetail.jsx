@@ -4,6 +4,7 @@ import { FaUser, FaStar, FaArrowLeft } from 'react-icons/fa';
 import CustomerSidebar from './CustomerSidebar';
 import aksen from '../assets/images/aksen.png';
 import axios from 'axios';
+import defaultImage from '../assets/images/foto.png';
 
 const API_BASE_URL = 'http://kebabmutiara.xyz/api';
 
@@ -136,7 +137,7 @@ const CustomerReviewDetail = () => {
 
       <div className="relative z-10 flex-1 ml-52 mx-4 my-4 mr-6">
         <div className="flex justify-between items-center mb-4 bg-white p-4 rounded-lg shadow-lg">
-          <h1 className="text-base font-bold text-red-800">Review</h1>
+          <h1 className="text-base font-bold text-red-800">Ulasan</h1>
           <div className="flex items-center bg-red-800 text-white px-4 py-2 rounded-lg">
             <FaUser className="mr-2 text-xs" />
             <span className="text-xs font-medium">{customerName}</span>
@@ -150,28 +151,29 @@ const CustomerReviewDetail = () => {
             <FaArrowLeft className="mr-2 text-xs" /> KEMBALI
           </button>
           <div className="border-2 border-red-800 rounded-lg p-4 mb-6" style={insetShadowStyle}>
-            <h3 className="text-sm font-bold mb-4 border-b border-gray-200 pb-2">ORDER DETAIL</h3>
+            <h3 className="text-sm font-bold mb-4 border-b border-gray-200 pb-2">Detail Pesanan</h3>
             <div className="flex items-center">
               <div className="w-20 h-20 bg-gray-200 rounded-lg overflow-hidden mr-6">
                 <img
-                  src={product.gambar || '/api/placeholder/100/100'}
+                  src={product.gambar || defaultImage}
                   alt={product.nama_produk || 'Product'}
                   className="w-full h-full object-cover"
-                  onError={(e) => { e.target.src = '/api/placeholder/100/100'; }}
+                  onError={(e) => { e.target.src = defaultImage; }}
                 />
               </div>
               <div>
-                <h4 className="text-lg font-bold">{product.nama_produk || '-'}</h4>
-                <p className="text-sm text-gray-500">Size: {product.ukuran || '-'}</p>
-                <p className="text-sm text-gray-500">Quantity: {product.quantity ?? '-'}</p>
+                <h4 className="text-lg font-bold">{product.nama || '-'}</h4>
+                {/* <h1 className="text-lg font-bold">{product}</h1> */}
+                <p className="text-sm text-gray-500">Ukuran: {product.ukuran || '-'}</p>
+                <p className="text-sm text-gray-500">Jumlah: {product.jumlah ?? '-'}</p>
                 <p className="text-sm text-gray-700 font-semibold">
-                  Price: Rp. {(product.harga ?? 0).toLocaleString('id-ID')}
+                  Harga: Rp. {(product.harga ?? 0).toLocaleString('id-ID')}
                 </p>
               </div>
             </div>
           </div>
           <div className="border-2 border-red-800 rounded-lg p-4" style={insetShadowStyle}>
-            <h3 className="text-sm font-bold mb-4">Rate Product Quality</h3>
+            <h3 className="text-sm font-bold mb-4">Nilai Kualitas Menu</h3>
             <div className="flex mb-6">
               {[1, 2, 3, 4, 5].map(star => (
                 <FaStar
@@ -182,7 +184,7 @@ const CustomerReviewDetail = () => {
               ))}
             </div>
             <div className="border-t border-gray-300 mb-6"></div>
-            <h3 className="text-sm font-bold mb-2">Your Review</h3>
+            <h3 className="text-sm font-bold mb-2">Penilaian Anda</h3>
             {viewOnly ? (
               <p className="whitespace-pre-wrap border border-gray-300 rounded-lg p-3 bg-gray-100 text-gray-700 min-h-[128px]">{comment || '-'}</p>
             ) : (
@@ -190,7 +192,7 @@ const CustomerReviewDetail = () => {
                 className="w-full border border-gray-300 rounded-lg p-3 h-32 focus:outline-none focus:ring-1 focus:ring-red-800"
                 value={comment}
                 onChange={e => setComment(e.target.value)}
-                placeholder="Write your review here..."
+                placeholder="Tulis penilaian Anda di sini..."
               />
             )}
           </div>
@@ -202,14 +204,14 @@ const CustomerReviewDetail = () => {
               className="px-8 py-2 border border-red-800 text-red-800 rounded-lg text-sm font-medium"
               disabled={submitting}
             >
-              BACK
+              KEMBALI
             </button>
             <button
               onClick={handleSubmitReview}
               className="px-8 py-2 bg-red-800 text-white rounded-lg text-sm font-medium"
               disabled={submitting}
             >
-              {submitting ? 'Submitting...' : 'REVIEW'}
+              {submitting ? 'Submitting...' : 'NILAI'}
             </button>
           </div>
         )}

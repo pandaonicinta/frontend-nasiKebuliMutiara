@@ -68,18 +68,17 @@ const CustomerOrder = () => {
 
   const formatStatus = (status) => {
     const map = {
-      pending: 'Payment Pending',
-      success: 'Payment Completed',
-      failed: 'Payment Failed',
-      'on process': 'Cooking',
-      'on deliver': 'On The Way',
-      delivered: 'Delivered',
-      completed: 'Completed'
+      pending: 'Pembayaran Tertunda',
+      success: 'Pembayaran Berhasil',
+      failed: 'Pembayaran Gagal',
+      'on process': 'Dimasak',
+      'on deliver': 'Di Jalan',
+      delivered: 'Selesai',
+      completed: 'Selesai'
     };
     return map[status] || status || 'Unknown';
   };
 
-  // Fungsi formatDate dengan format "22-Mei-2025 21:45"
   const formatDate = (dateString) => {
     if (!dateString) return '-';
     try {
@@ -120,7 +119,7 @@ const CustomerOrder = () => {
 
       <div className="relative z-10 flex-1 ml-52 mx-4 my-4 mr-6">
         <div className="flex justify-between items-center mb-6 bg-white p-4 rounded-lg shadow-lg">
-          <h1 className="text-base font-bold text-red-800">My Order</h1>
+          <h1 className="text-base font-bold text-red-800">Pesanan Saya</h1>
           <div className="flex items-center bg-red-800 text-white px-4 py-2 rounded-lg">
             <FaUser className="mr-2 text-xs" />
             <span className="text-xs font-medium">{customerName}</span>
@@ -129,19 +128,19 @@ const CustomerOrder = () => {
 
         <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-6">
           <div className="p-4">
-            <h2 className="text-base font-bold text-gray-800">My Order</h2>
+            <h2 className="text-base font-bold text-gray-800">Lihat Riwayat Pemesanan</h2>
           </div>
           <div className="h-0.5 bg-red-800"></div>
 
           <div className="flex bg-red-800 text-white p-3 text-sm">
             <div className="w-16 text-center">NO</div>
-            <div className="flex-1">ORDER</div>
+            <div className="flex-1">PESANAN</div>
           </div>
 
           {loading && (
             <div className="p-8 text-center">
               <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-red-800"></div>
-              <p className="mt-2 text-gray-600">Loading your orders...</p>
+              <p className="mt-2 text-gray-600">Memuat pesanan Anda...</p>
             </div>
           )}
 
@@ -166,17 +165,7 @@ const CustomerOrder = () => {
             const totalHarga = order.total_harga 
               ? Number(order.total_harga) 
               : (order.keranjang?.reduce((sum, item) => sum + (Number(item.harga) || 0) * (Number(item.quantity) || 1), 0) || 0);
-
-            const mostExpensiveItem = order.keranjang && order.keranjang.length > 0
-              ? order.keranjang.reduce((prev, current) => {
-                  const prevPrice = Number(prev.harga) || 0;
-                  const currPrice = Number(current.harga) || 0;
-                  return (currPrice > prevPrice) ? current : prev;
-                })
-              : null;
-
-            const firstItem = order.keranjang && order.keranjang.length > 0 ? order.keranjang[0] : null;
-
+            const displayItem = order.keranjang && order.keranjang.length > 0 ? order.keranjang[0] : null;
             const tanggal = order.created_at || order.tanggal || order.tanggal_pembelian || null;
 
             return (
@@ -192,7 +181,7 @@ const CustomerOrder = () => {
                           </div>
                           <span className="text-sm font-bold text-black-500">{formatStatus(order.status)}</span>
                           <span className="text-xs text-gray-400">
-                            {order.status === 'delivered' ? 'Enjoy your meal' : 'Thank you for your order'}
+                            {order.status === 'delivered' ? 'Selamat makan~' : 'Terima kasih atas pesanan Anda'}
                           </span>
                         </div>
                         <span className="text-xs text-gray-500">{formatDate(tanggal)}</span>
@@ -200,43 +189,56 @@ const CustomerOrder = () => {
 
                       <div className="w-full h-px bg-gray-300 my-3"></div>
 
-                      {mostExpensiveItem ? (
+                      {displayItem ? (
                         <div className="w-full flex items-center mt-2">
                           <div className="w-10 mr-3" />
                           <div className="w-12 h-12 mr-3">
                             <div className="w-full h-full bg-gray-200 rounded-lg overflow-hidden">
                               <img
-                                src={getImageUrl(mostExpensiveItem.gambar)}
-                                alt={firstItem ? firstItem.nama_produk : 'Menu Image'}
+                                src={getImageUrl(displayItem.gambar)}
+                                alt={displayItem.nama_produk || 'Menu Image'}
                                 className="w-full h-full object-cover"
                                 onError={(e) => { e.target.src = defaultImage; }}
                               />
                             </div>
                           </div>
                           <div className="flex-1">
-                            <h4 className="text-xs font-bold">{firstItem ? firstItem.nama_produk : 'Unknown'}</h4>
-                            <p className="text-xs text-gray-500">Size: {mostExpensiveItem.ukuran}</p>
-                          </div>
-                          <div className="flex flex-1 items-center justify-center">
-                            <div className="shadow-inner px-3 py-1 rounded bg-white border border-gray-300 text-center text-xs w-12">
-                              {totalQuantity}
-                            </div>
+                            <h4 className="text-xs font-bold">
+                              {displayItem.nama_produk || 'Unknown'} 
+                              <span className="text-gray-400 font-normal ml-1">x{displayItem.quantity || 1}</span>
+                            </h4>
+                            <p className="text-xs text-gray-500">Ukuran: {displayItem.ukuran}</p>
+                            {order.keranjang && order.keranjang.length > 1 && (
+                              <p className="text-xs text-gray-400">+{order.keranjang.length - 1} menu lain{order.keranjang.length > 2 ? 's' : ''}</p>
+                            )}
                           </div>
                           <div className="text-center text-xs font-bold w-28">
-                            Rp. {totalHarga.toLocaleString('id-ID')}
+                            Rp. {(Number(displayItem.harga) || 0).toLocaleString('id-ID')}
                           </div>
                           <div className="w-28 text-right">
                             <button
                               onClick={() => handleViewDetails(getOrderId(order))}
                               className="text-xs text-white bg-red-800 px-3 py-1 rounded mt-1 inline-block"
                             >
-                              VIEW DETAILS
+                              LIHAT DETAIL
                             </button>
                           </div>
                         </div>
                       ) : (
                         <div className="w-full text-center py-2">
                           <p className="text-sm text-gray-500">No items in this order</p>
+                        </div>
+                      )}
+
+                      {/* Total Summary */}
+                      {order.keranjang && order.keranjang.length > 0 && (
+                        <div className="w-full mt-4 pt-3 border-t border-gray-200">
+                          <div className="flex justify-end items-center">
+                            <div className="text-sm">
+                              <span className="font-bold text-black">Total {totalQuantity} menu: </span>
+                              <span className="font-bold text-red-800">Rp. {totalHarga.toLocaleString('id-ID')}</span>
+                            </div>
+                          </div>
                         </div>
                       )}
 

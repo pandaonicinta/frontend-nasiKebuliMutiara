@@ -23,7 +23,7 @@ const MenuDetail = () => {
   const navigate = useNavigate();
   const [quantity, setQuantity] = useState(1);
   const [selectedSize, setSelectedSize] = useState('');
-  const [activeTab, setActiveTab] = useState('Description');
+  const [activeTab, setActiveTab] = useState('Deskripsi');
   const [mainImage, setMainImage] = useState(null);
   const [addedToCart, setAddedToCart] = useState(false);
   const [menu, setMenu] = useState(null);
@@ -313,7 +313,7 @@ const MenuDetail = () => {
           </div>
           <div className="flex items-center space-x-8">
             <a href="/" className="text-gray-800 hover:text-[#FDC302] font-medium">Home</a>
-            <a href="/about" className="text-gray-800 hover:text-[#FDC302] font-medium">About Us</a>
+            <a href="/about" className="text-gray-800 hover:text-[#FDC302] font-medium">Tentang Kami</a>
             <a href="/menu" className="text-[#FDC302] font-medium">Menu</a>
             <a href="/cart" className="text-gray-800 hover:text-[#FDC302] relative">
               <FiShoppingBag size={20} />
@@ -440,17 +440,16 @@ const MenuDetail = () => {
                     }`}
                     disabled={menu.stok <= 0 || isAddingToCart}
                   >
-                    {isAddingToCart ? 'Adding...' : 'Add to Cart'} {!isAddingToCart && <HiOutlineArrowNarrowRight className="ml-2" />}
+                    {isAddingToCart ? 'Menambahkan...' : 'Tambah ke Keranjang'} {!isAddingToCart && <HiOutlineArrowNarrowRight className="ml-2" />}
                   </button>
                 </div>
                 {addedToCart && (
                   <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-6" role="alert">
-                    <strong className="font-bold">Success! </strong>
-                    <span className="block sm:inline">{menu.nama_produk} ({selectedSize}) has been added to your cart.</span>
+                    <strong className="font-bold">Berhasil! </strong>
                     {isAuthenticated ? (
-                      <span className="block mt-1 text-sm">Item saved to your account.</span>
+                      <span className="block mt-1 text-sm">Menu disimpan di akunmu.</span>
                     ) : (
-                      <span className="block mt-1 text-sm">Item saved to local storage. <a href="/login" className="underline">Login</a> to save to your account.</span>
+                      <span className="block mt-1 text-sm">Menu disimpan di local storage. <a href="/login" className="underline">Login</a> to save to your account.</span>
                     )}
                   </div>
                 )}
@@ -458,12 +457,12 @@ const MenuDetail = () => {
             </div>
             <div className="tabs-container w-full">
               <div className="flex justify-center">
-                {['Description', 'Additional Information', 'Reviews'].map((tab) => (
+                {['Deskripsi', 'Detail', 'Ulasan'].map((tab) => (
                   <button
                     key={tab}
-                    onClick={() => setActiveTab(tab === 'Additional Information' ? 'Additional Info' : tab)}
+                    onClick={() => setActiveTab(tab === 'Detail' ? 'Additional Info' : tab)}
                     className={`px-6 py-3 font-bold ${
-                      activeTab === (tab === 'Additional Information' ? 'Additional Info' : tab)
+                      activeTab === (tab === 'Detail' ? 'Additional Info' : tab)
                         ? 'text-[#FDC302] border-b-2 border-[#FDC302]'
                         : 'text-gray-500'
                     }`}
@@ -473,7 +472,7 @@ const MenuDetail = () => {
                 ))}
               </div>
               <div className="py-6 border-t border-gray-200">
-                {activeTab === 'Description' && (
+                {activeTab === 'Deskripsi' && (
                   <div className="max-w-3xl mx-auto text-center">
                     <p className="text-gray-500 font-medium">{menu.deskripsi}</p>
                   </div>
@@ -494,9 +493,9 @@ const MenuDetail = () => {
                   </div>
                 )}
                 
-                {activeTab === 'Reviews' && (
+                {activeTab === 'Ulasan' && (
                   <div className="max-w-3xl mx-auto text-center">
-                    <p className="text-gray-500">No reviews yet. Be the first to leave a review!</p>
+                    <p className="text-gray-500">Belum ada ulasan, jadilah yang pertama meninggalkan ulasan!</p>
                   </div>
                 )}
               </div>
@@ -509,10 +508,10 @@ const MenuDetail = () => {
         {/* Related Products */}
         <div className="container mx-auto py-12">
           <h2 className="text-4xl font-berkshire mb-3 text-center font-bold">
-            <span className="text-black">Related </span>
-            <span className="text-[#FDC302]">Products</span>
+            <span className="text-black">Menu </span>
+            <span className="text-[#FDC302]">Terkait</span>
           </h2>
-          <p className="text-center text-gray-500 mb-8 text-sm">Choose from some of related products</p>
+          <p className="text-center text-gray-500 mb-8 text-sm">Pilih dari beberapa menu terkait</p>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {relatedMenus.length > 0 ? (
@@ -555,7 +554,7 @@ const MenuDetail = () => {
                       }}
                       className="w-full bg-[#FDC302] text-white py-2 px-4 rounded-full hover:bg-yellow-500 transition duration-300"
                     >
-                      Buy Now
+                      Beli Sekarang
                     </button>
                   </div>
                 </div>
@@ -590,7 +589,7 @@ const MenuDetail = () => {
                           <li>
                             <a href="/about" className="hover:text-yellow-400 flex items-center text-xs">
                               <span className="text-yellow-400 mr-2">•</span>
-                              About
+                              Tentang Kami
                             </a>
                           </li>
                           </ul>
