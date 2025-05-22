@@ -20,36 +20,28 @@ const CustomerProfile = () => {
     picture: localStorage.getItem('userPicture') || ''
   });
   
-  // For file upload
   const [profilePictureFile, setProfilePictureFile] = useState(null);
   const fileInputRef = useRef(null);
 
   const apiUrl = 'https://kebabmutiara.xyz/api';
   const storageUrl = 'https://kebabmutiara.xyz/storage';
 
-  // Format profile picture URL properly
   const getProfilePictureUrl = (picturePath) => {
     if (!picturePath) return '';
-    
-    // Check if it's already a complete URL
     if (picturePath.startsWith('http')) {
       return picturePath;
     } 
-    // Check if it's a data URL (from file preview)
     else if (picturePath.startsWith('data:')) {
       return picturePath;
     }
-    // If it's a path that starts with "foto_profile"
     else if (picturePath.includes('foto_profile')) {
       return `${storageUrl}/${picturePath}`;
     }
-    // Otherwise, append the storage path
     else {
       return `${storageUrl}/${picturePath}`;
     }
   };
 
-  // Fetch user profile data from API
   const fetchProfileData = async () => {
     setIsLoading(true);
     try {
@@ -58,7 +50,6 @@ const CustomerProfile = () => {
         throw new Error('Authentication token not found');
       }
       
-      // Get user data from the aboutMe endpoint
       const response = await axios.get(`${apiUrl}/aboutMe`, {
         headers: {
           Authorization: `Bearer ${token}`
@@ -67,24 +58,19 @@ const CustomerProfile = () => {
       
       if (response.data) {
         const userData = response.data;
-        
-        // Get the picture path
         const picturePath = userData.picture || '';
-        
         console.log('API returned picture path:', picturePath);
         
-        // Update profile state with data from API
         setProfile({
           username: userData.username || '',
           name: userData.name || '',
           email: userData.email || '',
           phone: userData.phone || '',
           gender: userData.gender || '',
-          password: '',  // Password shouldn't be displayed for security reasons
-          picture: picturePath // Store the raw path
+          password: '',  
+          picture: picturePath 
         });
         
-        // Update localStorage with the latest data
         localStorage.setItem('userUsername', userData.username || '');
         localStorage.setItem('userName', userData.name || '');
         localStorage.setItem('userEmail', userData.email || '');
@@ -99,7 +85,6 @@ const CustomerProfile = () => {
       console.error('Error fetching profile:', err);
       setError('Failed to load profile data. Please try again later.');
       
-      // Fall back to local storage data if API fails
       setProfile({
         username: localStorage.getItem('userUsername') || '',
         name: localStorage.getItem('userName') || '',
@@ -136,7 +121,6 @@ const CustomerProfile = () => {
         return;
       }
       
-      // Check file type
       const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
       if (!allowedTypes.includes(file.type)) {
         setError('Only JPG, JPEG, and PNG files are allowed');
@@ -145,13 +129,11 @@ const CustomerProfile = () => {
       
       setProfilePictureFile(file);
       
-      // Create a preview URL
       const reader = new FileReader();
       reader.onload = (e) => {
-        // Only update the preview in the UI, not the actual path
         setProfile(prev => ({
           ...prev,
-          picture: e.target.result // Just for preview
+          picture: e.target.result 
         }));
       };
       reader.readAsDataURL(file);
@@ -164,17 +146,14 @@ const CustomerProfile = () => {
 
   const handleBack = () => {
     setIsEditing(false);
-    // Reload original data from API
     fetchProfileData();
-    // Reset picture file
     setProfilePictureFile(null);
   };
 
-  // Separate function to update profile picture
   const updateProfilePicture = async () => {
     try {
       if (!profilePictureFile) {
-        return null; // Nothing to update
+        return null;
       }
 
       const token = localStorage.getItem('token');
@@ -182,11 +161,9 @@ const CustomerProfile = () => {
         throw new Error('Not authenticated. Please log in again.');
       }
       
-      // Create form data specifically for the picture
       const formData = new FormData();
       formData.append('picture', profilePictureFile);
       
-      // Make the request to update the photo
       const response = await axios.post(
         `${apiUrl}/aboutMe/updatePhoto`,
         formData,
@@ -200,7 +177,6 @@ const CustomerProfile = () => {
       
       console.log('Profile picture update response:', response.data);
       
-      // If response contains updated picture path, update localStorage
       if (response.data && response.data.path) {
         localStorage.setItem('userPicture', response.data.path);
       }
@@ -212,7 +188,6 @@ const CustomerProfile = () => {
     }
   };
 
-  // Function to update profile information
   const updateProfileInfo = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -220,13 +195,11 @@ const CustomerProfile = () => {
         throw new Error('Not authenticated. Please log in again.');
       }
       
-      // Create form data for profile info update
       const formData = new FormData();
       formData.append('username', profile.username.trim());
       formData.append('name', profile.name.trim());
       formData.append('email', profile.email.trim());
       
-      // Only append non-empty values
       if (profile.phone && profile.phone.trim()) {
         formData.append('phone', profile.phone.trim());
       }
@@ -235,7 +208,6 @@ const CustomerProfile = () => {
         formData.append('gender', profile.gender);
       }
       
-      // Only append password if it was changed (non-empty)
       if (profile.password) {
         formData.append('password', profile.password);
       }
@@ -252,8 +224,6 @@ const CustomerProfile = () => {
       );
       
       console.log('Profile info update response:', response.data);
-      
-      // Update localStorage with profile values
       localStorage.setItem('userUsername', profile.username);
       localStorage.setItem('userName', profile.name);
       localStorage.setItem('userEmail', profile.email);
@@ -269,7 +239,6 @@ const CustomerProfile = () => {
 
   const handleSave = async () => {
     try {
-      // Input validation
       if (!profile.username.trim()) {
         setError('Username is required');
         return;
@@ -285,14 +254,12 @@ const CustomerProfile = () => {
         return;
       }
       
-      // Basic email validation
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(profile.email)) {
         setError('Please enter a valid email address');
         return;
       }
       
-      // Phone number validation - allow empty or proper format
       if (profile.phone && !/^[0-9+\-\s]{6,20}$/.test(profile.phone)) {
         setError('Please enter a valid phone number');
         return;
@@ -300,29 +267,23 @@ const CustomerProfile = () => {
 
       setIsLoading(true);
       
-      // First update profile info
       await updateProfileInfo();
       
-      // Then update profile picture if a new one was selected
       if (profilePictureFile) {
         await updateProfilePicture();
       }
       
-      // Reset state
       setProfilePictureFile(null);
       setIsEditing(false);
       
-      // Show success message
       setSuccessMessage('Profile updated successfully!');
       setTimeout(() => {
         setSuccessMessage('');
       }, 3000);
       
-      // Refresh data
       fetchProfileData();
       
     } catch (err) {
-      // Handle errors
       console.error('Error in save operation:', err);
       
       let errorMessage = 'Failed to update profile. Please try again.';
@@ -337,7 +298,6 @@ const CustomerProfile = () => {
         setError('');
       }, 5000);
       
-      // Handle authentication errors
       if (err.response && err.response.status === 401) {
         localStorage.removeItem('token');
         window.location.href = '/login';
@@ -351,7 +311,6 @@ const CustomerProfile = () => {
     setShowPassword(!showPassword);
   };
 
-  // Format gender for display
   const displayGender = () => {
     if (!profile.gender) return 'Not specified';
     if (profile.gender.toLowerCase() === 'male') return 'Laki-laki';
@@ -359,35 +318,25 @@ const CustomerProfile = () => {
     return profile.gender;
   };
 
-  // Format email for display (remove duplicate @ if present)
   const displayEmail = () => {
     const email = profile.email || '';
     return email.replace(/^(.*)@@(.*)$/, '$1@$2');
   };
 
-  // Get first name for display
   const userName = profile.name ? profile.name.split(' ')[0] : 'Customer';
 
-  // Trigger the file input click
   const triggerFileInput = () => {
     fileInputRef.current.click();
   };
 
-  // Get properly formatted profile picture URL for display
   const displayProfilePicture = () => {
     if (!profile.picture) return '';
-    
-    // If it's already a data URL (from file preview), use it as is
     if (profile.picture.startsWith('data:')) {
       return profile.picture;
     }
-    
-    // If it's already a complete URL, use it as is
     if (profile.picture.startsWith('http')) {
       return profile.picture;
     }
-    
-    // Otherwise, append the storage path
     return `${storageUrl}/${profile.picture}`;
   };
 
@@ -408,7 +357,6 @@ const CustomerProfile = () => {
 
       {/* Main Content */}
       <div className="relative z-10 flex-1 ml-48 mx-4 my-4 mr-6">
-        {/* Header with Title and User */}
         <div className="bg-white rounded-lg p-4 flex justify-between items-center mb-6 shadow-xl">
           <h1 className="text-red-800 font-bold">Profile</h1>
           <div className="flex items-center bg-red-800 text-white px-4 py-2 rounded-lg">
@@ -416,10 +364,7 @@ const CustomerProfile = () => {
             <span className="text-xs">{userName}</span>
           </div>
         </div>
-
-        {/* Main Content Area */}
         <div className="bg-white rounded-lg overflow-hidden shadow-xl">
-          {/* Error and Success Messages */}
           {error && (
             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mx-6 mt-6">
               {error}
@@ -431,8 +376,6 @@ const CustomerProfile = () => {
               {successMessage}
             </div>
           )}
-
-          {/* Profile Header with Avatar */}
           <div className="bg-red-800 p-6 pb-16 relative">
             <div className="absolute -bottom-10 left-6">
               <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center relative">
@@ -444,7 +387,7 @@ const CustomerProfile = () => {
                     onError={(e) => {
                       console.error("Image load error:", e);
                       e.target.onerror = null;
-                      e.target.src = ''; // Fallback to default
+                      e.target.src = ''; 
                     }}
                   />
                 ) : (
@@ -483,8 +426,6 @@ const CustomerProfile = () => {
                 <span className="drop-shadow-md">Customer</span>
               </div>
             </div>
-
-            {/* Loading State */}
             {isLoading ? (
               <div className="text-center py-8">
                 <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-red-800"></div>
@@ -492,9 +433,7 @@ const CustomerProfile = () => {
               </div>
             ) : (
               <>
-                {/* Profile Details */}
                 {isEditing ? (
-                  // Edit Form
                   <div className="mt-8">
                     <div className="bg-white p-6 rounded-lg shadow-inner shadow-gray-400 mb-6">
                       <div className="mb-6">
@@ -590,7 +529,7 @@ const CustomerProfile = () => {
                                 className="w-full h-full object-cover"
                                 onError={(e) => {
                                   e.target.onerror = null;
-                                  e.target.src = ''; // Fallback to default
+                                  e.target.src = ''; 
                                 }}
                               />
                             ) : (

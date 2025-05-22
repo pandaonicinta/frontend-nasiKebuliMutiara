@@ -1,122 +1,129 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import axios from 'axios';
-import aksen from '../assets/images/aksen.png';
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { FaUser, FaStar, FaArrowLeft } from 'react-icons/fa';
 import CustomerSidebar from './CustomerSidebar';
-import { FaStar } from 'react-icons/fa';
+import aksen from '../assets/images/aksen.png';
+import axios from 'axios';
 
 const API_BASE_URL = 'http://kebabmutiara.xyz/api';
 
 const CustomerReviewDetail = () => {
   const navigate = useNavigate();
-  const { keranjangId } = useParams();
+  const { orderId } = useParams();
+  const location = useLocation();
+  const customerName = localStorage.getItem('userName') || 'Customer';
 
-  const [item, setItem] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const productFromState = location.state?.product || null;
+  const viewOnly = location.state?.viewOnly || false;
 
-  const [ratingValue, setRatingValue] = useState(0);
+  const [product, setProduct] = useState(productFromState);
+  const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
-  const [hasReviewed, setHasReviewed] = useState(false);
-  const [submitLoading, setSubmitLoading] = useState(false);
+  const [loading, setLoading] = useState(!productFromState);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState(null);
+  const [successMsg, setSuccessMsg] = useState('');
 
   useEffect(() => {
-    const fetchItemReview = async () => {
-      try {
-        setLoading(true);
-        const token = localStorage.getItem('token');
-        if (!token) throw new Error('Authentication token not found');
+    if (!productFromState) {
+      const fetchProduct = async () => {
+        try {
+          setLoading(true);
+          const token = localStorage.getItem('token');
+          if (!token) throw new Error('Authentication token not found');
 
-        // Fetch keranjang detail with review info by keranjangId
-        const res = await axios.get(`${API_BASE_URL}/keranjang/${keranjangId}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+          const res = await axios.get(`${API_BASE_URL}/ulasan/${orderId}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
 
-        const data = res.data.data || res.data;
-
-        setItem(data);
-
-        if (data.rating && data.rating.rating_value) {
-          setHasReviewed(true);
-          setRatingValue(data.rating.rating_value);
-          setComment(data.rating.comment || '');
-        } else {
-          setHasReviewed(false);
-          setRatingValue(0);
-          setComment('');
+          if (res.data) {
+            setProduct(res.data.product || res.data);
+            if (res.data.rating) {
+              setRating(Number(res.data.rating.rating_value || 5));
+              setComment(res.data.rating.comment || '');
+            } else {
+              setRating(5);
+              setComment('');
+            }
+          } else {
+            setError('Data product tidak ditemukan');
+          }
+        } catch (err) {
+          setError(err.response?.data?.message || err.message || 'Gagal memuat data produk');
+        } finally {
+          setLoading(false);
         }
-        setError(null);
-      } catch (err) {
-        setError(err.response?.data?.message || err.message || 'Failed to load review detail.');
-      } finally {
-        setLoading(false);
+      };
+
+      fetchProduct();
+    } else {
+      if (productFromState.rating !== null && productFromState.rating !== undefined) {
+        setRating(Number(productFromState.rating));
+        setComment(productFromState.comment || '');
       }
-    };
+    }
+  }, [orderId, productFromState]);
 
-    fetchItemReview();
-  }, [keranjangId]);
+  const handleStarClick = (index) => {
+    if (!viewOnly) setRating(index);
+  };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (ratingValue < 1) {
-      alert('Please provide a rating.');
+  const handleSubmitReview = async () => {
+    if (rating === 0) {
+      setError('Please select a rating before submitting.');
       return;
     }
-    setSubmitLoading(true);
+    setSubmitting(true);
+    setError(null);
+
     try {
       const token = localStorage.getItem('token');
-      await axios.post(`${API_BASE_URL}/ulasan/${keranjangId}`, {
-        rating_value: ratingValue,
-        comment,
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      if (!token) throw new Error('Authentication token not found');
 
-      alert('Review submitted successfully!');
-      setHasReviewed(true);
+      await axios.post(
+        `${API_BASE_URL}/ulasan/${orderId}`,
+        { rating, comment },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setSuccessMsg('Review submitted successfully!');
+      setTimeout(() => setSuccessMsg(''), 3000);
+
+      navigate('/customer/review', { replace: true });
     } catch (err) {
-      alert('Failed to submit review.');
+      setError(err.response?.data?.message || err.message || 'Failed to submit review.');
     } finally {
-      setSubmitLoading(false);
+      setSubmitting(false);
     }
   };
 
-  if (loading) return (
-    <div className="flex min-h-screen bg-gray-100">
-      <div
-        className="absolute top-0 left-0 right-0 h-1/3 bg-red-800 z-0"
-        style={{ backgroundImage: `url(${aksen})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
-      />
-      <CustomerSidebar activePage="review" />
-      <div className="relative z-10 flex-1 ml-52 mx-4 my-4 mr-6 flex items-center justify-center">
-        <div className="p-8 text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-red-800"></div>
-          <p className="mt-2 text-gray-600">Loading review detail...</p>
-        </div>
-      </div>
-    </div>
-  );
+  const handleBack = () => navigate('/customer/review');
 
-  if (error) return (
-    <div className="flex min-h-screen bg-gray-100">
-      <div
-        className="absolute top-0 left-0 right-0 h-1/3 bg-red-800 z-0"
-        style={{ backgroundImage: `url(${aksen})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
-      />
-      <CustomerSidebar activePage="review" />
-      <div className="relative z-10 flex-1 ml-52 mx-4 my-4 mr-6 flex items-center justify-center">
-        <div className="bg-white p-8 rounded-lg shadow-lg text-center text-red-600">
-          <p>{error}</p>
-          <button
-            onClick={() => navigate(-1)}
-            className="mt-4 bg-red-800 text-white px-4 py-2 rounded text-sm"
-          >
-            Back
-          </button>
-        </div>
+  const insetShadowStyle = {
+    boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.1)',
+  };
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-100">
+        <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-800"></div>
       </div>
-    </div>
-  );
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-100">
+        <p className="text-red-600">Product data not found.</p>
+        <button
+          onClick={handleBack}
+          className="ml-4 bg-red-800 text-white px-4 py-2 rounded"
+        >
+          KEMBALI
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen bg-gray-100">
@@ -124,68 +131,90 @@ const CustomerReviewDetail = () => {
         className="absolute top-0 left-0 right-0 h-1/3 bg-red-800 z-0"
         style={{ backgroundImage: `url(${aksen})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
       />
+
       <CustomerSidebar activePage="review" />
+
       <div className="relative z-10 flex-1 ml-52 mx-4 my-4 mr-6">
+        <div className="flex justify-between items-center mb-4 bg-white p-4 rounded-lg shadow-lg">
+          <h1 className="text-base font-bold text-red-800">Review</h1>
+          <div className="flex items-center bg-red-800 text-white px-4 py-2 rounded-lg">
+            <FaUser className="mr-2 text-xs" />
+            <span className="text-xs font-medium">{customerName}</span>
+          </div>
+        </div>
         <div className="bg-white rounded-lg shadow-lg p-6">
-          <h2 className="text-lg font-bold text-red-800 mb-4">{item?.nama_produk || 'Product Review'}</h2>
-          <div className="flex items-center mb-6">
-            <div className="w-20 h-20 rounded-lg overflow-hidden bg-gray-200 mr-4">
-              <img
-                src={item?.gambar ? `${API_BASE_URL.replace('/api', '')}/storage/${item.gambar}` : defaultImage}
-                alt={item?.nama_produk}
-                className="w-full h-full object-cover"
-              />
-            </div>
-
-            {/* Jika sudah review, tampilkan rating dan comment read-only */}
-            {hasReviewed ? (
-              <div className="flex-1">
-                <div className="flex items-center mb-2">
-                  {[...Array(5)].map((_, i) => (
-                    <FaStar
-                      key={i}
-                      className={`mr-1 ${i < ratingValue ? 'text-yellow-400' : 'text-gray-300'}`}
-                    />
-                  ))}
-                </div>
-                <p className="text-gray-700 whitespace-pre-wrap">{comment || '-'}</p>
-              </div>
-            ) : (
-              // Jika belum review, tampilkan form input
-              <form onSubmit={handleSubmit} className="flex-1">
-                <label className="block mb-2 font-semibold text-gray-700">Rate this product</label>
-                <div className="flex mb-4">
-                  {[...Array(5)].map((_, i) => (
-                    <FaStar
-                      key={i}
-                      onClick={() => setRatingValue(i + 1)}
-                      className={`cursor-pointer mr-1 ${i < ratingValue ? 'text-yellow-400' : 'text-gray-300'}`}
-                      size={24}
-                    />
-                  ))}
-                </div>
-
-                <label className="block mb-2 font-semibold text-gray-700">Comment</label>
-                <textarea
-                  className="w-full border border-gray-300 rounded p-2 mb-4"
-                  rows="4"
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  placeholder="Write your review here..."
-                  required
+          <button
+            onClick={handleBack}
+            className="flex items-center px-4 py-2 bg-red-800 text-white rounded-lg text-xs h-10 flex-shrink-0 mb-6"
+          >
+            <FaArrowLeft className="mr-2 text-xs" /> KEMBALI
+          </button>
+          <div className="border-2 border-red-800 rounded-lg p-4 mb-6" style={insetShadowStyle}>
+            <h3 className="text-sm font-bold mb-4 border-b border-gray-200 pb-2">ORDER DETAIL</h3>
+            <div className="flex items-center">
+              <div className="w-20 h-20 bg-gray-200 rounded-lg overflow-hidden mr-6">
+                <img
+                  src={product.gambar || '/api/placeholder/100/100'}
+                  alt={product.nama_produk || 'Product'}
+                  className="w-full h-full object-cover"
+                  onError={(e) => { e.target.src = '/api/placeholder/100/100'; }}
                 />
-
-                <button
-                  type="submit"
-                  disabled={submitLoading}
-                  className="bg-red-800 text-white px-6 py-2 rounded hover:bg-red-900 transition disabled:opacity-50"
-                >
-                  {submitLoading ? 'Submitting...' : 'Submit Review'}
-                </button>
-              </form>
+              </div>
+              <div>
+                <h4 className="text-lg font-bold">{product.nama_produk || '-'}</h4>
+                <p className="text-sm text-gray-500">Size: {product.ukuran || '-'}</p>
+                <p className="text-sm text-gray-500">Quantity: {product.quantity ?? '-'}</p>
+                <p className="text-sm text-gray-700 font-semibold">
+                  Price: Rp. {(product.harga ?? 0).toLocaleString('id-ID')}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="border-2 border-red-800 rounded-lg p-4" style={insetShadowStyle}>
+            <h3 className="text-sm font-bold mb-4">Rate Product Quality</h3>
+            <div className="flex mb-6">
+              {[1, 2, 3, 4, 5].map(star => (
+                <FaStar
+                  key={star}
+                  className={`text-3xl mr-1 ${star <= rating ? 'text-yellow-400' : 'text-gray-200'} ${viewOnly ? 'cursor-default' : 'cursor-pointer'}`}
+                  onClick={() => handleStarClick(star)}
+                />
+              ))}
+            </div>
+            <div className="border-t border-gray-300 mb-6"></div>
+            <h3 className="text-sm font-bold mb-2">Your Review</h3>
+            {viewOnly ? (
+              <p className="whitespace-pre-wrap border border-gray-300 rounded-lg p-3 bg-gray-100 text-gray-700 min-h-[128px]">{comment || '-'}</p>
+            ) : (
+              <textarea
+                className="w-full border border-gray-300 rounded-lg p-3 h-32 focus:outline-none focus:ring-1 focus:ring-red-800"
+                value={comment}
+                onChange={e => setComment(e.target.value)}
+                placeholder="Write your review here..."
+              />
             )}
           </div>
         </div>
+        {!viewOnly && (
+          <div className="px-6 pb-6 flex justify-end space-x-4 mt-6">
+            <button
+              onClick={handleBack}
+              className="px-8 py-2 border border-red-800 text-red-800 rounded-lg text-sm font-medium"
+              disabled={submitting}
+            >
+              BACK
+            </button>
+            <button
+              onClick={handleSubmitReview}
+              className="px-8 py-2 bg-red-800 text-white rounded-lg text-sm font-medium"
+              disabled={submitting}
+            >
+              {submitting ? 'Submitting...' : 'REVIEW'}
+            </button>
+          </div>
+        )}
+        {error && <div className="px-6 pb-6 text-red-600 font-semibold">{error}</div>}
+        {successMsg && <div className="px-6 pb-6 text-green-600 font-semibold">{successMsg}</div>}
       </div>
     </div>
   );

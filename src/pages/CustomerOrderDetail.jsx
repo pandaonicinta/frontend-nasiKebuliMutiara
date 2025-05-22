@@ -93,7 +93,6 @@ const CustomerOrderDetail = () => {
     );
   };
 
-  // Format tanggal dengan format "22-Mei-2025 21:45"
   const formatDate = (dateStr) => {
     if (!dateStr) return '-';
     const date = new Date(dateStr);
@@ -235,9 +234,7 @@ const CustomerOrderDetail = () => {
           </div>
         </div>
 
-        {/* Kotak Putih utama */}
         <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-6 p-4">
-          {/* Baris tombol Kembali dan kotak status berjajar, status lebar penuh sisa */}
           <div className="flex items-center mb-6 space-x-4">
             <button
               onClick={handleBack}
@@ -258,14 +255,11 @@ const CustomerOrderDetail = () => {
             </div>
           </div>
 
-          {/* Detail Isi Pesanan */}
           <div className="flex flex-wrap gap-6">
-            {/* Detail summary */}
             <div className="w-full md:w-3/5 flex-1">
               <div className="bg-white p-3 rounded-lg border-2 border-red-800">
                 <h3 className="text-sm font-bold text-gray-800 mb-3">Details</h3>
                 <div className="border-2 border-red-800 rounded-lg p-3">
-                  {/* Order Summary */}
                   <div className="mb-3">
                     <div className="flex justify-between mb-2">
                       <span className="text-xs font-bold text-gray-700">Order id</span>
@@ -283,7 +277,6 @@ const CustomerOrderDetail = () => {
 
                   <div className="w-full border-t border-gray-200 my-2"></div>
 
-                  {/* Items List */}
                   {orderDetails.keranjang.length > 0 ? (
                     orderDetails.keranjang.map((item, index) => (
                       <div
@@ -318,7 +311,6 @@ const CustomerOrderDetail = () => {
                     </div>
                   )}
 
-                  {/* Payment Summary */}
                   <div className="mt-3">
                     <h4 className="text-xs font-bold mb-2">Payment</h4>
                     <div className="flex justify-between mb-1 text-xs">
@@ -338,7 +330,6 @@ const CustomerOrderDetail = () => {
                       <span>Rp. {(Number(orderDetails.total) || 0).toLocaleString('id-ID')}</span>
                     </div>
 
-                    {/* Reorder button */}
                     {['delivered', 'success', 'completed'].includes(
                       (orderDetails.status || '').toLowerCase()
                     ) && (
@@ -352,7 +343,6 @@ const CustomerOrderDetail = () => {
                       </div>
                     )}
 
-                    {/* Temporary order warning */}
                     {id.startsWith('temp-') && (
                       <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                         <p className="text-xs text-yellow-700 text-center">

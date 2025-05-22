@@ -53,31 +53,33 @@ const CustomerReview = () => {
     fetchOrders();
   }, []);
 
-  const getImageUrl = (imagePath) => {
-    if (!imagePath) return defaultImage;
-    if (imagePath.startsWith('http')) return imagePath;
-    return `${API_BASE_URL.replace('/api', '')}/storage/${imagePath}`;
-  };
-
   const formatDate = (dateString) => {
     if (!dateString) return '-';
     try {
       const date = new Date(dateString);
-      return date.toLocaleDateString('id-ID', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-      });
+      if (isNaN(date.getTime())) return 'Invalid Date';
+
+      const day = date.getDate();
+      const monthNames = [
+        'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
+        'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
+      ];
+      const month = monthNames[date.getMonth()];
+      const year = date.getFullYear();
+
+      const hours = date.getHours().toString().padStart(2, '0');
+      const minutes = date.getMinutes().toString().padStart(2, '0');
+
+      return `${day}-${month}-${year} ${hours}:${minutes}`;
     } catch {
       return dateString;
     }
   };
 
-  const getOrderDate = (order) => {
-    return (
-      order.tanggal_pembelian ||
-      null
-    );
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return defaultImage;
+    if (imagePath.startsWith('http')) return imagePath;
+    return `${API_BASE_URL.replace('/api', '')}/storage/${imagePath}`;
   };
 
   const getOrderItems = (order) => {
@@ -97,12 +99,8 @@ const CustomerReview = () => {
 
   const getOrderId = (order) => order.transaksi_id || order.id || '';
 
-  const handleWriteReview = (keranjangId, item) => {
-    if (item.rating) {
-      alert(`You already submitted a review:\n\nRating: ${item.rating}\nComment: ${item.comment || '(no comment)'}`);
-    } else {
-      navigate(`/customer/review/${keranjangId}`, { state: { product: item } });
-    }
+  const handleViewReview = (keranjangId, product) => {
+    navigate(`/customer/review/${keranjangId}`, { state: { product, viewOnly: true } });
   };
 
   return (
@@ -173,7 +171,7 @@ const CustomerReview = () => {
                             <span className="text-sm font-bold">Delivered</span>
                             <span className="text-xs text-gray-500 ml-2">Enjoy your meal</span>
                           </div>
-                          <span className="text-xs">{formatDate(getOrderDate(order))}</span>
+                          <span className="text-xs text-gray-500">{formatDate(order.tanggal_pembelian)}</span>
                         </div>
 
                         <div className="w-full h-px bg-gray-300 my-3"></div>
@@ -196,12 +194,23 @@ const CustomerReview = () => {
                               <p className="text-xs text-gray-500">Size: {item.ukuran}</p>
                             </div>
                             <div className="w-28 text-right">
-                              <button
-                                onClick={() => handleWriteReview(item.keranjang_id, item)}
-                                className="text-xs text-white bg-red-800 px-6 py-1 rounded mt-1 inline-block"
-                              >
-                                {item.rating ? 'VIEW REVIEW' : 'REVIEW'}
-                              </button>
+                              {item.rating ? (
+                                <button
+                                  onClick={() => handleViewReview(item.keranjang_id, item)}
+                                  className="text-xs whitespace-nowrap text-white bg-red-800 px-5 py-1 rounded mt-1 inline-flex w-28 justify-center items-center"
+                                  style={{ lineHeight: '1.2' }}
+                                >
+                                  LIHAT ULASAN
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => navigate(`/customer/review/${item.keranjang_id}`, { state: { product: item, viewOnly: false } })}
+                                  className="text-xs whitespace-nowrap text-white bg-red-800 px-5 py-1 rounded mt-1 inline-flex w-28 justify-center items-center"
+                                  style={{ lineHeight: '1.2' }}
+                                >
+                                  ULASAN
+                                </button>
+                              )}
                             </div>
                           </div>
                         ))}
