@@ -241,11 +241,11 @@
       setFormData(prev => ({ ...prev, paymentMethod: method }));
     };
 
-    const processMidtransPayment = (snapToken) => {
+    const processMidtransPayment = (snapToken, transaksi_id) => {
       if (window.snap && typeof window.snap.pay === 'function') {
         window.snap.pay(snapToken, {
           onSuccess: function(result) {
-            handlePaymentSuccess(result.order_id);
+            handlePaymentSuccess(transaksi_id);
           },
           onPending: function() {
             alert('Pembayaran pending, silakan selesaikan pembayaran.');
@@ -340,7 +340,7 @@
         if (formData.paymentMethod === 'cash') {
           handlePaymentSuccess(transaksi_id);
         } else {
-          processMidtransPayment(snaptoken);
+          processMidtransPayment(snaptoken, transaksi_id);
         }
       } catch (error) {
         console.error('Error creating transaction:', error);
