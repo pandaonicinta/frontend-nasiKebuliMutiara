@@ -9,6 +9,7 @@ import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
 import SignIn from './pages/SignIn';
 import ThankYou from './pages/ThankYou'; 
+import MarkerClusterGroup from "react-leaflet-cluster";
 
 // Admin Components
 import AdminDashboard from './pages/AdminDashboard';
