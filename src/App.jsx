@@ -8,6 +8,7 @@ import MenuDetail from './pages/MenuDetail';
 import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
 import SignIn from './pages/SignIn';
+import ThankYou from './pages/ThankYou'; 
 
 // Admin Components
 import AdminDashboard from './pages/AdminDashboard';
@@ -27,7 +28,6 @@ import CustomerReviewDetail from './pages/CustomerReviewDetail';
 import CustomerAddress from './pages/CustomerAddress';  
 import CustomerProfile from './pages/CustomerProfile';  
 
-// Protected Route Component
 const ProtectedRoute = ({ children, allowedRole }) => {
   const userRole = localStorage.getItem('userRole');
   
@@ -89,6 +89,9 @@ function App() {
             </ProtectedRoute>
           } />
 
+          {/* Thank You page bisa tanpa proteksi supaya bisa diakses setelah pembayaran */}
+          <Route path="/thank-you" element={<ThankYou />} />
+
           {/* Admin Routes */}
           <Route path="/admin" element={
             <ProtectedRoute allowedRole="admin">
@@ -131,10 +134,10 @@ function App() {
             </ProtectedRoute>
           } />
           <Route path="/admin/menu/edit/:id" element={
-          <ProtectedRoute allowedRole="admin">
-            <AddMenu />
-          </ProtectedRoute>
-        } />
+            <ProtectedRoute allowedRole="admin">
+              <AddMenu />
+            </ProtectedRoute>
+          } />
 
           {/* Customer Routes */}
           <Route path="/customer" element={
