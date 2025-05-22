@@ -1,30 +1,58 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FaUsers } from 'react-icons/fa';
 import aksen from '../assets/images/aksen.png';
 import AdminSidebar from './AdminSidebar';
+import axios from 'axios';
 
 const AdminCustomer = () => {
-  const customers = [
-    { no: 1, name: 'Pandaoni', address: 'Jalan Sunter, Babakan, Bogor Tengah, Kota Bogor, Jawa Barat', totalSpent: 'Rp. 55.000', lastSpent: 'Rp. 55.000' },
-    { no: 2, name: 'Ario Elnino', address: 'Jalan Padjajaran, Babakan, Bogor Tengah, Kota Bogor, Jawa Barat', totalSpent: 'Rp. 350.000', lastSpent: 'Rp. 350.000' },
+  const navigate = useNavigate();
+  const [customers, setCustomers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  ];
+  useEffect(() => {
+    const userRole = localStorage.getItem('userRole');
+    if (!userRole || userRole !== 'admin') {
+      navigate('/');
+    } else {
+      fetchCustomers();
+    }
+  }, [navigate]);
+
+  const fetchCustomers = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const token = localStorage.getItem('token');
+      const headers = { Authorization: `Bearer ${token}` };
+
+      const response = await axios.get('http://kebabmutiara.xyz/api/dashboard/customer', { headers });
+
+      let fetchedCustomers = response.data;
+
+      setCustomers(fetchedCustomers);
+      setLoading(false);
+    } catch (err) {
+      console.error('Error fetching customers:', err);
+      setError('Failed to load customers. Please try again later.');
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="flex min-h-screen bg-gray-100">
-      <div 
+      <div
         className="absolute top-0 left-0 right-0 h-1/3 bg-red-800 z-0"
         style={{
           backgroundImage: `url(${aksen})`,
           backgroundSize: 'cover',
-          backgroundPosition: 'center'
-        }}>
-      </div>
+          backgroundPosition: 'center',
+        }}
+      ></div>
 
-      {/* Sidebar Component */}
       <AdminSidebar activePage="customers" />
 
-      {/* Main Content */}
       <div className="relative z-10 flex-1 ml-52 p-6">
         <div className="flex justify-between items-center mb-6 bg-white p-4 rounded-lg shadow-lg">
           <h1 className="text-xl font-bold text-red-800">Customer</h1>
@@ -36,34 +64,61 @@ const AdminCustomer = () => {
 
         <div className="bg-white rounded-lg shadow-lg">
           <div className="flex justify-between items-center p-4 border-b border-gray-200">
-            <h3 className="font-bold text-gray-800">Customer</h3>
+            <h3 className="font-bold text-gray-800">Customer List</h3>
+            {error && <span className="text-red-500 text-xs">{error}</span>}
           </div>
           <div className="overflow-x-auto">
-            <table className="min-w-full">
-              <thead>
-                <tr className="bg-red-800 text-white text-center">
-                  <th className="py-2 px-3 text-xs">NO</th>
-                  <th className="py-2 px-3 text-xs">NAME</th>
-                  <th className="py-2 px-3 text-xs">ADDRESS</th>
-                  <th className="py-2 px-3 text-xs">TOTAL SPENT</th>
-                  <th className="py-2 px-3 text-xs">LAST SPENT</th>
-                </tr>
-              </thead>
-              <tbody>
-                {customers.map((customer) => (
-                  <tr
-                    key={customer.no}
-                    className="border-b border-gray-200 text-center hover:bg-gray-50 transition-colors"
-                  >
-                    <td className="py-2 px-3 text-xs">{customer.no}</td>
-                    <td className="py-2 px-3 text-xs text-red-800">{customer.name}</td>
-                    <td className="py-2 px-3 text-xs text-left text-red-800">{customer.address}</td>
-                    <td className="py-2 px-3 text-xs text-red-800">{customer.totalSpent}</td>
-                    <td className="py-2 px-3 text-xs text-red-800">{customer.lastSpent}</td>
+            {loading ? (
+              <div className="flex justify-center items-center h-32">
+                <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-red-800"></div>
+              </div>
+            ) : (
+              <table className="min-w-full">
+                <thead>
+                  <tr className="bg-red-800 text-white text-center">
+                    <th className="py-2 px-3 text-xs">NO</th>
+                    <th className="py-2 px-3 text-xs">NAME</th>
+                    <th className="py-2 px-3 text-xs">ADDRESS</th>
+                    <th className="py-2 px-3 text-xs">TOTAL SPENT</th>
+                    <th className="py-2 px-3 text-xs">LAST SPENT</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {customers.length === 0 ? (
+                    <tr>
+                      <td colSpan="5" className="text-center py-4">
+                        No customers found.
+                      </td>
+                    </tr>
+                  ) : (
+                    customers.map((customer, idx) => (
+                      <tr
+                        key={idx}
+                        className="border-b border-gray-200 text-center hover:bg-gray-50 transition-colors"
+                      >
+                        <td className="py-2 px-3 text-xs">{idx + 1}</td>
+                        <td className="py-2 px-3 text-xs text-red-800">{customer.Nama}</td>
+                        <td className="py-2 px-3 text-xs text-left text-red-800">{customer.Alamat}</td>
+                        <td className="py-2 px-3 text-xs text-red-800">
+                          {new Intl.NumberFormat('id-ID', {
+                            style: 'currency',
+                            currency: 'IDR',
+                            minimumFractionDigits: 0,
+                          }).format(customer.total_spent)}
+                        </td>
+                        <td className="py-2 px-3 text-xs text-red-800">
+                          {new Intl.NumberFormat('id-ID', {
+                            style: 'currency',
+                            currency: 'IDR',
+                            minimumFractionDigits: 0,
+                          }).format(Number(customer.last_spent))}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
       </div>

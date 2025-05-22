@@ -1,146 +1,189 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { FaUser, FaStar } from 'react-icons/fa';
-import CustomerSidebar from './CustomerSidebar';
+import axios from 'axios';
 import aksen from '../assets/images/aksen.png';
+import CustomerSidebar from './CustomerSidebar';
+import { FaStar } from 'react-icons/fa';
+
+const API_BASE_URL = 'http://kebabmutiara.xyz/api';
 
 const CustomerReviewDetail = () => {
   const navigate = useNavigate();
-  const { orderId } = useParams();
-  const customerName = localStorage.getItem('userName') || 'Customer';
-  const [rating, setRating] = useState(5);
-  const [review, setReview] = useState('');
+  const { keranjangId } = useParams();
 
-  // Check if user is logged in as customer
+  const [item, setItem] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const [ratingValue, setRatingValue] = useState(0);
+  const [comment, setComment] = useState('');
+  const [hasReviewed, setHasReviewed] = useState(false);
+  const [submitLoading, setSubmitLoading] = useState(false);
+
   useEffect(() => {
-    const userRole = localStorage.getItem('userRole');
-    if (!userRole || userRole !== 'customer') {
-      navigate('/');
+    const fetchItemReview = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem('token');
+        if (!token) throw new Error('Authentication token not found');
+
+        // Fetch keranjang detail with review info by keranjangId
+        const res = await axios.get(`${API_BASE_URL}/keranjang/${keranjangId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        const data = res.data.data || res.data;
+
+        setItem(data);
+
+        if (data.rating && data.rating.rating_value) {
+          setHasReviewed(true);
+          setRatingValue(data.rating.rating_value);
+          setComment(data.rating.comment || '');
+        } else {
+          setHasReviewed(false);
+          setRatingValue(0);
+          setComment('');
+        }
+        setError(null);
+      } catch (err) {
+        setError(err.response?.data?.message || err.message || 'Failed to load review detail.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchItemReview();
+  }, [keranjangId]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (ratingValue < 1) {
+      alert('Please provide a rating.');
+      return;
     }
-  }, [navigate]);
+    setSubmitLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(`${API_BASE_URL}/ulasan/${keranjangId}`, {
+        rating_value: ratingValue,
+        comment,
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
 
-  // Order data (would fetch from API in a real app)
-  const orderData = {
-    id: orderId,
-    date: '1 January 2025',
-    product: {
-      name: 'Nasi Kebuli Kambing',
-      size: 'L',
-      image: '/api/placeholder/100/100'
+      alert('Review submitted successfully!');
+      setHasReviewed(true);
+    } catch (err) {
+      alert('Failed to submit review.');
+    } finally {
+      setSubmitLoading(false);
     }
   };
 
-  const handleStarClick = (index) => {
-    setRating(index);
-  };
+  if (loading) return (
+    <div className="flex min-h-screen bg-gray-100">
+      <div
+        className="absolute top-0 left-0 right-0 h-1/3 bg-red-800 z-0"
+        style={{ backgroundImage: `url(${aksen})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+      />
+      <CustomerSidebar activePage="review" />
+      <div className="relative z-10 flex-1 ml-52 mx-4 my-4 mr-6 flex items-center justify-center">
+        <div className="p-8 text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-red-800"></div>
+          <p className="mt-2 text-gray-600">Loading review detail...</p>
+        </div>
+      </div>
+    </div>
+  );
 
-  const handleSubmitReview = () => {
-    // Here you would send the review to your backend
-    console.log('Submitting review:', { orderId, rating, review });
-    // Navigate back to review list
-    navigate('/customer/review');
-  };
-
-  const handleBack = () => {
-    navigate('/customer/review');
-  };
+  if (error) return (
+    <div className="flex min-h-screen bg-gray-100">
+      <div
+        className="absolute top-0 left-0 right-0 h-1/3 bg-red-800 z-0"
+        style={{ backgroundImage: `url(${aksen})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+      />
+      <CustomerSidebar activePage="review" />
+      <div className="relative z-10 flex-1 ml-52 mx-4 my-4 mr-6 flex items-center justify-center">
+        <div className="bg-white p-8 rounded-lg shadow-lg text-center text-red-600">
+          <p>{error}</p>
+          <button
+            onClick={() => navigate(-1)}
+            className="mt-4 bg-red-800 text-white px-4 py-2 rounded text-sm"
+          >
+            Back
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="flex min-h-screen bg-gray-100">
-      {/* Background with red top 1/3 and accent pattern */}
       <div
         className="absolute top-0 left-0 right-0 h-1/3 bg-red-800 z-0"
-        style={{
-          backgroundImage: `url(${aksen})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center'
-        }}>
-      </div>
-
-      {/* Sidebar */}
+        style={{ backgroundImage: `url(${aksen})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+      />
       <CustomerSidebar activePage="review" />
-
-      {/* Main Content */}
       <div className="relative z-10 flex-1 ml-52 mx-4 my-4 mr-6">
-        {/* Header with Page Title and Customer badge */}
-        <div className="flex justify-between items-center mb-6 bg-white p-4 rounded-lg shadow-lg">
-          <h1 className="text-base font-bold text-red-800">Review</h1>
-          <div className="flex items-center bg-red-800 text-white px-4 py-2 rounded-lg">
-            <FaUser className="mr-2 text-xs" />
-            <span className="text-xs font-medium">{customerName}</span>
-          </div>
-        </div>
-
-        {/* Review Form - Simplified layout to match design */}
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-          {/* Product Section - Simple without box shadow */}
-          <div className="p-6">
-            <div className="flex justify-between items-center mb-4 border-b border-gray-200 pb-2">
-              <h3 className="text-sm font-bold">PRODUCT</h3>
-              <span className="text-xs text-gray-500">{orderData.date}</span>
+        <div className="bg-white rounded-lg shadow-lg p-6">
+          <h2 className="text-lg font-bold text-red-800 mb-4">{item?.nama_produk || 'Product Review'}</h2>
+          <div className="flex items-center mb-6">
+            <div className="w-20 h-20 rounded-lg overflow-hidden bg-gray-200 mr-4">
+              <img
+                src={item?.gambar ? `${API_BASE_URL.replace('/api', '')}/storage/${item.gambar}` : defaultImage}
+                alt={item?.nama_produk}
+                className="w-full h-full object-cover"
+              />
             </div>
-            
-            <div className="flex items-center mb-6">
-              <div className="w-16 h-16 bg-gray-200 rounded-lg overflow-hidden mr-4">
-                <img
-                  src={orderData.product.image}
-                  alt={orderData.product.name}
-                  className="w-full h-full object-cover"
+
+            {/* Jika sudah review, tampilkan rating dan comment read-only */}
+            {hasReviewed ? (
+              <div className="flex-1">
+                <div className="flex items-center mb-2">
+                  {[...Array(5)].map((_, i) => (
+                    <FaStar
+                      key={i}
+                      className={`mr-1 ${i < ratingValue ? 'text-yellow-400' : 'text-gray-300'}`}
+                    />
+                  ))}
+                </div>
+                <p className="text-gray-700 whitespace-pre-wrap">{comment || '-'}</p>
+              </div>
+            ) : (
+              // Jika belum review, tampilkan form input
+              <form onSubmit={handleSubmit} className="flex-1">
+                <label className="block mb-2 font-semibold text-gray-700">Rate this product</label>
+                <div className="flex mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <FaStar
+                      key={i}
+                      onClick={() => setRatingValue(i + 1)}
+                      className={`cursor-pointer mr-1 ${i < ratingValue ? 'text-yellow-400' : 'text-gray-300'}`}
+                      size={24}
+                    />
+                  ))}
+                </div>
+
+                <label className="block mb-2 font-semibold text-gray-700">Comment</label>
+                <textarea
+                  className="w-full border border-gray-300 rounded p-2 mb-4"
+                  rows="4"
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  placeholder="Write your review here..."
+                  required
                 />
-              </div>
-              <div>
-                <h4 className="text-sm font-bold">{orderData.product.name}</h4>
-                <p className="text-xs text-gray-500">Size: {orderData.product.size}</p>
-              </div>
-            </div>
-          </div>
 
-          {/* Rating and Review Section with red border */}
-          <div className="mx-6 mb-6 border-2 border-red-800 rounded-lg p-4">
-            {/* Rating Section */}
-            <div className="mb-4">
-              <h3 className="text-sm mb-2">Rate Product Quality</h3>
-              <div className="flex">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <FaStar
-                    key={star}
-                    className={`text-3xl mr-1 cursor-pointer ${star <= rating ? 'text-yellow-400' : 'text-gray-200'}`}
-                    onClick={() => handleStarClick(star)}
-                  />
-                ))}
-              </div>
-            </div>
-            
-            {/* Divider between rating and review */}
-            <div className="border-t border-gray-300 my-4"></div>
-
-            {/* Review Text Section */}
-            <div>
-              <h3 className="text-sm mb-2">Write your opinion about us</h3>
-              <p className="text-xs text-gray-500 mb-2">Share your opinion about your shopping experience on our application here</p>
-              <textarea
-                className="w-full border border-gray-300 rounded-lg p-3 h-32 focus:outline-none focus:ring-1 focus:ring-red-800"
-                value={review}
-                onChange={(e) => setReview(e.target.value)}
-                placeholder="Write your review here..."
-              ></textarea>
-            </div>
-          </div>
-
-          {/* Action Buttons - Styled to match design */}
-          <div className="px-6 pb-6 flex justify-end space-x-4">
-            <button
-              onClick={handleBack}
-              className="px-8 py-2 border border-red-800 text-red-800 rounded-lg text-sm font-medium"
-            >
-              BACK
-            </button>
-            <button
-              onClick={handleSubmitReview}
-              className="px-8 py-2 bg-red-800 text-white rounded-lg text-sm font-medium"
-            >
-              REVIEW
-            </button>
+                <button
+                  type="submit"
+                  disabled={submitLoading}
+                  className="bg-red-800 text-white px-6 py-2 rounded hover:bg-red-900 transition disabled:opacity-50"
+                >
+                  {submitLoading ? 'Submitting...' : 'Submit Review'}
+                </button>
+              </form>
+            )}
           </div>
         </div>
       </div>

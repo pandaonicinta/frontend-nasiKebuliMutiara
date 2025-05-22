@@ -1,272 +1,222 @@
 import React, { useState, useEffect } from 'react';
-import { FaUserAlt, FaStar } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { FaUser } from 'react-icons/fa';
 import CustomerSidebar from './CustomerSidebar';
 import aksen from '../assets/images/aksen.png';
+import axios from 'axios';
+import defaultImage from '../assets/images/foto.png';
+
+const API_BASE_URL = 'http://kebabmutiara.xyz/api';
 
 const CustomerReview = () => {
   const navigate = useNavigate();
-  const [unratedOrders, setUnratedOrders] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const customerName = localStorage.getItem('userName') || 'Customer';
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
-  
-  // Rating state for each order
-  const [ratings, setRatings] = useState({});
-  const [comments, setComments] = useState({});
-
-  const apiUrl = 'http://kebabmutiara.xyz/api';
-  
-  const fetchUnratedOrders = async () => {
-    setIsLoading(true);
-    try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`${apiUrl}/ulasan`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      
-      if (response.data && response.data.data) {
-        setUnratedOrders(response.data.data);
-        
-        // Initialize ratings and comments for each order
-        const initialRatings = {};
-        const initialComments = {};
-        response.data.data.forEach(order => {
-          initialRatings[order.id] = 0;
-          initialComments[order.id] = '';
-        });
-        
-        setRatings(initialRatings);
-        setComments(initialComments);
-      }
-      setError(null);
-    } catch (err) {
-      console.error('Error fetching unrated orders:', err);
-      setError('Failed to load orders for review. Please try again later.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   useEffect(() => {
     const userRole = localStorage.getItem('userRole');
-    
     if (!userRole || (userRole !== 'customer' && userRole !== 'pembeli')) {
       navigate('/');
-      return;
     }
-    
-    fetchUnratedOrders();
   }, [navigate]);
 
-  // Handle star rating click
-  const handleRatingChange = (orderId, rating) => {
-    setRatings(prevRatings => ({
-      ...prevRatings,
-      [orderId]: rating
-    }));
-  };
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem('token');
+        if (!token) throw new Error('Authentication token not found');
 
-  // Handle comment input change
-  const handleCommentChange = (orderId, comment) => {
-    setComments(prevComments => ({
-      ...prevComments,
-      [orderId]: comment
-    }));
-  };
+        const response = await axios.get(`${API_BASE_URL}/ulasan`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
 
-  // Submit review
-  const handleSubmitReview = async (orderId) => {
-    if (ratings[orderId] === 0) {
-      setError('Please select a rating before submitting');
-      return;
-    }
-    
-    setSubmitting(true);
-    try {
-      const token = localStorage.getItem('token');
-      await axios.post(
-        `${apiUrl}/ulasan/${orderId}`,
-        {
-          rating: ratings[orderId],
-          comment: comments[orderId]
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
+        const ordersData = response.data;
+
+        if (!Array.isArray(ordersData) || ordersData.length === 0) {
+          setError('You have no delivered orders yet.');
+          setOrders([]);
+        } else {
+          setOrders(ordersData);
+          setError(null);
         }
-      );
-      
-      // Remove the reviewed order from the list
-      setUnratedOrders(prevOrders => prevOrders.filter(order => order.id !== orderId));
-      
-      // Show success message
-      setSuccessMessage('Review submitted successfully!');
-      setTimeout(() => {
-        setSuccessMessage('');
-      }, 3000);
-      
-    } catch (err) {
-      console.error('Error submitting review:', err);
-      setError('Failed to submit review. Please try again.');
-    } finally {
-      setSubmitting(false);
+      } catch (err) {
+        setError(err.response?.data?.message || err.message || 'Failed to load delivered orders.');
+        setOrders([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, []);
+
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return defaultImage;
+    if (imagePath.startsWith('http')) return imagePath;
+    return `${API_BASE_URL.replace('/api', '')}/storage/${imagePath}`;
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '-';
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      });
+    } catch {
+      return dateString;
     }
   };
 
-  // Get user information from localStorage
-  const customerName = localStorage.getItem('userName') || 'Customer';
+  const getOrderDate = (order) => {
+    return (
+      order.tanggal_pembelian ||
+      null
+    );
+  };
 
-  // Render rating stars
-  const renderStars = (orderId) => {
-    const stars = [];
-    for (let i = 1; i <= 5; i++) {
-      stars.push(
-        <FaStar
-          key={i}
-          className={`cursor-pointer ${i <= ratings[orderId] ? 'text-yellow-500' : 'text-gray-300'}`}
-          size={24}
-          onClick={() => handleRatingChange(orderId, i)}
-        />
-      );
+  const getOrderItems = (order) => {
+    if (!order || !order.keranjang) return [];
+    return order.keranjang.map(item => ({
+      nama: item.nama_produk || 'Unknown',
+      ukuran: item.ukuran || '-',
+      jumlah: item.quantity || 1,
+      harga: item.harga || 0,
+      gambar: item.gambar || null,
+      keranjang_id: item.keranjang_id,
+      israted: item.israted,
+      rating: item.rating?.rating_value || null,
+      comment: item.rating?.comment || '',
+    }));
+  };
+
+  const getOrderId = (order) => order.transaksi_id || order.id || '';
+
+  const handleWriteReview = (keranjangId, item) => {
+    if (item.rating) {
+      alert(`You already submitted a review:\n\nRating: ${item.rating}\nComment: ${item.comment || '(no comment)'}`);
+    } else {
+      navigate(`/customer/review/${keranjangId}`, { state: { product: item } });
     }
-    return stars;
   };
 
   return (
-    <div className="flex min-h-screen bg-red-900">
-      {/* Background pattern */}
+    <div className="flex min-h-screen bg-gray-100">
       <div
-        className="absolute top-0 left-0 right-0 bottom-0 z-0"
-        style={{
-          backgroundImage: `url(${aksen})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center'
-        }}
-      ></div>
+        className="absolute top-0 left-0 right-0 h-1/3 bg-red-800 z-0"
+        style={{ backgroundImage: `url(${aksen})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+      />
 
-      {/* Sidebar */}
       <CustomerSidebar activePage="review" />
 
-      {/* Main Content - With proper margin to accommodate fixed sidebar */}
       <div className="relative z-10 flex-1 ml-52 mx-4 my-4 mr-6">
-        {/* Header with Title and User */}
-        <div className="bg-white rounded-lg p-4 flex justify-between items-center mb-6">
-          <h1 className="text-red-800 font-bold">Product Reviews</h1>
+        <div className="flex justify-between items-center mb-6 bg-white p-4 rounded-lg shadow-lg">
+          <h1 className="text-base font-bold text-red-800">Review</h1>
           <div className="flex items-center bg-red-800 text-white px-4 py-2 rounded-lg">
-            <FaUserAlt className="mr-2 text-xs" />
-            <span className="text-xs">{customerName}</span>
+            <FaUser className="mr-2 text-xs" />
+            <span className="text-xs font-medium">{customerName}</span>
           </div>
         </div>
 
-        {/* Main Content Area */}
-        <div className="bg-white rounded-lg p-6">
-          {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-              {error}
-            </div>
-          )}
-          
-          {successMessage && (
-            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
-              {successMessage}
-            </div>
-          )}
+        <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-6">
+          <div className="p-4">
+            <h2 className="text-base font-bold text-gray-800">My Review</h2>
+          </div>
+          <div className="h-0.5 bg-red-800"></div>
 
-          {isLoading ? (
-            <div className="text-center py-8">
+          <div className="flex bg-red-800 text-white p-3 text-sm">
+            <div className="w-16 text-center">NO</div>
+            <div className="flex-1">ORDER</div>
+          </div>
+
+          {loading ? (
+            <div className="p-8 text-center">
               <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-red-800"></div>
               <p className="mt-2 text-gray-600">Loading your orders...</p>
             </div>
-          ) : unratedOrders.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              You don't have any orders to review at the moment.
-            </div>
-          ) : (
-            <div className="space-y-6">
-              <h2 className="text-lg font-semibold text-red-800">Orders Awaiting Your Review</h2>
-              
-              {unratedOrders.map((order) => (
-                <div 
-                  key={order.id} 
-                  className="border border-red-800 rounded-lg p-4 mb-4"
+          ) : error ? (
+            <div className="p-8 text-center">
+              <p className="text-red-600">{error}</p>
+              {error !== 'You have no delivered orders yet.' && (
+                <button
+                  onClick={() => window.location.reload()}
+                  className="mt-2 bg-red-800 text-white px-4 py-2 rounded text-sm"
                 >
-                  <div className="mb-4">
-                    <h3 className="font-bold">Order #{order.id}</h3>
-                    <p className="text-sm text-gray-600">
-                      Date: {new Date(order.created_at).toLocaleDateString('id-ID', {
-                        day: 'numeric', month: 'long', year: 'numeric'
-                      })}
-                    </p>
-                  </div>
-                  
-                  {/* Order Items */}
-                  <div className="mb-4">
-                    {order.items && order.items.map((item, index) => (
-                      <div key={index} className="flex items-center py-2 border-b border-gray-200 last:border-b-0">
-                        <div className="w-12 h-12 mr-3">
-                          <div className="w-full h-full bg-gray-200 rounded-lg overflow-hidden">
-                            <img
-                              src={item.gambar || '/api/placeholder/100/100'}
-                              alt={item.nama}
-                              className="w-full h-full object-cover"
-                              onError={(e) => { e.target.src = '/api/placeholder/100/100'; }}
-                            />
+                  Try Again
+                </button>
+              )}
+            </div>
+          ) : orders.length === 0 ? (
+            <div className="p-8 text-center text-gray-500">You have no delivered orders to review.</div>
+          ) : (
+            orders.map((order, index) => {
+              const orderId = getOrderId(order);
+              return (
+                <div
+                  key={orderId || index}
+                  className="border-b border-gray-200 last:border-b-0"
+                >
+                  <div className="flex p-3">
+                    <div className="w-16 text-center">{index + 1}</div>
+                    <div className="flex-1">
+                      <div className="flex flex-wrap items-start border-2 border-red-800 rounded-lg p-3 mb-4">
+                        <div className="w-full flex justify-between items-start mb-2">
+                          <div className="flex items-center">
+                            <div className="bg-red-800 w-6 h-6 rounded-full flex items-center justify-center mr-2">
+                              <span className="text-white text-xs">✓</span>
+                            </div>
+                            <span className="text-sm font-bold">Delivered</span>
+                            <span className="text-xs text-gray-500 ml-2">Enjoy your meal</span>
                           </div>
+                          <span className="text-xs">{formatDate(getOrderDate(order))}</span>
                         </div>
-                        <div className="flex-1">
-                          <p className="font-semibold">{item.nama}</p>
-                          <p className="text-sm text-gray-600">
-                            {item.jumlah || 1} x Rp. {item.harga?.toLocaleString('id-ID') || '0'}
-                          </p>
-                        </div>
+
+                        <div className="w-full h-px bg-gray-300 my-3"></div>
+
+                        {getOrderItems(order).map((item, itemIndex) => (
+                          <div key={itemIndex} className="w-full flex items-center mt-2">
+                            <div className="w-10 mr-3" />
+                            <div className="w-12 h-12 mr-3">
+                              <div className="w-full h-full bg-gray-200 rounded-lg overflow-hidden">
+                                <img
+                                  src={getImageUrl(item.gambar)}
+                                  alt={item.nama}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => { e.target.src = defaultImage; }}
+                                />
+                              </div>
+                            </div>
+                            <div className="flex-1">
+                              <h4 className="text-xs font-bold">{item.nama}</h4>
+                              <p className="text-xs text-gray-500">Size: {item.ukuran}</p>
+                            </div>
+                            <div className="w-28 text-right">
+                              <button
+                                onClick={() => handleWriteReview(item.keranjang_id, item)}
+                                className="text-xs text-white bg-red-800 px-6 py-1 rounded mt-1 inline-block"
+                              >
+                                {item.rating ? 'VIEW REVIEW' : 'REVIEW'}
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+
+                        {getOrderItems(order).length === 0 && (
+                          <div className="w-full text-center py-2">
+                            <p className="text-sm text-gray-500">No items in this order</p>
+                          </div>
+                        )}
                       </div>
-                    ))}
-                    
-                    {(!order.items || order.items.length === 0) && (
-                      <p className="text-gray-500 italic">No items data available</p>
-                    )}
-                  </div>
-                  
-                  {/* Rating Section */}
-                  <div className="p-4 bg-gray-50 rounded-lg">
-                    <div className="mb-4">
-                      <label className="block text-gray-600 text-sm mb-2">Your Rating</label>
-                      <div className="flex space-x-2">
-                        {renderStars(order.id)}
-                      </div>
-                    </div>
-                    
-                    <div className="mb-4">
-                      <label className="block text-gray-600 text-sm mb-2">Your Comment (Optional)</label>
-                      <textarea
-                        value={comments[order.id]}
-                        onChange={(e) => handleCommentChange(order.id, e.target.value)}
-                        className="w-full border border-red-800 rounded-lg p-3 h-24"
-                        placeholder="Share your experience with this order..."
-                      />
-                    </div>
-                    
-                    <div className="flex justify-end">
-                      <button
-                        onClick={() => handleSubmitReview(order.id)}
-                        disabled={submitting || ratings[order.id] === 0}
-                        className={`bg-red-800 text-white px-6 py-2 rounded-md ${
-                          submitting || ratings[order.id] === 0 ? 'opacity-50 cursor-not-allowed' : ''
-                        }`}
-                      >
-                        {submitting ? 'Submitting...' : 'Submit Review'}
-                      </button>
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
+              );
+            })
           )}
         </div>
       </div>

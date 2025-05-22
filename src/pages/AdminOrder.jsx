@@ -17,7 +17,7 @@ const AdminOrder = () => {
     pending: 0,
     cooking: 0
   });
-  
+
   useEffect(() => {
     const userRole = localStorage.getItem('userRole');
     if (!userRole || userRole !== 'admin') {
@@ -26,18 +26,19 @@ const AdminOrder = () => {
       fetchOrdersData();
     }
   }, [navigate]);
-  
+
   const fetchOrdersData = async () => {
     try {
       setLoading(true);
+      setError(null);
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
+
       const summaryResponse = await axios.get('http://kebabmutiara.xyz/api/dashboard', { headers });
-      console.log("Dashboard summary response:", summaryResponse.data);
       const totalOrders = summaryResponse.data.total_order || 0;
       const delivered = summaryResponse.data.total_delivered || 0;
+
       const ordersResponse = await axios.get('http://kebabmutiara.xyz/api/dashboard/order', { headers });
-      console.log("Orders API response:", ordersResponse.data);
       let ordersData = [];
 
       if (Array.isArray(ordersResponse.data)) {
@@ -50,38 +51,31 @@ const AdminOrder = () => {
           ordersData = possibleArrays[0];
         }
       }
-      
-      const processedOrders = ordersData.map(order => {
-        return {
-          transaksi_id: order.transaksi_id || order.id,
-          created_at: order.created_at || order.tanggal_pembelian,
-          status: order.status || 'PENDING',
-          total: order.total || order.total_harga || 0,
-          alamat: order.alamat || {},
-          customer_name: order.alamat?.user?.name || order.nama_pembeli || 'N/A'
-        };
-      });
-      
+
+      const processedOrders = ordersData.map(order => ({
+        transaksi_id: order.transaksi_id || order.id,
+        created_at: order.created_at || order.tanggal_pembelian,
+        status: order.status || 'pending',
+        total: order.total || order.total_harga || 0,
+        alamat: order.alamat || {},
+        customer_name: order.alamat?.user?.name || order.nama_pembeli || 'N/A'
+      }));
+
       setOrders(processedOrders);
 
       let pending = 0;
       let cooking = 0;
       let onDelivery = 0;
-      
+
       processedOrders.forEach(order => {
-        const status = (order.status || '').toUpperCase();
-        
-        if (status === 'PENDING' || status === 'NEW ORDER') {
-          pending++;
-        } else if (status === 'MASAK' || status === 'COOKING') {
-          cooking++;
-        } else if (status === 'OTW' || status === 'ON DELIVERY') {
-          onDelivery++;
-        }
+        const status = (order.status || '').toLowerCase().trim();
+        if (['pending', 'new order', 'paid'].includes(status)) pending++;
+        else if (['masak', 'cooking', 'on process'].includes(status)) cooking++;
+        else if (['otw', 'on deliver', 'on delivery'].includes(status)) onDelivery++;
       });
 
       const calculatedOnDelivery = onDelivery || (totalOrders - delivered - pending - cooking);
-      
+
       setSummaryData({
         totalOrders,
         delivered,
@@ -89,7 +83,7 @@ const AdminOrder = () => {
         pending,
         cooking
       });
-      
+
       setLoading(false);
     } catch (err) {
       console.error('Error fetching orders:', err);
@@ -103,13 +97,19 @@ const AdminOrder = () => {
     try {
       const date = new Date(dateString);
       if (isNaN(date.getTime())) return 'Invalid Date';
-      return date.toLocaleString('id-ID', { 
-        day: 'numeric', 
-        month: 'long', 
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
+
+      const day = date.getDate();
+      const monthNames = [
+        'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
+        'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
+      ];
+      const month = monthNames[date.getMonth()];
+      const year = date.getFullYear();
+
+      const hours = date.getHours().toString().padStart(2, '0');
+      const minutes = date.getMinutes().toString().padStart(2, '0');
+
+      return `${day}-${month}-${year} ${hours}:${minutes}`;
     } catch (e) {
       console.error('Error formatting date:', e);
       return 'Format Error';
@@ -127,35 +127,32 @@ const AdminOrder = () => {
 
   const getStatusBadgeClass = (status) => {
     if (!status) return 'bg-gray-500 text-white text-xs px-4 py-1 rounded-md w-24 inline-block';
-    
-    switch (status.toUpperCase()) {
-      case 'DELIVERED':
-      case 'SAMPAI':
-        return 'bg-green-500 text-white text-xs px-4 py-1 rounded-md w-24 inline-block';
-      case 'ON DELIVERY':
-      case 'OTW':
-        return 'bg-blue-500 text-white text-xs px-1 py-1 rounded-md w-24 inline-block';
-      case 'NEW ORDER':
-      case 'PENDING':
-        return 'bg-red-500 text-white text-xs px-1 py-1 rounded-md w-24 inline-block';
-      case 'COOKING':
-      case 'MASAK':
-        return 'bg-yellow-500 text-white text-xs px-1 py-1 rounded-md w-24 inline-block';
-      default:
-        return 'bg-gray-500 text-white text-xs px-4 py-1 rounded-md w-24 inline-block';
+
+    const s = status.toLowerCase().trim();
+    if (['delivered', 'sampai'].includes(s)) {
+      return 'bg-green-500 text-white text-xs px-4 py-1 rounded-md w-24 inline-block';
     }
+    if (['on delivery', 'otw', 'on deliver'].includes(s)) {
+      return 'bg-blue-500 text-white text-xs px-4 py-1 rounded-md w-24 inline-block';
+    }
+    if (['new order', 'pending', 'paid'].includes(s)) {
+      return 'bg-red-500 text-white text-xs px-4 py-1 rounded-md w-24 inline-block';
+    }
+    if (['masak', 'cooking', 'on process'].includes(s)) {
+      return 'bg-yellow-500 text-white text-xs px-4 py-1 rounded-md w-24 inline-block';
+    }
+    return 'bg-gray-500 text-white text-xs px-4 py-1 rounded-md w-24 inline-block';
   };
 
   const getDisplayStatus = (status) => {
     if (!status) return 'UNKNOWN';
-    
-    switch (status.toUpperCase()) {
-      case 'SAMPAI': return 'DELIVERED';
-      case 'OTW': return 'ON DELIVERY';
-      case 'MASAK': return 'COOKING';
-      case 'PENDING': return 'NEW ORDER';
-      default: return status;
-    }
+
+    const s = status.toLowerCase().trim();
+    if (s === 'sampai' || s === 'delivered') return 'DELIVERED';
+    if (['otw', 'on delivery', 'on deliver'].includes(s)) return 'ON DELIVERY';
+    if (['masak', 'cooking', 'on process'].includes(s)) return 'COOKING';
+    if (['pending', 'paid', 'new order'].includes(s)) return 'NEW ORDER';
+    return status.toUpperCase();
   };
 
   const handleOrderClick = (orderId) => {
@@ -167,70 +164,37 @@ const AdminOrder = () => {
       setError('Cannot update order with unknown status');
       return;
     }
-    
+
+    const statusMap = {
+      pending: { endpoint: `http://kebabmutiara.xyz/api/masak/${orderId}`, nextStatus: 'on process' },
+      'new order': { endpoint: `http://kebabmutiara.xyz/api/masak/${orderId}`, nextStatus: 'on process' },
+      paid: { endpoint: `http://kebabmutiara.xyz/api/masak/${orderId}`, nextStatus: 'on process' },
+      'on process': { endpoint: `http://kebabmutiara.xyz/api/otw/${orderId}`, nextStatus: 'on deliver' },
+      cooking: { endpoint: `http://kebabmutiara.xyz/api/otw/${orderId}`, nextStatus: 'on deliver' },
+      masak: { endpoint: `http://kebabmutiara.xyz/api/otw/${orderId}`, nextStatus: 'on deliver' },
+      otw: { endpoint: `http://kebabmutiara.xyz/api/sampai/${orderId}`, nextStatus: 'delivered' },
+      'on delivery': { endpoint: `http://kebabmutiara.xyz/api/sampai/${orderId}`, nextStatus: 'delivered' },
+      'on deliver': { endpoint: `http://kebabmutiara.xyz/api/sampai/${orderId}`, nextStatus: 'delivered' }
+    };
+
+    const normalizedStatus = currentStatus.toLowerCase().trim();
+    const flow = statusMap[normalizedStatus];
+
+    if (!flow) {
+      setError(`Unknown order status: ${currentStatus}`);
+      return;
+    }
+
     try {
-      let nextEndpoint = '';
-      let nextStatus = '';
-      
-      switch (currentStatus.toUpperCase()) {
-        case 'PENDING':
-        case 'NEW ORDER':
-          nextEndpoint = `http://kebabmutiara.xyz/api/masak/${orderId}`;
-          nextStatus = 'COOKING';
-          break;
-        case 'MASAK':
-        case 'COOKING':
-          nextEndpoint = `http://kebabmutiara.xyz/api/otw/${orderId}`;
-          nextStatus = 'ON DELIVERY';
-          break;
-        case 'OTW':
-        case 'ON DELIVERY':
-          nextEndpoint = `http://kebabmutiara.xyz/api/sampai/${orderId}`;
-          nextStatus = 'DELIVERED';
-          break;
-        default:
-          setError(`Unknown order status: ${currentStatus}`);
-          return; 
-      }
-      
-      if (nextEndpoint) {
-        const token = localStorage.getItem('token');
-        await axios.get(nextEndpoint, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        setOrders(prevOrders => 
-          prevOrders.map(order => 
-            order.transaksi_id === orderId 
-              ? { ...order, status: nextStatus === 'ON DELIVERY' ? 'OTW' : nextStatus === 'DELIVERED' ? 'SAMPAI' : 'MASAK' } 
-              : order
-          )
-        );
-
-        if (currentStatus.toUpperCase() === 'PENDING' || currentStatus.toUpperCase() === 'NEW ORDER') {
-          setSummaryData(prev => ({
-            ...prev,
-            pending: Math.max(0, prev.pending - 1),
-            cooking: prev.cooking + 1
-          }));
-        } else if (currentStatus.toUpperCase() === 'MASAK' || currentStatus.toUpperCase() === 'COOKING') {
-          setSummaryData(prev => ({
-            ...prev,
-            cooking: Math.max(0, prev.cooking - 1),
-            onDelivery: prev.onDelivery + 1
-          }));
-        } else if (currentStatus.toUpperCase() === 'OTW' || currentStatus.toUpperCase() === 'ON DELIVERY') {
-          setSummaryData(prev => ({
-            ...prev,
-            onDelivery: Math.max(0, prev.onDelivery - 1),
-            delivered: prev.delivered + 1
-          }));
+      setError(null);
+      const token = localStorage.getItem('token');
+      await axios.get(flow.endpoint, {
+        headers: {
+          Authorization: `Bearer ${token}`
         }
- 
-        fetchOrdersData();
-      }
+      });
+
+      await fetchOrdersData();
     } catch (err) {
       console.error('Error updating order status:', err);
       setError('Failed to update order status. Please try again.');
@@ -239,19 +203,17 @@ const AdminOrder = () => {
 
   return (
     <div className="flex min-h-screen bg-gray-100">
-      <div 
-        className="absolute top-0 left-0 right-0 h-1/3 bg-red-800 z-0" 
-        style={{ 
+      <div
+        className="absolute top-0 left-0 right-0 h-1/3 bg-red-800 z-0"
+        style={{
           backgroundImage: `url(${aksen})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center'
-        }}>
-      </div>
-      
-      {/* Sidebar */}
+        }}
+      ></div>
+
       <AdminSidebar activePage="orders" />
 
-      {/* Main Content */}
       <div className="relative z-10 flex-1 ml-52 p-6">
         <div className="flex justify-between items-center mb-6 bg-white p-4 rounded-lg shadow-lg">
           <h1 className="text-xl font-bold text-red-800">Order Management</h1>
@@ -261,7 +223,6 @@ const AdminOrder = () => {
           </div>
         </div>
 
-        {/* Order Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
           <div className="bg-white rounded-lg shadow-lg">
             <div className="p-3">
@@ -274,6 +235,7 @@ const AdminOrder = () => {
               </div>
             </div>
           </div>
+
           <div className="bg-white rounded-lg shadow-lg">
             <div className="p-3">
               <p className="text-xs text-gray-500">NEW ORDERS</p>
@@ -285,6 +247,7 @@ const AdminOrder = () => {
               </div>
             </div>
           </div>
+
           <div className="bg-white rounded-lg shadow-lg">
             <div className="p-3">
               <p className="text-xs text-gray-500">COOKING</p>
@@ -296,6 +259,7 @@ const AdminOrder = () => {
               </div>
             </div>
           </div>
+
           <div className="bg-white rounded-lg shadow-lg">
             <div className="p-3">
               <p className="text-xs text-gray-500">ON DELIVERY</p>
@@ -307,6 +271,7 @@ const AdminOrder = () => {
               </div>
             </div>
           </div>
+
           <div className="bg-white rounded-lg shadow-lg">
             <div className="p-3">
               <p className="text-xs text-gray-500">DELIVERED</p>
@@ -320,21 +285,20 @@ const AdminOrder = () => {
           </div>
         </div>
 
-        {/* Order Table */}
         <div className="bg-white rounded-lg shadow-lg">
           <div className="flex justify-between items-center p-4 border-b border-gray-200">
             <h3 className="font-bold text-gray-800">Order List</h3>
             <div>
               {error && <span className="text-red-500 text-xs mr-4">{error}</span>}
-              <button 
-                onClick={() => fetchOrdersData()} 
+              <button
+                onClick={() => fetchOrdersData()}
                 className="bg-red-800 text-white px-3 py-1 rounded text-xs font-bold hover:bg-red-900 transition"
               >
                 REFRESH
               </button>
             </div>
           </div>
-          
+
           {loading ? (
             <div className="flex justify-center items-center h-64">
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-800"></div>
@@ -360,53 +324,58 @@ const AdminOrder = () => {
                   {orders.length === 0 ? (
                     <tr>
                       <td colSpan="6" className="text-center py-4">
-                        No orders found. {summaryData.totalOrders > 0 ? 
-                        `There should be ${summaryData.totalOrders} orders according to the dashboard. Please check the API connection.` : 
-                        'No orders are available at this time.'}
+                        No orders found.{' '}
+                        {summaryData.totalOrders > 0
+                          ? `There should be ${summaryData.totalOrders} orders according to the dashboard. Please check the API connection.`
+                          : 'No orders are available at this time.'}
                       </td>
                     </tr>
                   ) : (
-                    orders.map((order) => (
-                      <tr 
-                        key={order.transaksi_id} 
-                        className="border-b border-gray-200 text-center hover:bg-gray-50 transition-colors"
-                      >
-                        <td 
-                          className="py-2 px-3 text-xs text-red-800 cursor-pointer"
-                          onClick={() => handleOrderClick(order.transaksi_id)}
+                    orders.map((order) => {
+                      const status = (order.status || '').toLowerCase().trim();
+                      return (
+                        <tr
+                          key={order.transaksi_id}
+                          className="border-b border-gray-200 text-center hover:bg-gray-50 transition-colors"
                         >
-                          #{order.transaksi_id}
-                        </td>
-                        <td className="py-2 px-3 text-xs text-red-800">{formatDate(order.created_at)}</td>
-                        <td className="py-2 px-3 text-xs text-red-800">{order.customer_name}</td>
-                        <td className="py-2 px-3 text-xs text-red-800">{formatCurrency(order.total)}</td>
-                        <td className="py-2 px-3 flex justify-center">
-                          <span className={getStatusBadgeClass(order.status)}>
-                            {getDisplayStatus(order.status)}
-                          </span>
-                        </td>
-                        <td className="py-2 px-3">
-                          {order.status && ['PENDING', 'NEW ORDER', 'MASAK', 'COOKING', 'OTW', 'ON DELIVERY'].some(
-                            s => order.status.toUpperCase().includes(s)
-                          ) && (
-                            <button
-                              onClick={() => handleStatusChange(order.transaksi_id, order.status)}
-                              className="bg-red-800 text-white text-xs px-2 py-1 rounded-md hover:bg-red-900 transition"
-                            >
-                              {(order.status.toUpperCase() === 'PENDING' || order.status.toUpperCase() === 'NEW ORDER') ? 'Start Cooking' : 
-                               (order.status.toUpperCase() === 'MASAK' || order.status.toUpperCase() === 'COOKING') ? 'Send Delivery' : 
-                               'Mark Delivered'}
-                            </button>
-                          )}
-                          <button
+                          <td
+                            className="py-2 px-3 text-xs text-red-800 cursor-pointer"
                             onClick={() => handleOrderClick(order.transaksi_id)}
-                            className="bg-gray-200 text-gray-800 text-xs px-2 py-1 rounded-md ml-2 hover:bg-gray-300 transition"
                           >
-                            <FaEye className="inline text-xs mr-1" /> View
-                          </button>
-                        </td>
-                      </tr>
-                    ))
+                            #{order.transaksi_id}
+                          </td>
+                          <td className="py-2 px-3 text-xs text-red-800">{formatDate(order.created_at)}</td>
+                          <td className="py-2 px-3 text-xs text-red-800">{order.customer_name}</td>
+                          <td className="py-2 px-3 text-xs text-red-800">{formatCurrency(order.total)}</td>
+                          <td className="py-2 px-3 flex justify-center">
+                            <span className={`${getStatusBadgeClass(order.status)} uppercase`}>
+                              {getDisplayStatus(order.status)}
+                            </span>
+                          </td>
+                          <td className="py-2 px-3">
+                            {['pending', 'new order', 'paid', 'masak', 'cooking', 'on process', 'otw', 'on delivery', 'on deliver'].includes(status) && (
+                              <button
+                                onClick={() => handleStatusChange(order.transaksi_id, order.status)}
+                                className="bg-red-800 text-white text-xs px-2 py-1 rounded-md hover:bg-red-900 transition"
+                              >
+                                {(() => {
+                                  if (['pending', 'new order', 'paid'].includes(status)) return 'Start Cooking';
+                                  if (['masak', 'cooking', 'on process'].includes(status)) return 'Send Delivery';
+                                  if (['otw', 'on delivery', 'on deliver'].includes(status)) return 'Mark Delivered';
+                                  return '';
+                                })()}
+                              </button>
+                            )}
+                            <button
+                              onClick={() => handleOrderClick(order.transaksi_id)}
+                              className="bg-gray-200 text-gray-800 text-xs px-2 py-1 rounded-md ml-2 hover:bg-gray-300 transition"
+                            >
+                              <FaEye className="inline text-xs mr-1" /> View
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>

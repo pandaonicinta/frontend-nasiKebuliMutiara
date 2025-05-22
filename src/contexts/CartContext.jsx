@@ -24,7 +24,7 @@ export const CartProvider = ({ children }) => {
       localStorage.setItem('cart', JSON.stringify(cartItems.map(item => ({
         produk_id: item.id,
         quantity: item.quantity,
-        ukuran: item.size // Make sure to save size to localStorage
+        ukuran: item.size 
       }))));
     }
   }, [cartItems]);
@@ -61,7 +61,6 @@ export const CartProvider = ({ children }) => {
       
       let formattedItems = [];
       
-      // Handle different API response formats
       if (response.data && Array.isArray(response.data.data)) {
         formattedItems = response.data.data.map(item => ({
           id: item.produk_id || item.id_produk || item.id,
@@ -98,7 +97,6 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  // Helper function to handle image URLs
   const getImageUrl = (imagePath) => {
     if (!imagePath) return null;  
     if (imagePath.startsWith('http')) {
@@ -146,14 +144,11 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  // FIX: Improved addToCart function to prevent duplicates
   const addToCart = async (item) => {
     try {
       const token = localStorage.getItem('auth_token') || localStorage.getItem('token') || localStorage.getItem('authToken');
       
       if (token) {
-        // For authenticated users, only call the API
-        // and let the fetchCartFromAPI handle state updates
         await axios.post(
           `${API_BASE_URL}/api/keranjang/add`,
           {
@@ -169,10 +164,8 @@ export const CartProvider = ({ children }) => {
           }
         );
         
-        // Fetch updated cart from API
         await fetchCartFromAPI(token);
       } else {
-        // For unauthenticated users, update local state and localStorage
         const existingItemIndex = cartItems.findIndex(
           cartItem => cartItem.id === item.id && cartItem.size === item.size
         );
@@ -185,7 +178,6 @@ export const CartProvider = ({ children }) => {
           setCartItems([...cartItems, item]);
         }
 
-        // Update localStorage
         const existingCart = JSON.parse(localStorage.getItem('cart') || '[]');
         const existingItemLocalIndex = existingCart.findIndex(
           cartItem => cartItem.produk_id === item.id && cartItem.ukuran === item.size
@@ -209,7 +201,6 @@ export const CartProvider = ({ children }) => {
         localStorage.removeItem('auth_token');
         localStorage.removeItem('token');
         localStorage.removeItem('authToken');
-        // Try again without token after logout
         addToCart(item);
       }
     }
@@ -218,8 +209,6 @@ export const CartProvider = ({ children }) => {
   const removeFromCart = async (id, size) => {
     try {
       const token = localStorage.getItem('auth_token') || localStorage.getItem('token') || localStorage.getItem('authToken');
-      
-      // Find the cart item using both ID and size
       const cartItem = cartItems.find(item => 
         item.id === id && item.size === size
       );
@@ -254,7 +243,6 @@ export const CartProvider = ({ children }) => {
         localStorage.setItem('cart', JSON.stringify(updatedCart));
       }
       
-      // Update selected items
       setSelectedItems(selectedItems.filter(itemId => 
         itemId !== cartItem.cart_item_id
       ));
@@ -264,19 +252,16 @@ export const CartProvider = ({ children }) => {
         localStorage.removeItem('auth_token');
         localStorage.removeItem('token');
         localStorage.removeItem('authToken');
-        // Try again without token after logout
         removeFromCart(id, size);
       }
     }
   };
 
-  // FIX: Improved updateQuantity function
   const updateQuantity = async (productId, size, quantity) => {
     try {
       const token = localStorage.getItem('auth_token') || localStorage.getItem('token') || localStorage.getItem('authToken');
       
       if (token) {
-        // For authenticated users, use API
         await axios.post(
           `${API_BASE_URL}/api/keranjang/add`,
           {
@@ -291,11 +276,9 @@ export const CartProvider = ({ children }) => {
             }
           }
         );
-        
-        // Fetch the updated cart
+
         await fetchCartFromAPI(token);
       } else {
-        // For unauthenticated users, update local state and localStorage
         const updatedItems = cartItems.map(item => {
           if (item.id === productId && item.size === size) {
             return { ...item, quantity };
@@ -305,7 +288,6 @@ export const CartProvider = ({ children }) => {
         
         setCartItems(updatedItems);
         
-        // Update localStorage
         const localCart = JSON.parse(localStorage.getItem('cart') || '[]');
         const updatedLocalCart = localCart.map(item => {
           if (item.produk_id === productId && item.ukuran === size) {
@@ -393,7 +375,7 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  const processCheckout = async () => {
+  const processCheckout = async (addressId, paymentMethod) => {
     try {
       const token = localStorage.getItem('auth_token') || localStorage.getItem('token') || localStorage.getItem('authToken');
       
@@ -405,11 +387,15 @@ export const CartProvider = ({ children }) => {
         throw new Error('No items selected for checkout');
       }
       
-      // Call checkout API with selected item IDs
+      const total = calculateSelectedTotal();
+      
       const response = await axios.post(
         `${API_BASE_URL}/api/transaksi/create`, 
         {
-          id_item: selectedItems
+          id_item: selectedItems,
+          total: total,
+          id_alamat: addressId,
+          jenis_pembayaran: paymentMethod 
         },
         {
           headers: {
@@ -426,6 +412,70 @@ export const CartProvider = ({ children }) => {
       return response.data;
     } catch (err) {
       console.error('Error processing checkout:', err);
+      throw err;
+    }
+  };
+
+  const updatePaymentStatus = async (transactionId, status) => {
+    try {
+      const token = localStorage.getItem('auth_token') || localStorage.getItem('token') || localStorage.getItem('authToken');
+      
+      if (!token) {
+        throw new Error('User must be logged in to update payment status');
+      }
+      
+      let endpoint;
+      
+      switch(status) {
+        case 'success':
+          endpoint = `${API_BASE_URL}/api/transaksi/berhasil/${transactionId}`;
+          break;
+        case 'failed':
+          endpoint = `${API_BASE_URL}/api/transaksi/gagal/${transactionId}`;
+          break;
+        default:
+          throw new Error('Invalid payment status');
+      }
+      
+      const response = await axios.post(
+        endpoint,
+        {},
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      return response.data;
+    } catch (err) {
+      console.error('Error updating payment status:', err);
+      throw err;
+    }
+  };
+
+  const getOrderStatus = async (transactionId) => {
+    try {
+      const token = localStorage.getItem('auth_token') || localStorage.getItem('token') || localStorage.getItem('authToken');
+      
+      if (!token) {
+        throw new Error('User must be logged in to check order status');
+      }
+      
+      const response = await axios.get(
+        `${API_BASE_URL}/api/transaksi/${transactionId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      return response.data;
+    } catch (err) {
+      console.error('Error getting order status:', err);
       throw err;
     }
   };
@@ -478,6 +528,8 @@ export const CartProvider = ({ children }) => {
         calculateSelectedTotal,
         clearCart,
         processCheckout,
+        updatePaymentStatus, 
+        getOrderStatus, 
         syncCartAfterLogin
       }}
     >

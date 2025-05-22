@@ -1,25 +1,97 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FaUsers, FaCheck } from 'react-icons/fa';
 import aksen from '../assets/images/aksen.png';
 import AdminSidebar from './AdminSidebar';
+import axios from 'axios';
+
+const API_BASE_URL = 'http://kebabmutiara.xyz/api';
 
 const AdminReview = () => {
-  const [reviews, setReviews] = useState([
-    { no: 1, name: 'Ciput', rating: 5, review: 'Enak banget, bumbunya ga pelit. Besok besok bakal beli di sini lagi pasti', appearance: true },
-    { no: 2, name: 'Budi', rating: 4, review: 'Gurih, enak, pas sekali dengan selera saya. Bakal jadi langganan nih', appearance: true },
-  ]);
+  const [reviews, setReviews] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const toggleAppearance = (reviewNo) => {
-    setReviews(reviews.map(review =>
-      review.no === reviewNo
-        ? {...review, appearance: !review.appearance}
-        : review
-    ));
+  useEffect(() => {
+    const fetchReviews = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem('token');
+        console.log('Token:', token);
+
+        const response = await axios.get(`${API_BASE_URL}/ulasan`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        });
+
+        console.log('API response:', response.data);
+
+        const data = response.data;
+
+        let allReviews = [];
+        let counter = 1;
+
+        data.forEach((transaksi, i) => {
+          console.log(`Transaksi ${i}:`, transaksi);
+          transaksi.keranjang.forEach((item, j) => {
+            console.log(`Keranjang ${j}:`, item);
+            if (item.israted === "1" || item.israted === 1) {
+              allReviews.push({
+                no: counter++,
+                keranjang_id: item.keranjang_id,
+                name: item.nama_produk,
+                rating: Number(item.rating?.rating_value) || 0,
+                review: item.rating?.comment || '',
+                appearance: true,
+              });
+            }
+          });
+        });
+
+        console.log('Filtered reviews:', allReviews);
+
+        if (allReviews.length === 0) {
+          setError('No reviews found.');
+        } else {
+          setError(null);
+        }
+
+        setReviews(allReviews);
+      } catch (err) {
+        setError(err.response?.data?.message || err.message || 'Failed to load reviews.');
+        setReviews([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchReviews();
+  }, []);
+
+  const toggleAppearance = (keranjang_id) => {
+    setReviews((prev) =>
+      prev.map((rev) =>
+        rev.keranjang_id === keranjang_id ? { ...rev, appearance: !rev.appearance } : rev
+      )
+    );
   };
 
-  const renderStars = (rating) => {
-    return '★'.repeat(rating);
-  };
+  const renderStars = (rating) => '★'.repeat(rating);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-800"></div>
+        <span className="ml-4 text-red-800">Loading reviews...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center min-h-screen text-red-600">
+        <p>{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen bg-gray-100">
@@ -28,14 +100,12 @@ const AdminReview = () => {
         style={{
           backgroundImage: `url(${aksen})`,
           backgroundSize: 'cover',
-          backgroundPosition: 'center'
-        }}>
-      </div>
-      
-      {/* Sidebar */}
+          backgroundPosition: 'center',
+        }}
+      />
+
       <AdminSidebar activePage="review" />
 
-      {/* Main Content */}
       <div className="relative z-10 flex-1 ml-52 p-6">
         <div className="flex justify-between items-center mb-6 bg-white p-4 rounded-lg shadow-lg">
           <h1 className="text-xl font-bold text-red-800">Review</h1>
@@ -45,7 +115,6 @@ const AdminReview = () => {
           </div>
         </div>
 
-        {/* Review Table */}
         <div className="bg-white rounded-lg shadow-lg">
           <div className="flex justify-between items-center p-4 border-b border-gray-200">
             <h3 className="font-bold text-gray-800">Review</h3>
@@ -62,28 +131,36 @@ const AdminReview = () => {
                 </tr>
               </thead>
               <tbody>
-                {reviews.map((review) => (
-                  <tr
-                    key={review.no}
-                    className="border-b border-gray-200 text-center hover:bg-gray-50 transition-colors"
-                  >
-                    <td className="py-2 px-3 text-xs">{review.no}</td>
-                    <td className="py-2 px-3 text-xs text-red-800">{review.name}</td>
-                    <td className="py-2 px-3 text-xs text-yellow-500">{renderStars(review.rating)}</td>
-                    <td className="py-2 px-3 text-xs text-left text-red-800">{review.review}</td>
-                    <td className="py-2 px-3">
-                      <button
-                        onClick={() => toggleAppearance(review.no)}
-                        className={`px-4 py-1 rounded-md text-white text-xs ${
-                          review.appearance ? 'bg-green-500' : 'bg-gray-500'
-                        }`}
-                      >
-                        {review.appearance && <FaCheck className="inline mr-1" />}
-                        {review.appearance ? 'YES' : 'NO'}
-                      </button>
+                {reviews.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="text-center py-4 text-gray-500">
+                      No reviews found.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  reviews.map((review) => (
+                    <tr
+                      key={review.keranjang_id}
+                      className="border-b border-gray-200 text-center hover:bg-gray-50 transition-colors"
+                    >
+                      <td className="py-2 px-3 text-xs">{review.no}</td>
+                      <td className="py-2 px-3 text-xs text-red-800">{review.name}</td>
+                      <td className="py-2 px-3 text-xs text-yellow-500">{renderStars(review.rating)}</td>
+                      <td className="py-2 px-3 text-xs text-left text-red-800">{review.review}</td>
+                      <td className="py-2 px-3">
+                        <button
+                          onClick={() => toggleAppearance(review.keranjang_id)}
+                          className={`px-4 py-1 rounded-md text-white text-xs ${
+                            review.appearance ? 'bg-green-500' : 'bg-gray-500'
+                          }`}
+                        >
+                          {review.appearance && <FaCheck className="inline mr-1" />}
+                          {review.appearance ? 'YES' : 'NO'}
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
