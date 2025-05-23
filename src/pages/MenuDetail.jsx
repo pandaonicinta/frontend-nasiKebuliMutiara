@@ -46,6 +46,42 @@ const MenuDetail = () => {
     }).format(price);
   };
 
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('id-ID', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  const renderStars = (rating) => {
+    const stars = [];
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 !== 0;
+    
+    for (let i = 0; i < fullStars; i++) {
+      stars.push(<FaStar key={i} className="text-[#FDC302]" size={14} />);
+    }
+    
+    if (hasHalfStar) {
+      stars.push(<FaStar key="half" className="text-gray-300" size={14} />);
+    }
+    
+    for (let i = fullStars + (hasHalfStar ? 1 : 0); i < 5; i++) {
+      stars.push(<FaStar key={i} className="text-gray-300" size={14} />);
+    }
+    
+    return stars;
+  };
+
+  // Fungsi untuk menghitung rata-rata rating
+  const calculateAverageRating = () => {
+    if (ulasanList.length === 0) return 0;
+    const totalRating = ulasanList.reduce((sum, ulasan) => sum + parseFloat(ulasan.rating_value), 0);
+    return (totalRating / ulasanList.length);
+  };
+
   useEffect(() => {
     // Check if user is logged in - using the same token keys as in Home.jsx
     const token = localStorage.getItem('authToken') || localStorage.getItem('token');
@@ -53,21 +89,29 @@ const MenuDetail = () => {
   }, []);
 
   useEffect(() => {
-  if (activeTab === 'Ulasan') {
-    const fetchUlasan = async () => {
-      try {
-        const response = await axios.get(`${API_BASE_URL}/api/allulasan`);
-        setUlasanList(response.data); // Make sure response.data is already the array from map
-      } catch (error) {
-        console.error('Gagal mengambil ulasan:', error);
-      } finally {
-        setLoadingUlasan(false);
-      }
-    };
+    if (activeTab === 'Ulasan' && id) {
+      const fetchUlasan = async () => {
+        try {
+          setLoadingUlasan(true);
+          const response = await axios.get(`${API_BASE_URL}/api/allulasan`);
+          
+          // Filter ulasan berdasarkan ID produk saat ini
+          const filteredUlasan = response.data.filter(ulasan => 
+            ulasan.id_produk === parseInt(id) || ulasan.produk_id === parseInt(id)
+          );
+          
+          setUlasanList(filteredUlasan);
+        } catch (error) {
+          console.error('Gagal mengambil ulasan:', error);
+          setUlasanList([]);
+        } finally {
+          setLoadingUlasan(false);
+        }
+      };
 
-    fetchUlasan();
-  }
-}, [activeTab]);
+      fetchUlasan();
+    }
+  }, [activeTab, id]);
 
   useEffect(() => {
     const fetchMenuData = async () => {
@@ -89,6 +133,17 @@ const MenuDetail = () => {
           if (sizes.length > 0) {
             setSelectedSize(sizes[0]);
           }
+        }
+        
+        // Fetch ulasan untuk menghitung rating
+        try {
+          const ulasanResponse = await axios.get(`${API_BASE_URL}/api/allulasan`);
+          const filteredUlasan = ulasanResponse.data.filter(ulasan => 
+            ulasan.id_produk === parseInt(id) || ulasan.produk_id === parseInt(id)
+          );
+          setUlasanList(filteredUlasan);
+        } catch (ulasanErr) {
+          console.error('Error fetching ulasan:', ulasanErr);
         }
         
         setIsLoading(false);
@@ -318,6 +373,8 @@ const MenuDetail = () => {
     'ID Produk': menu.produk_id || 'N/A'
   };
 
+  const averageRating = calculateAverageRating();
+
   return (
     <div className="min-h-screen bg-white">
       {/* Navigation Bar */}
@@ -385,10 +442,11 @@ const MenuDetail = () => {
               <div className="lg:w-1/2">
                 <h1 className="text-3xl font-bold text-gray-900 mb-2">{menu.nama_produk}</h1>
                 <div className="flex items-center mb-4">
-                  {[1, 2, 3, 4, 5].map(star => (
-                    <FaStar key={star} className="text-[#FDC302]" />
-                  ))}
-                  <span className="ml-2 text-sm text-gray-500">(5/5)</span>
+                  {renderStars(averageRating > 0 ? averageRating : 5)}
+                  <span className="ml-2 text-sm text-gray-500">
+                    ({averageRating > 0 ? averageRating : '5'}/5) 
+                    {ulasanList.length > 0 && ` - ${ulasanList.length} ulasan`}
+                  </span>
                 </div>
                 <h2 className="text-2xl font-bold text-[#B22222] mb-6">{formatPrice(menu.harga)}</h2>
                 <p className="text-gray-700 mb-6">{menu.deskripsi}</p>
@@ -514,23 +572,99 @@ const MenuDetail = () => {
                 )}
                 
                 {activeTab === 'Ulasan' && (
-                  <div className="max-w-3xl mx-auto">
+                  <div className="max-w-4xl mx-auto">
                     {loadingUlasan ? (
-                      <p className="text-center text-gray-500">Memuat ulasan...</p>
+                      <div className="flex items-center justify-center py-12">
+                        <div className="text-center">
+                          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FDC302] mx-auto mb-4"></div>
+                          <p className="text-gray-500 font-medium">Memuat ulasan...</p>
+                        </div>
+                      </div>
                     ) : ulasanList.length === 0 ? (
-                      <p className="text-center text-gray-500">Belum ada ulasan, jadilah yang pertama meninggalkan ulasan!</p>
-                    ) : (
-                      <div className="space-y-4">
-                        {ulasanList.map((ulasan) => (
-                          <div key={ulasan.rating_id} className="p-4 border rounded shadow-sm">
-                            <div className="flex justify-between items-center mb-1">
-                              <h3 className="font-semibold">{ulasan.nama_produk || 'Produk tidak diketahui'}</h3>
-                              <span className="text-yellow-500">⭐ {ulasan.rating_value}/5</span>
-                            </div>
-                            <p className="text-gray-700">{ulasan.comment}</p>
-                            <p className="text-sm text-gray-400 mt-1">{ulasan.created_at}</p>
+                      <div className="text-center py-12">
+                        <div className="mb-6">
+                          <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <FaStar className="text-gray-400 text-2xl" />
                           </div>
-                        ))}
+                          <h3 className="text-xl font-bold text-gray-900 mb-2">Belum Ada Ulasan</h3>
+                          <p className="text-gray-500 max-w-md mx-auto">
+                            Jadilah yang pertama memberikan ulasan untuk produk <strong>{menu.nama_produk}</strong> ini dan bantu pelanggan lain membuat keputusan!
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div>
+                       
+                        {/* Reviews List */}
+                        <div className="space-y-4">
+                          {ulasanList.map((ulasan) => (
+                            <div 
+                              key={ulasan.rating_id} 
+                              className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow duration-300 relative"
+                            >
+                              {/* Tanggal di pojok kanan atas */}
+                              <div className="absolute top-3 right-4">
+                                <span className="text-xs text-gray-500">
+                                  {formatDate(ulasan.created_at)}
+                                </span>
+                              </div>
+
+                              {/* Review Header */}
+                              <div className="flex items-start mb-3">
+                                <div className="flex-1 pr-20">
+                                  <div className="flex items-center space-x-3 mb-2">
+                                    <div className="w-8 h-8 bg-[#FDC302] rounded-full flex items-center justify-center">
+                                      <span className="text-white text-xs font-bold">
+                                        {ulasan.name ? ulasan.name.charAt(0).toUpperCase() : 'U'}
+                                      </span>
+                                    </div>
+                                    <div>
+                                      <h4 className="font-semibold text-gray-900 text-sm">
+                                        {ulasan.name}
+                                      </h4>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center space-x-2 ml-11">
+                                    <div className="flex items-center">
+                                      {renderStars(ulasan.rating_value)}
+                                    </div>
+                                    <span className="text-xs font-semibold text-[#FDC302]">
+                                      {ulasan.rating_value}/5
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Review Content */}
+                              <div className="ml-11">
+                                <p className="text-gray-700 leading-relaxed text-sm">
+                                  "{ulasan.comment}"
+                                </p>
+                              </div>
+
+                              {/* Review Footer */}
+                              <div className="mt-3 pt-3 border-t border-gray-100 ml-11">
+                                <div className="flex items-center space-x-2">
+                                  <span className="text-xs text-gray-500">
+                                    Produk: 
+                                  </span>
+                                  <span className="text-xs font-medium text-gray-700">
+                                    {menu.nama_produk}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Reviews Summary */}
+                        {ulasanList.length > 5 && (
+                          <div className="mt-6 text-center">
+                            <p className="text-gray-500 text-sm">
+                              Menampilkan {ulasanList.length} ulasan untuk produk ini
+                            </p>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -540,7 +674,7 @@ const MenuDetail = () => {
           </div>
         </div>
 
-        <div className="w-full h-px bg-gray-300 my-8"></div>
+        <div className="w-full h-px bg-gray-300 my-8"></div> 
 
         {/* Related Products */}
         <div className="container mx-auto py-12">
