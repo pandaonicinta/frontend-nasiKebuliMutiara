@@ -61,9 +61,9 @@ const MenuCard = ({ item, handleMenuClick, navigate, getImageUrl, foto, formatCu
         <div className="flex-shrink-0 mt-auto">
           <div className="flex items-center justify-between w-full mb-4 h-8">
             <div className="flex items-center text-[#FDC302]">
-              <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs">
+              {/* <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs">
                 {item.ukuran || 'M'}
-              </span>
+              </span> */}
             </div>
             <span className="text-lg font-semibold text-gray-900">
               {formatCurrency(item.harga)}

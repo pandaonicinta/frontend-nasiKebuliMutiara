@@ -546,7 +546,7 @@ const MenuDetail = () => {
                   </div>
                 )}
 
-                {sizes.length > 0 && (
+                {/* {sizes.length > 0 && (
                   <div className="mb-6">
                     <h3 className="font-medium mb-2">Ukuran:</h3>
                     <div className="flex space-x-4">
@@ -563,7 +563,7 @@ const MenuDetail = () => {
                       ))}
                     </div>
                   </div>
-                )}
+                )} */}
 
                 <div className="flex items-center space-x-4 mb-6">
                   <div className="flex items-center border border-gray-300 rounded-md">
