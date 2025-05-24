@@ -16,7 +16,11 @@
       font-family: 'Berkshire Swash', cursive;
     }
   }
-  
+  header {
+  position: relative; /* atau fixed/sticky jika header menempel */
+  z-index: 1000; /* nilai tinggi supaya selalu di atas */
+}
+
   /* Wave divider style */
   .wave-divider {
     position: relative;

@@ -258,52 +258,65 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  const updateQuantity = async (productId, size, quantity) => {
-    try {
-      const token = localStorage.getItem('auth_token') || localStorage.getItem('token') || localStorage.getItem('authToken');
-      
-      if (token) {
-        await axios.post(
-          `${API_BASE_URL}/api/keranjang/add`,
-          {
-            id_produk: productId,
-            quantity: quantity,
-            ukuran: size || ''
-          },
-          {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
-          }
-        );
-
-        await fetchCartFromAPI(token);
-      } else {
-        const updatedItems = cartItems.map(item => {
-          if (item.id === productId && item.size === size) {
-            return { ...item, quantity };
-          }
-          return item;
-        });
-        
-        setCartItems(updatedItems);
-        
-        const localCart = JSON.parse(localStorage.getItem('cart') || '[]');
-        const updatedLocalCart = localCart.map(item => {
-          if (item.produk_id === productId && item.ukuran === size) {
-            return { ...item, quantity };
-          }
-          return item;
-        });
-        
-        localStorage.setItem('cart', JSON.stringify(updatedLocalCart));
+  const updateQuantity = async (productId, size, quantity, action) => {
+  try {
+    const token = localStorage.getItem('auth_token') || localStorage.getItem('token') || localStorage.getItem('authToken');
+    
+    if (token) {
+      // Find cart item by productId and size
+      const cartItem = cartItems.find(item => item.id === productId && item.size === size);
+      if (!cartItem || !cartItem.cart_item_id) {
+        throw new Error('Cart item not found');
       }
-    } catch (error) {
-      console.error('Error updating item quantity:', error);
-      throw error;
+
+      // Determine action based on quantity difference if not explicitly passed
+      // Or use the passed action directly
+      const updateAction = action || (quantity > cartItem.quantity ? 'increase' : 'decrease');
+
+      await axios.post(
+        `${API_BASE_URL}/api/keranjang/update`,
+        {
+          id_item: cartItem.cart_item_id,
+          action: updateAction,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      // Refresh cart data after update
+      await fetchCartFromAPI(token);
+
+    } else {
+      // Local update when no token available
+      const updatedItems = cartItems.map(item => {
+        if (item.id === productId && item.size === size) {
+          return { ...item, quantity };
+        }
+        return item;
+      });
+      
+      setCartItems(updatedItems);
+      
+      const localCart = JSON.parse(localStorage.getItem('cart') || '[]');
+      const updatedLocalCart = localCart.map(item => {
+        if (item.produk_id === productId && item.ukuran === size) {
+          return { ...item, quantity };
+        }
+        return item;
+      });
+      
+      localStorage.setItem('cart', JSON.stringify(updatedLocalCart));
     }
-  };
+  } catch (error) {
+    console.error('Error updating item quantity:', error);
+    throw error;
+  }
+};
+
 
   const toggleSelectItem = (cart_item_id) => {
     setSelectedItems(prevSelected => {

@@ -20,14 +20,7 @@ const AdminDashboard = () => {
     delivered: 0
   });
   const [recentOrders, setRecentOrders] = useState([]);
-  const [performanceData, setPerformanceData] = useState([
-    { name: 'Jul', value: 0 },
-    { name: 'Aug', value: 0 },
-    { name: 'Sep', value: 0 },
-    { name: 'Oct', value: 0 },
-    { name: 'Nov', value: 0 },
-    { name: 'Dec', value: 0 }
-  ]);
+  const [performanceData, setPerformanceData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -39,12 +32,46 @@ const AdminDashboard = () => {
     }
   }, [navigate]);
 
+  const formatMonthName = (monthString) => {
+    const [year, month] = monthString.split('-');
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return monthNames[parseInt(month) - 1];
+  };
+
+  // Generate last 6 months including current month
+  const generateLast6Months = () => {
+    const months = [];
+    const currentDate = new Date();
+    
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date();
+      date.setMonth(currentDate.getMonth() - i);
+      
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const monthKey = `${year}-${month}`;
+      
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                         'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      
+      months.push({
+        key: monthKey,
+        name: monthNames[date.getMonth()],
+        value: 0 // default value
+      });
+    }
+    
+    return months;
+  };
+
   const fetchDashboardData = async () => {
     try {
       setIsLoading(true);
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
       
+      // Fetch main dashboard data
       const summaryResponse = await axios.get('http://kebabmutiara.xyz/api/dashboard', { headers });
       
       const formattedIncome = new Intl.NumberFormat('id-ID', {
@@ -85,10 +112,36 @@ const AdminDashboard = () => {
       }));
       
       setRecentOrders(formattedOrders);
+
+      // Fetch performance chart data
+      const performanceResponse = await axios.get('http://kebabmutiara.xyz/api/dashboard/report', { headers });
+      
+      // Generate last 6 months template
+      const last6Months = generateLast6Months();
+      
+      // Map API data to the 6 months template
+      const apiDataMap = {};
+      performanceResponse.data.forEach(item => {
+        apiDataMap[item.month] = parseInt(item.total_orders);
+      });
+      
+      // Fill the template with actual data where available
+      const finalPerformanceData = last6Months.map(month => ({
+        name: month.name,
+        value: apiDataMap[month.key] || 0
+      }));
+      
+      setPerformanceData(finalPerformanceData);
       
       setIsLoading(false);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
+      // Set last 6 months with zero values if API fails
+      const last6Months = generateLast6Months();
+      setPerformanceData(last6Months.map(month => ({
+        name: month.name,
+        value: 0
+      })));
       setIsLoading(false);
     }
   };
@@ -147,6 +200,9 @@ const AdminDashboard = () => {
   };
 
   const circleSegments = calculateCircleSegments();
+
+  // Calculate max value for bar chart scaling
+  const maxValue = Math.max(...performanceData.map(item => item.value), 1);
 
   return (
     <div className="flex min-h-screen bg-gray-100">
@@ -329,15 +385,18 @@ const AdminDashboard = () => {
                     <div key={index} className="flex flex-col items-center">
                       <div
                         className="bg-red-800 w-6 rounded-t-sm"
-                        style={{ height: `${item.value * 2}px` }}
+                        style={{ 
+                          height: `${maxValue > 0 ? (item.value / maxValue) * 120 : 0}px`,
+                          minHeight: item.value > 0 ? '4px' : '0px'
+                        }}
                       ></div>
                       <p className="text-xs mt-2">{item.name}</p>
+                      <p className="text-xs text-gray-500">{item.value}</p>
                     </div>
                   ))}
                 </div>
               </div>
             </div>
-
 
             <div className="mt-6 bg-white rounded-lg shadow-lg">
               <div className="flex justify-between items-center p-4 border-b border-gray-200 ">

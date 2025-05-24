@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaUsers, FaEye } from 'react-icons/fa';
+import { FaUsers, FaEye, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import aksen from '../assets/images/aksen.png';
 import AdminSidebar from './AdminSidebar';
 import axios from 'axios';
@@ -10,6 +10,8 @@ const AdminOrder = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [ordersPerPage] = useState(10);
   const [summaryData, setSummaryData] = useState({
     totalOrders: 0,
     delivered: 0,
@@ -58,7 +60,8 @@ const AdminOrder = () => {
         status: order.status || 'pending',
         total: order.total || order.total_harga || 0,
         alamat: order.alamat || {},
-        customer_name: order.alamat?.user?.name || order.nama_pembeli || 'N/A'
+        customer_name: order.alamat?.user?.name || order.nama_pembeli || 'N/A',
+        jenis_pembayaran: order.jenis_pembayaran || 'N/A'
       }));
 
       setOrders(processedOrders);
@@ -89,6 +92,28 @@ const AdminOrder = () => {
       console.error('Error fetching orders:', err);
       setError('Failed to load orders. Please try again later.');
       setLoading(false);
+    }
+  };
+
+  // Pagination calculations
+  const totalPages = Math.ceil(orders.length / ordersPerPage);
+  const indexOfLastOrder = currentPage * ordersPerPage;
+  const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
+  const currentOrders = orders.slice(indexOfFirstOrder, indexOfLastOrder);
+
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
     }
   };
 
@@ -153,6 +178,26 @@ const AdminOrder = () => {
     if (['masak', 'cooking', 'on process'].includes(s)) return 'DIMASAK';
     if (['pending', 'paid', 'new order'].includes(s)) return 'PESANAN BARU';
     return status.toUpperCase();
+  };
+
+  const getPaymentTypeBadgeClass = (paymentType) => {
+    if (!paymentType || paymentType === 'N/A') {
+      return 'bg-gray-500 text-white text-xs px-3 py-1 rounded-md inline-block';
+    }
+
+    const type = paymentType.toLowerCase().trim();
+    if (['cash', 'tunai', 'cod'].includes(type)) {
+      return 'bg-green-600 text-white text-xs px-3 py-1 rounded-md inline-block';
+    }
+    if (['transfer', 'bank', 'qris', 'e-wallet', 'gopay', 'ovo', 'dana'].includes(type)) {
+      return 'bg-blue-600 text-white text-xs px-3 py-1 rounded-md inline-block';
+    }
+    return 'bg-purple-600 text-white text-xs px-3 py-1 rounded-md inline-block';
+  };
+
+  const getDisplayPaymentType = (paymentType) => {
+    if (!paymentType || paymentType === 'N/A') return 'N/A';
+    return paymentType.toUpperCase();
   };
 
   const handleOrderClick = (orderId) => {
@@ -308,78 +353,126 @@ const AdminOrder = () => {
               <p>{error}</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full">
-                <thead>
-                  <tr className="bg-red-800 text-white text-center">
-                    <th className="py-2 px-3 text-xs">ID PESANAN</th>
-                    <th className="py-2 px-3 text-xs">TANGGAL</th>
-                    <th className="py-2 px-3 text-xs">NAMA PEMBELI</th>
-                    <th className="py-2 px-3 text-xs">JUMLAH</th>
-                    <th className="py-2 px-3 text-xs">STATUS PESANAN</th>
-                    <th className="py-2 px-3 text-xs">DETAIL</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {orders.length === 0 ? (
-                    <tr>
-                      <td colSpan="6" className="text-center py-4">
-                        No orders found.{' '}
-                        {summaryData.totalOrders > 0
-                          ? `There should be ${summaryData.totalOrders} orders according to the dashboard. Please check the API connection.`
-                          : 'No orders are available at this time.'}
-                      </td>
+            <>
+              <div className="overflow-x-auto">
+                <table className="min-w-full">
+                  <thead>
+                    <tr className="bg-red-800 text-white text-center">
+                      <th className="py-2 px-3 text-xs">ID PESANAN</th>
+                      <th className="py-2 px-3 text-xs">TANGGAL</th>
+                      <th className="py-2 px-3 text-xs">NAMA PEMBELI</th>
+                      <th className="py-2 px-3 text-xs">JUMLAH</th>
+                      <th className="py-2 px-3 text-xs">JENIS PEMBAYARAN</th>
+                      <th className="py-2 px-3 text-xs">STATUS PESANAN</th>
+                      <th className="py-2 px-3 text-xs">DETAIL</th>
                     </tr>
-                  ) : (
-                    orders.map((order) => {
-                      const status = (order.status || '').toLowerCase().trim();
-                      return (
-                        <tr
-                          key={order.transaksi_id}
-                          className="border-b border-gray-200 text-center hover:bg-gray-50 transition-colors"
-                        >
-                          <td
-                            className="py-2 px-3 text-xs text-red-800 cursor-pointer"
-                            onClick={() => handleOrderClick(order.transaksi_id)}
+                  </thead>
+                  <tbody>
+                    {currentOrders.length === 0 ? (
+                      <tr>
+                        <td colSpan="7" className="text-center py-4">
+                          No orders found.{' '}
+                          {summaryData.totalOrders > 0
+                            ? `There should be ${summaryData.totalOrders} orders according to the dashboard. Please check the API connection.`
+                            : 'No orders are available at this time.'}
+                        </td>
+                      </tr>
+                    ) : (
+                      currentOrders.map((order) => {
+                        const status = (order.status || '').toLowerCase().trim();
+                        return (
+                          <tr
+                            key={order.transaksi_id}
+                            className="border-b border-gray-200 text-center hover:bg-gray-50 transition-colors"
                           >
-                            #{order.transaksi_id}
-                          </td>
-                          <td className="py-2 px-3 text-xs text-red-800">{formatDate(order.created_at)}</td>
-                          <td className="py-2 px-3 text-xs text-red-800">{order.customer_name}</td>
-                          <td className="py-2 px-3 text-xs text-red-800">{formatCurrency(order.total)}</td>
-                          <td className="py-2 px-3 flex justify-center">
-                            <span className={`${getStatusBadgeClass(order.status)} uppercase`}>
-                              {getDisplayStatus(order.status)}
-                            </span>
-                          </td>
-                          <td className="py-2 px-3">
-                            {['pending', 'new order', 'paid', 'masak', 'cooking', 'on process', 'otw', 'on delivery', 'on deliver'].includes(status) && (
-                              <button
-                                onClick={() => handleStatusChange(order.transaksi_id, order.status)}
-                                className="bg-red-800 text-white text-xs px-2 py-1 rounded-md hover:bg-red-900 transition"
-                              >
-                                {(() => {
-                                  if (['pending', 'new order', 'paid'].includes(status)) return 'Mulai Memasak';
-                                  if (['masak', 'cooking', 'on process'].includes(status)) return 'Kirim';
-                                  if (['otw', 'on delivery', 'on deliver'].includes(status)) return 'Tandai Selesai';
-                                  return '';
-                                })()}
-                              </button>
-                            )}
-                            <button
+                            <td
+                              className="py-2 px-3 text-xs text-red-800 cursor-pointer"
                               onClick={() => handleOrderClick(order.transaksi_id)}
-                              className="bg-gray-200 text-gray-800 text-xs px-2 py-1 rounded-md ml-2 hover:bg-gray-300 transition"
                             >
-                              <FaEye className="inline text-xs mr-1" /> Lihat
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
+                              #{order.transaksi_id}
+                            </td>
+                            <td className="py-2 px-3 text-xs text-red-800">{formatDate(order.created_at)}</td>
+                            <td className="py-2 px-3 text-xs text-red-800">{order.customer_name}</td>
+                            <td className="py-2 px-3 text-xs text-red-800">{formatCurrency(order.total)}</td>
+                            <td className="py-2 px-3">
+                              <span className={getPaymentTypeBadgeClass(order.jenis_pembayaran)}>
+                                {getDisplayPaymentType(order.jenis_pembayaran)}
+                              </span>
+                            </td>
+                            <td className="py-2 px-3 flex justify-center">
+                              <span className={`${getStatusBadgeClass(order.status)} uppercase`}>
+                                {getDisplayStatus(order.status)}
+                              </span>
+                            </td>
+                            <td className="py-2 px-3 align-top">
+                              <div className="flex flex-col gap-1">
+                                {['pending', 'new order', 'paid', 'masak', 'cooking', 'on process', 'otw', 'on delivery', 'on deliver'].includes(status) && (
+                                  <button
+                                    onClick={() => handleStatusChange(order.transaksi_id, order.status)}
+                                    className="bg-red-800 text-white text-xs px-2 py-1 rounded-md hover:bg-red-900 transition w-full"
+                                  >
+                                    {(() => {
+                                      if (['pending', 'new order', 'paid'].includes(status)) return 'Mulai Memasak';
+                                      if (['masak', 'cooking', 'on process'].includes(status)) return 'Kirim';
+                                      if (['otw', 'on delivery', 'on deliver'].includes(status)) return 'Tandai Selesai';
+                                      return '';
+                                    })()}
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => handleOrderClick(order.transaksi_id)}
+                                  className="bg-gray-200 text-gray-800 text-xs px-2 py-1 rounded-md hover:bg-gray-300 transition w-full"
+                                >
+                                  <FaEye className="inline text-xs mr-1" /> Lihat
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination */}
+              {orders.length > 0 && (
+                <div className="flex justify-between items-center p-4 border-t border-gray-200">
+                  <div className="text-sm text-gray-600">
+                    Menampilkan {indexOfFirstOrder + 1} - {Math.min(indexOfLastOrder, orders.length)} dari {orders.length} pesanan
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={handlePrevPage}
+                      disabled={currentPage === 1}
+                      className={`p-2 rounded-md ${
+                        currentPage === 1
+                          ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                          : 'bg-red-800 text-white hover:bg-red-900'
+                      } transition`}
+                    >
+                      <FaChevronLeft className="text-xs" />
+                    </button>
+                    
+                    <span className="px-3 py-1 bg-red-800 text-white rounded-md text-sm">
+                      {currentPage} / {totalPages}
+                    </span>
+                    
+                    <button
+                      onClick={handleNextPage}
+                      disabled={currentPage === totalPages}
+                      className={`p-2 rounded-md ${
+                        currentPage === totalPages
+                          ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                          : 'bg-red-800 text-white hover:bg-red-900'
+                      } transition`}
+                    >
+                      <FaChevronRight className="text-xs" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

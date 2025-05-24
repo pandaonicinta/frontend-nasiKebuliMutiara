@@ -151,7 +151,7 @@ const CustomerReviewDetail = () => {
             <FaArrowLeft className="mr-2 text-xs" /> KEMBALI
           </button>
           <div className="border-2 border-red-800 rounded-lg p-4 mb-6" style={insetShadowStyle}>
-            <h3 className="text-sm font-bold mb-4 border-b border-gray-200 pb-2">Detail Pesanan</h3>
+            <h3 className="text-sm text-red-800 font-bold mb-4 border-b border-gray-200 pb-2">Detail Pesanan</h3>
             <div className="flex items-center">
               <div className="w-20 h-20 bg-gray-200 rounded-lg overflow-hidden mr-6">
                 <img
@@ -167,7 +167,7 @@ const CustomerReviewDetail = () => {
                 <p className="text-sm text-gray-500">Ukuran: {product.ukuran || '-'}</p>
                 <p className="text-sm text-gray-500">Jumlah: {product.jumlah ?? '-'}</p>
                 <p className="text-sm text-gray-700 font-semibold">
-                  Harga: Rp. {(product.harga ?? 0).toLocaleString('id-ID')}
+                  Harga: Rp {(product.harga ?? 0).toLocaleString('id-ID')}
                 </p>
               </div>
             </div>

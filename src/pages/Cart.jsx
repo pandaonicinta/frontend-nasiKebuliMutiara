@@ -206,92 +206,56 @@ const Cart = () => {
   const subtotal = calculateSelectedTotal();
   const total = subtotal + (getSelectedCount() > 0 ? shippingCost : 0);
 
-  const handleQuantityChange = async (id, size, qty) => {
-    if (qty < 1) return;
-    
-    setIsUpdating(true);
-    setError(null);
-    
-    try {
-      await updateQuantity(id, size, qty);
-    } catch (err) {
-      console.error('Error updating cart item quantity:', err);
-      setError('Failed to update item quantity. Please try again.');
-    } finally {
-      setIsUpdating(false);
-    }
-  };
+  const handleChangeQuantity = async (id, size, currentQty, action) => {
+  if (action === 'decrease' && currentQty <= 1) return; // prevent going below 1
 
-  const handleDecreaseQuantity = async (id, size, currentQty) => {
-    if (currentQty <= 1) return;
-    
-    setIsUpdating(true);
-    setError(null);
-    
-    try {
-      const token = localStorage.getItem('auth_token') || localStorage.getItem('token') || localStorage.getItem('authToken');
-      
-      if (token) {
-        const cartItemId = cartItems.find(item => item.id === id && item.size === size)?.cart_item_id;
-        if (cartItemId) {
-          await axios.put(`${API_BASE_URL}/api/keranjang/${cartItemId}`, {
-            quantity: currentQty - 1
-          }, {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
-          });
-        }
-      }
-      
-      await updateQuantity(id, size, currentQty - 1);
-    } catch (err) {
-      console.error('Error decreasing cart item quantity:', err);
-      setError('Failed to decrease item quantity. Please try again.');
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-const handleIncreaseQuantity = async (id, size, currentQty) => {
   setIsUpdating(true);
   setError(null);
-  
+
   try {
     const token = localStorage.getItem('auth_token') || localStorage.getItem('token') || localStorage.getItem('authToken');
-    
     if (token) {
-      await axios.post(`${API_BASE_URL}/api/keranjang/add`, {
-        product_id: id,
-        quantity: currentQty + 1,
-        size: size || null
-      }, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      const cartResponse = await axios.get(`${API_BASE_URL}/api/keranjang`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (cartResponse.data && cartResponse.data.success) {
-        await updateQuantity(id, size, currentQty + 1);
+      const cartItem = cartItems.find(item => item.id === id && item.size === size);
+      if (!cartItem || !cartItem.cart_item_id) {
+        setError('Cart item not found.');
+        setIsUpdating(false);
+        return;
       }
+
+      // await axios.post(
+      //   `${API_BASE_URL}/api/keranjang/update`,
+      //   {
+      //     id_item: cartItem.cart_item_id,
+      //     action: action, // 'increase' or 'decrease'
+      //   },
+      //   {
+      //     headers: {
+      //       Authorization: `Bearer ${token}`,
+      //       'Content-Type': 'application/json',
+      //     },
+      //   }
+      // );
+
+      // Update local UI state after success
+      const newQty = action === 'increase' ? currentQty + 1 : currentQty - 1;
+      await updateQuantity(id, size, newQty, action);
     } else {
-      await updateQuantity(id, size, currentQty + 1);
+      // If no token, update locally
+      const newQty = action === 'increase' ? currentQty + 1 : currentQty - 1;
+      await updateQuantity(id, size, newQty, action);
     }
   } catch (err) {
-    console.error('Error increasing cart item quantity:', err);
-    setError('Failed to increase item quantity. Please try again.');
+    console.error(`Error ${action} cart item quantity:`, err);
+    setError(`Failed to ${action} item quantity. Please try again.`);
   } finally {
     setIsUpdating(false);
   }
 };
+
+// Then you can define these wrappers for convenience:
+const handleDecreaseQuantity = (id, size, currentQty) => handleChangeQuantity(id, size, currentQty, 'decrease');
+const handleIncreaseQuantity = (id, size, currentQty) => handleChangeQuantity(id, size, currentQty, 'increase');
+
 
   const handleRemoveItem = async (id, size) => {
     setError(null);
@@ -303,17 +267,17 @@ const handleIncreaseQuantity = async (id, size, currentQty) => {
     }
   };
 
-  const handleClearCart = async () => {
-    if(!confirm('Are you sure you want to clear your cart?')) return;
+  // const handleClearCart = async () => {
+  //   if(!confirm('Are you sure you want to clear your cart?')) return;
     
-    setError(null);
-    try {
-      await clearCart();
-    } catch (err) {
-      console.error('Error clearing cart:', err);
-      setError('Failed to clear cart. Please try again.');
-    }
-  };
+  //   setError(null);
+  //   try {
+  //     await clearCart();
+  //   } catch (err) {
+  //     console.error('Error clearing cart:', err);
+  //     setError('Failed to clear cart. Please try again.');
+  //   }
+  // };
 
   const handleCheckout = async () => {
     if (getSelectedCount() === 0) {
@@ -583,12 +547,12 @@ const handleIncreaseQuantity = async (id, size, currentQty) => {
                   >
                     <HiOutlineArrowNarrowLeft className="mr-2" /> Lanjutkan Belanja
                   </button>
-                  <button
+                  {/* <button
                     onClick={handleClearCart}
                     className="flex items-center bg-red-100 text-red-600 py-2 px-4 rounded-md hover:bg-red-200 transition duration-300"
                   >
                     <FiTrash2 className="mr-2" /> Hapus Keranjang
-                  </button>
+                  </button> */}
                 </div>
               </>
             )}
@@ -727,7 +691,7 @@ const handleIncreaseQuantity = async (id, size, currentQty) => {
                   {/* Social Media x  */}
                   <div className="mt-4 md:mt-0 flex items-start md:justify-end">
                     <div className="flex space-x-3">
-                      <a href="https://facebook.com/mutiaravillage" 
+                      <a href="https://facebook.com/https://www.facebook.com/kebuli.mutiara" 
                         className="bg-red-800 p-1.5 rounded-md hover:bg-red-700 transition-colors"
                         aria-label="Facebook"
                         target="_blank" 
@@ -736,7 +700,7 @@ const handleIncreaseQuantity = async (id, size, currentQty) => {
                           <path d="M20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 2v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v7h-3v-7h-2v-3h2V7.5C13 5.57 14.57 4 16.5 4H19z"/>
                         </svg>
                       </a>
-                      <a href="https://instagram.com/mutiaravillage" 
+                      <a href="https://instagram.com/https://www.instagram.com/kebuli_mutiara?igsh=d2p1M2Rid2J3dTB6" 
                         className="bg-red-800 p-1.5 rounded-md hover:bg-red-700 transition-colors" 
                         aria-label="Instagram"
                         target="_blank" 
@@ -745,7 +709,7 @@ const handleIncreaseQuantity = async (id, size, currentQty) => {
                           <path d="M7.8 2h8.4C19.4 2 22 4.6 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8C4.6 22 2 19.4 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2m-.2 2A3.6 3.6 0 0 0 4 7.6v8.8C4 18.39 5.61 20 7.6 20h8.8a3.6 3.6 0 0 0 3.6-3.6V7.6C20 5.61 18.39 4 16.4 4H7.6m9.65 1.5a1.25 1.25 0 0 1 1.25 1.25A1.25 1.25 0 0 1 17.25 8 1.25 1.25 0 0 1 16 6.75a1.25 1.25 0 0 1 1.25-1.25M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3z"/>
                         </svg>
                       </a>
-                      <a href="https://wa.me/6289797929390" 
+                      <a href="https://wa.me/6285775579055" 
                         className="bg-red-800 p-1.5 rounded-md hover:bg-red-700 transition-colors" 
                         aria-label="WhatsApp"
                         target="_blank" 
@@ -761,7 +725,7 @@ const handleIncreaseQuantity = async (id, size, currentQty) => {
             </div>
           </div>
         </footer>
-
+        
         {/* Copyright Section */}
         <div className="bg-red-900 text-white text-center py-3 px-6 md:px-20 lg:px-32">
           <div className="w-full h-px bg-red-800 mb-4"></div> 

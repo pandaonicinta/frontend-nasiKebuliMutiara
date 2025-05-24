@@ -70,6 +70,7 @@ const CustomerOrder = () => {
     const map = {
       pending: 'Pembayaran Tertunda',
       success: 'Pembayaran Berhasil',
+      Paid: 'Pembayaran Berhasil',
       failed: 'Pembayaran Gagal',
       'on process': 'Dimasak',
       'on deliver': 'Di Jalan',
