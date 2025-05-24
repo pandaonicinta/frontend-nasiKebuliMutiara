@@ -242,19 +242,28 @@
     };
 
     const processMidtransPayment = (snapToken, transaksi_id) => {
+      // handlePaymentSuccess(transaksi_id);
       if (window.snap && typeof window.snap.pay === 'function') {
         window.snap.pay(snapToken, {
-          onSuccess: function(result) {
-            handlePaymentSuccess(transaksi_id);
+      skipOrderSummary: true,
+          onSuccess: async (result) => {
+            try {
+              console.log('keapingl')
+              await handlePaymentSuccess(transaksi_id);
+            } catch (error) {
+              console.error('Payment success handler error:', error);
+            }
           },
           onPending: function() {
             alert('Pembayaran pending, silakan selesaikan pembayaran.');
+            navigate('/customer')
           },
           onError: function() {
             handlePaymentFailure();
           },
           onClose: function() {
             alert('Anda menutup jendela pembayaran tanpa menyelesaikan transaksi.');
+            navigate('/customer')
           }
         });
       } else {
@@ -263,21 +272,59 @@
       }
     };
 
-    const handlePaymentSuccess = async (transactionId) => {
-      try {
-        const token = localStorage.getItem('token');
-        await axios.get(`${API_BASE_URL}/bayar/berhasil/${transactionId}`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        clearCart();
-        sessionStorage.removeItem('checkoutItems');
-        sessionStorage.removeItem('selectedCartItemIds');
-        alert('Pembayaran berhasil! Pesanan Anda telah dibuat.');
-        navigate('/orders');
-      } catch (error) {
-        console.error('Error updating transaction status:', error);
+    const markTransactionAsPaid = async (transactionId, token) => {
+  try {
+    const response = await axios.post(
+      `${API_BASE_URL}/bayar/berhasil/${transactionId}`,
+      null,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
       }
-    };
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Failed to mark transaction as paid:', error);
+    throw error;
+  }
+};
+    
+  const handlePaymentSuccess = async (transactionId) => {
+  console.log('[handlePaymentSuccess] Start', transactionId);
+  
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.error('[handlePaymentSuccess] No token found');
+      return;
+    }
+    console.log('[handlePaymentSuccess] Token found, making keepalive request...');
+
+    // Use fetch with keepalive to survive page navigation
+    const response = await fetch(`${API_BASE_URL}/bayar/berhasil/${transactionId}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      keepalive: true // This keeps the request alive even if page navigates
+    });
+    
+    console.log('[handlePaymentSuccess] Keepalive request sent');
+
+    // Don't wait for response since page might redirect
+    sessionStorage.removeItem('checkoutItems');
+    sessionStorage.removeItem('selectedCartItemIds');
+
+    alert('Pembayaran berhasil! Pesanan Anda telah dibuat.');
+
+  } catch (error) {
+    console.error('[handlePaymentSuccess] Error:', error);
+  }
+};
+
+
 
     const handlePaymentFailure = async () => {
       alert('Pembayaran gagal. Silakan coba lagi.');
@@ -334,13 +381,15 @@
             'Content-Type': 'application/json'
           }
         });
-
         const { transaksi_id, snaptoken } = response.data;
+
 
         if (formData.paymentMethod === 'cash') {
           handlePaymentSuccess(transaksi_id);
         } else {
           processMidtransPayment(snaptoken, transaksi_id);
+          
+          // handlePaymentSuccess(transaksi_id);
         }
       } catch (error) {
         console.error('Error creating transaction:', error);

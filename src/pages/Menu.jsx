@@ -6,7 +6,83 @@ import { CartContext } from '../contexts/CartContext';
 import { FaStar } from 'react-icons/fa';
 import axios from 'axios';
 import logo from '../assets/images/logo.png';
-import foto from '../assets/images/foto.png'; 
+import foto from '../assets/images/foto.png';
+
+const MenuCard = ({ item, handleMenuClick, navigate, getImageUrl, foto, formatCurrency }) => {
+  const isLongDescription = item.deskripsi && item.deskripsi.length > 80;
+  const displayDescription = isLongDescription 
+    ? `${item.deskripsi?.substring(0, 80)}...`
+    : item.deskripsi;
+
+  return (
+    <div
+      className="flex flex-col bg-white rounded-lg shadow-md overflow-hidden border border-[#FDC302] w-full max-w-xs mx-auto cursor-pointer transform transition-transform hover:scale-105 h-[450px]"
+      onClick={() => handleMenuClick(item.produk_id)}
+    >
+      <div className="relative h-48 overflow-hidden flex-shrink-0">
+        <img
+          src={getImageUrl(item.gambar)}
+          alt={item.nama_produk}
+          className="absolute inset-0 w-full h-full object-contain p-2"
+          onError={(e) => {
+            e.target.onerror = null;
+            e.target.src = foto;
+          }}
+        />
+      </div>
+
+      <div className="p-4 flex flex-col flex-1 min-h-0">
+        {/* Title */}
+        <h3 className="text-xl font-bold text-gray-900 mb-2 text-left line-clamp-2 h-14 flex items-start flex-shrink-0">
+          {item.nama_produk}
+        </h3>
+
+        {/* Description Section */}
+        <div className="text-gray-700 mb-4 text-left flex-1 flex flex-col overflow-hidden">
+          <div className="flex-1 overflow-hidden">
+            <p className="text-sm leading-relaxed line-clamp-3">
+              {item.deskripsi || 'No description available'}
+            </p>
+          </div>
+          {isLongDescription && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/menu/${item.produk_id}`);
+              }}
+              className="text-[#FDC302] text-xs font-medium mt-2 hover:text-yellow-600 transition duration-200 self-start flex-shrink-0"
+            >
+              View More
+            </button>
+          )}
+        </div>
+
+        {/* Fixed Bottom Section */}
+        <div className="flex-shrink-0 mt-auto">
+          <div className="flex items-center justify-between w-full mb-4 h-8">
+            <div className="flex items-center text-[#FDC302]">
+              <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs">
+                {item.ukuran || 'M'}
+              </span>
+            </div>
+            <span className="text-lg font-semibold text-gray-900">
+              {formatCurrency(item.harga)}
+            </span>
+          </div>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/menu/${item.produk_id}`);
+            }}
+            className="w-full bg-[#FDC302] text-white py-2 px-4 rounded-full hover:bg-yellow-500 transition duration-300"
+          >
+            Pesan Sekarang
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const Menu = () => {
   const navigate = useNavigate();
@@ -24,67 +100,166 @@ const Menu = () => {
   ]);
   const API_URL = 'http://kebabmutiara.xyz';
 
-  // Check authentication status on component mount
+  const [userProfile, setUserProfile] = useState({
+    profilePhoto: null,
+    name: '',
+    role: '',
+    initials: ''
+  });
+  const [isProfileLoading, setIsProfileLoading] = useState(false);
+  
+  const getInitials = (name) => {
+    if (!name) return 'U'; // Default to 'U' for User
+    const nameParts = name.trim().split(' ');
+    return nameParts[0].charAt(0).toUpperCase();
+  };
+
+  const fetchUserProfile = async () => {
+    const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+    
+    if (!token) {
+      return;
+    }
+
+    try {
+      setIsProfileLoading(true);
+      const response = await axios.get('/aboutMe');
+
+      const userData = response.data;
+      const role = userData.role;
+      const name = userData.name;
+      const profilePhoto = userData.picture; 
+
+      console.log("Fetched user data:", userData); 
+
+      setUserProfile({
+        profilePhoto: profilePhoto || null, 
+        name: name,
+        role: role,
+        initials: getInitials(name)
+      });
+
+      localStorage.setItem('userRole', role);
+      localStorage.setItem('userName', name);
+      
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+      setUserProfile({
+        profilePhoto: null,
+        name: localStorage.getItem('userName') || '',
+        role: localStorage.getItem('userRole') || '',
+        initials: getInitials(localStorage.getItem('userName') || '')
+      });
+    } finally {
+      setIsProfileLoading(false);
+    }
+  };
+
+  const ProfilePhoto = () => {
+    const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+    
+    if (!token) return null;
+
+    if (isProfileLoading) {
+      return (
+        <div className="w-10 h-10 bg-gray-300 rounded-full animate-pulse flex items-center justify-center">
+          <div className="w-5 h-5 bg-gray-400 rounded-full"></div>
+        </div>
+      );
+    }
+
+    if (userProfile.profilePhoto) {
+      return (
+        <div className="relative">
+          <img
+            src={userProfile.profilePhoto}
+            alt="Profile"
+            className="w-10 h-10 rounded-full object-cover border-2 border-yellow-400 hover:border-yellow-500 transition-colors cursor-pointer shadow-md"
+            onClick={handleAccountNavigation}
+            onError={(e) => {
+              // Fallback to initials if image fails to load
+              e.target.style.display = 'none';
+              e.target.nextSibling.style.display = 'flex';
+            }}
+          />
+          <div
+            className="w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center text-white font-semibold text-sm cursor-pointer hover:bg-yellow-600 transition-colors shadow-md"
+            style={{ display: 'none' }}
+            onClick={handleAccountNavigation}
+            title={userProfile.name || 'My Account'}
+          >
+            {userProfile.initials}
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div
+        className="w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center text-white font-semibold text-sm cursor-pointer hover:bg-yellow-600 transition-colors shadow-md"
+        onClick={handleAccountNavigation}
+        title={userProfile.name || 'My Account'}
+      >
+        {userProfile.initials}
+      </div>
+    );
+  };
+
   useEffect(() => {
     const token = localStorage.getItem('authToken') || localStorage.getItem('token');
     if (token) {
       setIsAuthenticated(true);
+      fetchUserProfile(); 
     } else {
       setIsAuthenticated(false);
     }
   }, []);
 
-  // Function to handle menu item click
   const handleMenuClick = (menuId) => {
     navigate(`/menu/${menuId}`);
   };
 
-  // Function to handle account navigation (copied from Home component)
-  const handleAccountNavigation = () => {
+  const handleAccountNavigation = async () => {
     const token = localStorage.getItem('authToken') || localStorage.getItem('token');
-    const userRole = localStorage.getItem('userRole');
-    console.log("Button clicked! Token:", token, "UserRole:", userRole); // Debugging
     
-    if (token) {
-      if (!userRole || userRole === "undefined" || userRole === "unknown") {
-        axios.get('/aboutMe')
-          .then(response => {
-            const role = response.data.role || response.data.user?.role;
-            console.log("Fetched user role:", role);
-            if (role) {
-              localStorage.setItem('userRole', role);
-              if (role === 'admin') {
-                navigate('/admin');
-              } else if (role === 'pembeli') {
-                navigate('/customer');
-              } else {
-                console.log("Unknown user role after fetch:", role);
-                navigate('/login');
-              }
-            } else {
-              console.log("No role found in API response");
-              navigate('/login');
-            }
-          })
-          .catch(error => {
-            if (error.response && error.response.status === 404) {
-              console.error("User info endpoint not found (404)", error);
-            } else {
-              console.error("Error fetching user info:", error);
-            }
-            navigate('/login');
-          });
-      } else {
-        if (userRole === 'admin') {
-          navigate('/admin');
-        } else if (userRole === 'pembeli') {
-          navigate('/customer');
-        } else {
-          console.log("Unknown user role:", userRole);
-          navigate('/login');
-        }
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+
+    let userRole = userProfile.role || localStorage.getItem('userRole');
+    
+    // If no role or invalid role, fetch user data once
+    if (!userRole || userRole === "undefined" || userRole === "unknown") {
+      try {
+        const response = await axios.get('/aboutMe');
+        const userData = response.data;
+        userRole = userData.role;
+        
+        setUserProfile({
+          profilePhoto: userData.picture || null,
+          name: userData.name,
+          role: userData.role,
+          initials: getInitials(userData.name)
+        });
+        
+        localStorage.setItem('userRole', userData.role);
+        localStorage.setItem('userName', userData.name);
+        
+      } catch (error) {
+        console.error("Error fetching user info:", error);
+        navigate('/login');
+        return;
       }
+    }
+
+    // Navigate based on role
+    if (userRole === 'admin') {
+      navigate('/admin');
+    } else if (userRole === 'pembeli') {
+      navigate('/customer');
     } else {
+      console.log("Unknown user role:", userRole);
       navigate('/login');
     }
   };
@@ -186,15 +361,20 @@ const Menu = () => {
   return (
     <div className="min-h-screen bg-[#F9F7F0]">
       {/* Navigation Bar */}
-      <header className="bg-white py-4 px-6 md:px-16 lg:px-24">
-        <div className="flex justify-between items-center">
+      <header className="bg-white">
+        <nav className="flex justify-between items-center px-24 py-5">
           <div>
-            <img src={logo} alt="Nasi Kebuli Mutiara" className="h-12" />
+            <img 
+              src={logo} 
+              alt="Nasi Kebuli Mutiara" 
+              className="h-16 cursor-pointer" 
+              onClick={() => navigate('/')}
+            />
           </div>
-          <div className="flex items-center space-x-8">
-            <a href="/" className="text-gray-800 hover:text-[#FDC302] font-medium">Home</a>
-            <a href="/about" className="text-gray-800 hover:text-[#FDC302] font-medium">Tentang Kami</a>
-            <a href="/menu" className="text-[#FDC302] font-medium">Menu</a>
+          <div className="flex items-center space-x-10">
+            <a href="/" className="text-gray-800 font-medium hover:text-yellow-500">Home</a>
+            <a href="/about" className="text-gray-800 font-medium hover:text-yellow-500">Tentang Kami</a>
+            <a href="/menu" className="text-yellow-500 font-medium">Menu</a>
             <div className="relative">
               <input
                 type="text"
@@ -212,19 +392,14 @@ const Menu = () => {
               </span>
             </a>
             {isAuthenticated ? (
-              <button
-                onClick={handleAccountNavigation}
-                className="px-8 py-3 bg-yellow-500 text-white rounded-full flex items-center"
-              >
-                My Account <HiOutlineArrowNarrowRight className="ml-2" />
-              </button>
+              <ProfilePhoto />
             ) : (
-              <a href="/login" className="px-8 py-3 bg-yellow-500 text-white rounded-full flex items-center">
+              <a href="/login" className="px-8 py-3 bg-yellow-500 text-white rounded-full hover:bg-yellow-600 shadow-lg transition duration-300 flex items-center">
                 Login <HiOutlineArrowNarrowRight className="ml-2" />
               </a>
             )}
           </div>
-        </div>
+        </nav>
       </header>
 
       {/* Hero Section */}
@@ -267,18 +442,18 @@ const Menu = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {loading ? (
               Array.from({ length: 6 }, (_, index) => (
-                <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 w-full max-w-xs mx-auto">
-                  <div className="animate-pulse">
-                    <div className="bg-gray-200 pt-[66%]"></div>
-                    <div className="p-4">
+                <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 w-full max-w-xs mx-auto h-[450px]">
+                  <div className="animate-pulse h-full flex flex-col">
+                    <div className="bg-gray-200 h-48"></div>
+                    <div className="p-4 flex-1 flex flex-col">
                       <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
                       <div className="h-3 bg-gray-200 rounded w-full mb-1"></div>
-                      <div className="h-3 bg-gray-200 rounded w-5/6 mb-4"></div>
+                      <div className="h-3 bg-gray-200 rounded w-5/6 mb-4 flex-1"></div>
                       <div className="flex justify-between mb-4">
                         <div className="h-3 bg-gray-200 rounded w-1/4"></div>
                         <div className="h-3 bg-gray-200 rounded w-1/4"></div>
                       </div>
-                      <div className="h-8 bg-gray-200 rounded-full w-full"></div>
+                      <div className="h-8 bg-gray-200 rounded-full w-full mt-auto"></div>
                     </div>
                   </div>
                 </div>
@@ -286,7 +461,7 @@ const Menu = () => {
             ) : error ? (
               <div className="col-span-3 text-center py-12">
                 <h3 className="text-xl text-red-600 mb-4">{error}</h3>
-                <button 
+                <button
                   onClick={() => window.location.reload()}
                   className="bg-[#FDC302] text-white py-2 px-6 rounded-full hover:bg-yellow-500 transition duration-300"
                 >
@@ -296,48 +471,15 @@ const Menu = () => {
             ) : filteredItems.length > 0 ? (
               // Menu items
               filteredItems.map((item) => (
-                <div
-                  key={item.produk_id}
-                  className="flex flex-col bg-white rounded-lg shadow-md overflow-hidden border border-[#FDC302] w-full max-w-xs mx-auto cursor-pointer transform transition-transform hover:scale-105"
-                  onClick={() => handleMenuClick(item.produk_id)}
-                >
-                  <div className="relative pt-[66%] overflow-hidden">
-                    <img
-                      src={getImageUrl(item.gambar)}
-                      alt={item.nama_produk}
-                      className="absolute inset-0 w-full h-full object-contain p-2"
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = foto;
-                      }}
-                    />
-                  </div>
-                  <div className="p-4 flex flex-col">
-                    <h3 className="text-xl font-bold text-gray-900 mb-2 text-left">{item.nama_produk}</h3>
-                    <p className="text-gray-700 mb-4 text-left flex-grow">
-                      {item.deskripsi?.length > 100
-                        ? `${item.deskripsi.substring(0, 100)}...`
-                        : item.deskripsi || 'No description available'}
-                    </p>
-                    <div className="flex items-center justify-between w-full mb-4">
-                      <div className="flex items-center text-[#FDC302]">
-                        <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs">
-                          {item.ukuran || 'M'}
-                        </span>
-                      </div>
-                      <span className="text-lg font-semibold text-gray-900">{formatCurrency(item.harga)}</span>
-                    </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/menu/${item.produk_id}`);
-                      }}
-                      className="w-full bg-[#FDC302] text-white py-2 px-4 rounded-full hover:bg-yellow-500 transition duration-300"
-                    >
-                      Pesan Sekarang
-                    </button>
-                  </div>
-                </div>
+                <MenuCard 
+                  key={item.produk_id} 
+                  item={item} 
+                  handleMenuClick={handleMenuClick}
+                  navigate={navigate}
+                  getImageUrl={getImageUrl}
+                  foto={foto}
+                  formatCurrency={formatCurrency}
+                />
               ))
             ) : (
               <div className="col-span-3 text-center py-12">
@@ -347,6 +489,7 @@ const Menu = () => {
           </div>
         </div>
       </section>
+
 
       {/* Footer*/}
       <footer className="bg-red-900 text-white py-8 px-6 md:px-20 lg:px-32">

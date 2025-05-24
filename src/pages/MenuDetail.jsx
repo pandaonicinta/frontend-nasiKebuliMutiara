@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { FiShoppingBag } from 'react-icons/fi';
 import { HiOutlineArrowNarrowRight } from 'react-icons/hi';
 import { FaStar } from 'react-icons/fa';
@@ -9,7 +9,6 @@ import logo from '../assets/images/logo.png';
 import foto from '../assets/images/foto.png';
 
 const API_BASE_URL = 'http://kebabmutiara.xyz';
-
 
 const getImageUrl = (imagePath) => {
   if (!imagePath) return foto;  
@@ -36,7 +35,110 @@ const MenuDetail = () => {
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const { addToCart, cartCount } = useContext(CartContext);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  
+  const [userProfile, setUserProfile] = useState({
+    profilePhoto: null,
+    name: '',
+    role: '',
+    initials: ''
+  });
+  const [isProfileLoading, setIsProfileLoading] = useState(false);
+  
+  const getInitials = (name) => {
+    if (!name) return 'U'; // Default to 'U' for User
+    const nameParts = name.trim().split(' ');
+    return nameParts[0].charAt(0).toUpperCase();
+  };
 
+  const fetchUserProfile = async () => {
+    const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+    
+    if (!token) {
+      return;
+    }
+
+    try {
+      setIsProfileLoading(true);
+      const response = await axios.get('/aboutMe');
+
+      const userData = response.data;
+      const role = userData.role;
+      const name = userData.name;
+      const profilePhoto = userData.picture; 
+
+      console.log("Fetched user data:", userData); 
+
+      setUserProfile({
+        profilePhoto: profilePhoto || null, 
+        name: name,
+        role: role,
+        initials: getInitials(name)
+      });
+
+      localStorage.setItem('userRole', role);
+      localStorage.setItem('userName', name);
+      
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+      setUserProfile({
+        profilePhoto: null,
+        name: localStorage.getItem('userName') || '',
+        role: localStorage.getItem('userRole') || '',
+        initials: getInitials(localStorage.getItem('userName') || '')
+      });
+    } finally {
+      setIsProfileLoading(false);
+    }
+  };
+
+  const ProfilePhoto = () => {
+    const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+    
+    if (!token) return null;
+
+    if (isProfileLoading) {
+      return (
+        <div className="w-10 h-10 bg-gray-300 rounded-full animate-pulse flex items-center justify-center">
+          <div className="w-5 h-5 bg-gray-400 rounded-full"></div>
+        </div>
+      );
+    }
+
+    if (userProfile.profilePhoto) {
+      return (
+        <div className="relative">
+          <img
+            src={userProfile.profilePhoto}
+            alt="Profile"
+            className="w-10 h-10 rounded-full object-cover border-2 border-yellow-400 hover:border-yellow-500 transition-colors cursor-pointer shadow-md"
+            onClick={handleAccountNavigation}
+            onError={(e) => {
+              e.target.style.display = 'none';
+              e.target.nextSibling.style.display = 'flex';
+            }}
+          />
+          <div
+            className="w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center text-white font-semibold text-sm cursor-pointer hover:bg-yellow-600 transition-colors shadow-md"
+            style={{ display: 'none' }}
+            onClick={handleAccountNavigation}
+            title={userProfile.name || 'My Account'}
+          >
+            {userProfile.initials}
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div
+        className="w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center text-white font-semibold text-sm cursor-pointer hover:bg-yellow-600 transition-colors shadow-md"
+        onClick={handleAccountNavigation}
+        title={userProfile.name || 'My Account'}
+      >
+        {userProfile.initials}
+      </div>
+    );
+  };
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('id-ID', {
@@ -75,7 +177,6 @@ const MenuDetail = () => {
     return stars;
   };
 
-  // Fungsi untuk menghitung rata-rata rating
   const calculateAverageRating = () => {
     if (ulasanList.length === 0) return 0;
     const totalRating = ulasanList.reduce((sum, ulasan) => sum + parseFloat(ulasan.rating_value), 0);
@@ -83,9 +184,11 @@ const MenuDetail = () => {
   };
 
   useEffect(() => {
-    // Check if user is logged in - using the same token keys as in Home.jsx
     const token = localStorage.getItem('authToken') || localStorage.getItem('token');
-    setIsAuthenticated(!!token);
+    if (token) {
+      setIsAuthenticated(true);
+      fetchUserProfile(); 
+    }
   }, []);
 
   useEffect(() => {
@@ -197,7 +300,6 @@ const MenuDetail = () => {
   const increment = () => setQuantity(prev => prev + 1);
   const decrement = () => setQuantity(prev => prev > 1 ? prev - 1 : 1);
 
-  // Add to API cart function
   const addToApiCart = async () => {
     const token = localStorage.getItem('authToken') || localStorage.getItem('token');
     
@@ -316,51 +418,50 @@ const MenuDetail = () => {
     }
   };
 
-  // Handle account navigation (similar to Home.jsx)
-  const handleAccountNavigation = () => {
+  // Handle account navigation - updated to match AboutUs
+  const handleAccountNavigation = async () => {
     const token = localStorage.getItem('authToken') || localStorage.getItem('token');
-    const userRole = localStorage.getItem('userRole');
     
-    console.log("Button clicked! Token:", token, "UserRole:", userRole);
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+
+    let userRole = userProfile.role || localStorage.getItem('userRole');
     
-    if (token) {
-      if (!userRole || userRole === "undefined" || userRole === "unknown") {
-        axios.get('/aboutMe') 
-          .then(response => {
-            const role = response.data.role || response.data.user?.role;
-            console.log("Fetched user role:", role);
-            
-            if (role) {
-              localStorage.setItem('userRole', role);
-              
-              if (role === 'admin') {
-                navigate('/admin');
-              } else if (role === 'pembeli') {
-                navigate('/customer');
-              } else {
-                console.log("Unknown user role after fetch:", role);
-                navigate('/login');
-              }
-            } else {
-              console.log("No role found in API response");
-              navigate('/login');
-            }
-          })
-          .catch(error => {
-            console.error("Error fetching user info:", error);
-            navigate('/login');
-          });
-      } else {
-        if (userRole === 'admin') {
-          navigate('/admin');
-        } else if (userRole === 'pembeli') {
-          navigate('/customer');
-        } else {
-          console.log("Unknown user role:", userRole);
-          navigate('/login');
-        }
+    // If no role or invalid role, fetch user data once
+    if (!userRole || userRole === "undefined" || userRole === "unknown") {
+      try {
+        const response = await axios.get('/aboutMe');
+        const userData = response.data;
+        userRole = userData.role;
+        
+        // Update profile state
+        setUserProfile({
+          profilePhoto: userData.picture || null,
+          name: userData.name,
+          role: userData.role,
+          initials: getInitials(userData.name)
+        });
+        
+        // Update localStorage
+        localStorage.setItem('userRole', userData.role);
+        localStorage.setItem('userName', userData.name);
+        
+      } catch (error) {
+        console.error("Error fetching user info:", error);
+        navigate('/login');
+        return;
       }
+    }
+
+    // Navigate based on role
+    if (userRole === 'admin') {
+      navigate('/admin');
+    } else if (userRole === 'pembeli') {
+      navigate('/customer');
     } else {
+      console.log("Unknown user role:", userRole);
       navigate('/login');
     }
   };
@@ -377,47 +478,42 @@ const MenuDetail = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Navigation Bar */}
-      <header className="bg-white py-4 px-6 md:px-16 lg:px-32 w-full">
-        <div className="flex justify-between items-center">
+      {/* Navigation Bar*/}
+      <header className="bg-white shadow-sm">
+        <nav className="flex justify-between items-center px-24 py-5">
           <div>
             <img
               src={logo}
               alt="Nasi Kebuli Mutiara"
-              className="h-12 cursor-pointer"
+              className="h-16 cursor-pointer"
               onClick={() => navigate('/')}
             />
           </div>
-          <div className="flex items-center space-x-8">
-            <a href="/" className="text-gray-800 hover:text-[#FDC302] font-medium">Home</a>
-            <a href="/about" className="text-gray-800 hover:text-[#FDC302] font-medium">Tentang Kami</a>
-            <a href="/menu" className="text-[#FDC302] font-medium">Menu</a>
-            <a href="/cart" className="text-gray-800 hover:text-[#FDC302] relative">
+          <div className="flex items-center space-x-10">
+            <Link to="/" className="text-gray-800 font-medium hover:text-yellow-500">Home</Link>
+            <Link to="/about" className="text-gray-800 font-medium hover:text-yellow-500">Tentang Kami</Link>
+            <Link to="/menu" className="text-yellow-500 font-medium">Menu</Link>
+            <Link to="/cart" className="text-gray-800 hover:text-yellow-500 relative">
               <FiShoppingBag size={20} />
-              <span className="absolute -top-1 -right-1 bg-[#FDC302] text-white rounded-full w-4 h-4 flex items-center justify-center text-xs">
+              <span className="absolute -top-1 -right-1 bg-yellow-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs">
                 {cartCount}
               </span>
-            </a>
+            </Link>
             {isAuthenticated ? (
-              <button 
-                onClick={handleAccountNavigation}
-                className="px-8 py-3 bg-yellow-500 text-white rounded-full flex items-center"
-              >
-                My Account <HiOutlineArrowNarrowRight className="ml-2" />
-              </button>
+              <ProfilePhoto />
             ) : (
-              <a href="/login" className="px-8 py-3 bg-yellow-500 text-white rounded-full flex items-center">
+              <Link to="/login" className="px-8 py-3 bg-yellow-500 text-white rounded-full hover:bg-yellow-600 shadow-lg transition duration-300 flex items-center">
                 Login <HiOutlineArrowNarrowRight className="ml-2" />
-              </a>
+              </Link>
             )}
           </div>
-        </div>
+        </nav>
       </header>
 
       <div className="px-6 md:px-16 lg:px-32">
         <div className="container mx-auto py-4 bg-white">
           <div className="flex items-center text-sm">
-            <a href="/menu" className="text-gray-500 hover:text-[#FDC302]">Menu</a>
+            <a href="/menu" className="text-yellow-500 hover:text-gray-300">Menu</a>
             <span className="mx-2">›</span>
             <span className="text-gray-700">{menu.nama_produk}</span>
           </div>
@@ -449,7 +545,6 @@ const MenuDetail = () => {
                   </span>
                 </div>
                 <h2 className="text-2xl font-bold text-[#B22222] mb-6">{formatPrice(menu.harga)}</h2>
-                <p className="text-gray-700 mb-6">{menu.deskripsi}</p>
 
                 {/* Stock Status */}
                 <div className="mb-4">

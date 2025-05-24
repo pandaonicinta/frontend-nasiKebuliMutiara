@@ -99,49 +99,7 @@ const AdminOrderDetail = () => {
 
             {/* Order Details and Tracking */}
             <div className="flex flex-wrap gap-6">
-              <div className="w-1/3">
-                <div className="bg-white p-3 rounded-lg border-2 border-red-800">
-                  <h3 className="text-sm font-bold text-gray-800 mb-3">Tracking Order</h3>
-                  
-                  <div className="border-2 border-red-800 rounded-lg overflow-hidden mb-3">
-                    <div className="w-full h-48 bg-gray-100 relative">
-                      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                        <div className="flex flex-col items-center">
-                          <div className="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center shadow-md">
-                            <FaHome className="text-white" />
-                          </div>
-                          <div className="mt-1 text-red-800 font-bold text-xs">Kebuli Mutiara</div>
-                        </div>
-                      </div>
-                      <div className="absolute bottom-8 left-1/4">
-                        <div className="w-8 h-8 bg-gray-400 rounded-full flex items-center justify-center shadow-md">
-                          <FaUser className="text-white" />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Driver info */}
-                  <div className="border-2 border-red-800 rounded-lg p-3 mb-3 flex items-center justify-center">
-                    <div className="text-red-800 mr-2">
-                      <FaUser className="text-lg" />
-                    </div>
-                    <span className="text-sm font-bold">{orderDetails.driver.name}</span>
-                  </div>
-                  
-                  {/* Driver contact */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="border-2 border-red-800 rounded-lg p-2">
-                      <p className="text-xs text-gray-500">Driver Phone</p>
-                      <p className="text-xs">{orderDetails.driver.phone}</p>
-                    </div>
-                    <div className="border-2 border-red-800 rounded-lg p-2">
-                      <p className="text-xs text-gray-500">Delivery Time</p>
-                      <p className="text-xs">{orderDetails.driver.deliveryTime}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+    
               
               {/* Order Details */}
               <div className="flex-1">

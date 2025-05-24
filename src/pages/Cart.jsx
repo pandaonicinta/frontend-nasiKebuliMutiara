@@ -25,7 +25,6 @@ const getImageUrl = (imagePath) => {
   return `${API_BASE_URL}/storage/${imagePath}`;
 };
 
-
 const formatPrice = (price) => {
   return new Intl.NumberFormat('id-ID', {
     style: 'currency',
@@ -55,11 +54,132 @@ const Cart = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [error, setError] = useState(null);
 
+  // User profile state
+  const [userProfile, setUserProfile] = useState({
+    profilePhoto: null,
+    name: '',
+    role: '',
+    initials: ''
+  });
+  const [isProfileLoading, setIsProfileLoading] = useState(false);
+  
+  // Function to get initials from name
+  const getInitials = (name) => {
+    if (!name) return 'U'; // Default to 'U' for User
+    const nameParts = name.trim().split(' ');
+    return nameParts[0].charAt(0).toUpperCase();
+  };
+
+  // Fetch user profile data
+  const fetchUserProfile = async () => {
+    const token = localStorage.getItem('authToken') || localStorage.getItem('token') || localStorage.getItem('auth_token');
+    
+    if (!token) {
+      return;
+    }
+
+    try {
+      setIsProfileLoading(true);
+      const response = await axios.get(`${API_BASE_URL}/api/aboutMe`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const userData = response.data;
+      const role = userData.role;
+      const name = userData.name;
+      const profilePhoto = userData.picture; // Using 'picture' field from your API
+
+      console.log("Fetched user data:", userData); // Debug log
+
+      setUserProfile({
+        profilePhoto: profilePhoto || null, // Direct URL from API
+        name: name,
+        role: role,
+        initials: getInitials(name)
+      });
+
+      // Update localStorage with fresh data
+      localStorage.setItem('userRole', role);
+      localStorage.setItem('userName', name);
+      
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+      // Set default values on error
+      setUserProfile({
+        profilePhoto: null,
+        name: localStorage.getItem('userName') || '',
+        role: localStorage.getItem('userRole') || '',
+        initials: getInitials(localStorage.getItem('userName') || '')
+      });
+    } finally {
+      setIsProfileLoading(false);
+    }
+  };
+
+  // Profile Photo Component
+  const ProfilePhoto = () => {
+    const token = localStorage.getItem('authToken') || localStorage.getItem('token') || localStorage.getItem('auth_token');
+    
+    if (!token) return null;
+
+    if (isProfileLoading) {
+      return (
+        <div className="w-10 h-10 bg-gray-300 rounded-full animate-pulse flex items-center justify-center">
+          <div className="w-5 h-5 bg-gray-400 rounded-full"></div>
+        </div>
+      );
+    }
+
+    if (userProfile.profilePhoto) {
+      return (
+        <div className="relative">
+          <img
+            src={userProfile.profilePhoto}
+            alt="Profile"
+            className="w-10 h-10 rounded-full object-cover border-2 border-yellow-400 hover:border-yellow-500 transition-colors cursor-pointer shadow-md"
+            onClick={handleAccountNavigation}
+            onError={(e) => {
+              // Fallback to initials if image fails to load
+              e.target.style.display = 'none';
+              e.target.nextSibling.style.display = 'flex';
+            }}
+          />
+          {/* Hidden fallback for image error */}
+          <div
+            className="w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center text-white font-semibold text-sm cursor-pointer hover:bg-yellow-600 transition-colors shadow-md"
+            style={{ display: 'none' }}
+            onClick={handleAccountNavigation}
+            title={userProfile.name || 'My Account'}
+          >
+            {userProfile.initials}
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div
+        className="w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center text-white font-semibold text-sm cursor-pointer hover:bg-yellow-600 transition-colors shadow-md"
+        onClick={handleAccountNavigation}
+        title={userProfile.name || 'My Account'}
+      >
+        {userProfile.initials}
+      </div>
+    );
+  };
+
   const shippingCost = 10000;
 
   useEffect(() => {
     const token = localStorage.getItem('auth_token') || localStorage.getItem('token') || localStorage.getItem('authToken');
-    setIsAuthenticated(!!token);
+    if (token) {
+      setIsAuthenticated(true);
+      fetchUserProfile(); // Fetch profile when authenticated
+    } else {
+      setIsAuthenticated(false);
+    }
   }, []);
 
   const allSelected = cartItems.length > 0 && 
@@ -230,47 +350,53 @@ const handleIncreaseQuantity = async (id, size, currentQty) => {
     }
   };
 
-  const handleAccountNavigation = () => {
+  const handleAccountNavigation = async () => {
     const token = localStorage.getItem('auth_token') || localStorage.getItem('token') || localStorage.getItem('authToken');
-    const userRole = localStorage.getItem('userRole');
     
-    if (token) {
-      if (!userRole || userRole === "undefined" || userRole === "unknown") {
-        axios.get(`${API_BASE_URL}/api/aboutMe`, {
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+
+    let userRole = userProfile.role || localStorage.getItem('userRole');
+    
+    // If no role or invalid role, fetch user data once
+    if (!userRole || userRole === "undefined" || userRole === "unknown") {
+      try {
+        const response = await axios.get(`${API_BASE_URL}/api/aboutMe`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
-        })
-        .then(response => {
-          const role = response.data.role || response.data.user?.role;
-          
-          if (role) {
-            localStorage.setItem('userRole', role);
-            if (role === 'admin') {
-              navigate('/admin');
-            } else if (role === 'pembeli') {
-              navigate('/customer');
-            } else {
-              navigate('/login');
-            }
-          } else {
-            navigate('/login');
-          }
-        })
-        .catch(error => {
-          console.error("Error fetching user info:", error);
-          navigate('/login');
         });
-      } else {
-        if (userRole === 'admin') {
-          navigate('/admin');
-        } else if (userRole === 'pembeli') {
-          navigate('/customer');
-        } else {
-          navigate('/login');
-        }
+        const userData = response.data;
+        userRole = userData.role;
+        
+        // Update profile state
+        setUserProfile({
+          profilePhoto: userData.picture || null,
+          name: userData.name,
+          role: userData.role,
+          initials: getInitials(userData.name)
+        });
+        
+        // Update localStorage
+        localStorage.setItem('userRole', userData.role);
+        localStorage.setItem('userName', userData.name);
+        
+      } catch (error) {
+        console.error("Error fetching user info:", error);
+        navigate('/login');
+        return;
       }
+    }
+
+    // Navigate based on role
+    if (userRole === 'admin') {
+      navigate('/admin');
+    } else if (userRole === 'pembeli') {
+      navigate('/customer');
     } else {
+      console.log("Unknown user role:", userRole);
       navigate('/login');
     }
   };
@@ -285,42 +411,36 @@ const handleIncreaseQuantity = async (id, size, currentQty) => {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Navbar */}
-      <header className="bg-white py-4 px-4 md:px-8 lg:px-12 shadow-sm">
-        <div className="flex justify-between items-center">
-          <img
-            src={logo}
-            alt="Nasi Kebuli Mutiara"
-            className="h-12 cursor-pointer"
-            onClick={() => navigate('/')}
-          />
-          <div className="flex items-center space-x-6">
-            <a href="/" className="text-gray-800 hover:text-[#FDC302] font-medium">Home</a>
-            <a href="/about" className="text-gray-800 hover:text-[#FDC302] font-medium">About Us</a>
-            <a href="/menu" className="text-gray-800 hover:text-[#FDC302] font-medium">Menu</a>
-            <a href="/cart" className="text-[#FDC302] relative">
+      {/* Navbar - Updated to match AboutUs navbar */}
+      <header className="bg-white shadow-sm">
+        <nav className="flex justify-between items-center px-24 py-5">
+          <div>
+            <img 
+              src={logo} 
+              alt="Nasi Kebuli Mutiara" 
+              className="h-16 cursor-pointer" 
+              onClick={() => navigate('/')}
+            />
+          </div>
+          <div className="flex items-center space-x-10">
+            <a href="/" className="text-gray-800 font-medium hover:text-yellow-500">Home</a>
+            <a href="/about" className="text-gray-800 font-medium hover:text-yellow-500">Tentang Kami</a>
+            <a href="/menu" className="text-gray-800 font-medium hover:text-yellow-500">Menu</a>
+            <a href="/cart" className="text-yellow-500 relative">
               <FiShoppingBag size={20} />
-              <span className="absolute -top-1 -right-1 bg-[#FDC302] text-white rounded-full w-4 h-4 flex items-center justify-center text-xs">
+              <span className="absolute -top-1 -right-1 bg-yellow-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs">
                 {cartCount}
               </span>
             </a>
             {isAuthenticated ? (
-              <button
-                onClick={handleAccountNavigation}
-                className="px-8 py-3 bg-yellow-500 text-white rounded-full flex items-center"
-              >
-                My Account <HiOutlineArrowNarrowRight className="ml-2" />
-              </button>
+              <ProfilePhoto />
             ) : (
-              <a
-                href="/login"
-                className="px-8 py-3 bg-yellow-500 text-white rounded-full flex items-center"
-              >
+              <a href="/login" className="px-8 py-3 bg-yellow-500 text-white rounded-full hover:bg-yellow-600 shadow-lg transition duration-300 flex items-center">
                 Login <HiOutlineArrowNarrowRight className="ml-2" />
               </a>
             )}
           </div>
-        </div>
+        </nav>
       </header>
 
       {/* Cart Content */}

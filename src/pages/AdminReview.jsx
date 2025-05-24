@@ -129,7 +129,6 @@ const AdminReview = () => {
                   <th className="py-2 px-3 text-xs">NAMA</th>
                   <th className="py-2 px-3 text-xs">PENILAIAN</th>
                   <th className="py-2 px-3 text-xs">ULASAN</th>
-                  <th className="py-2 px-3 text-xs">DITAMPILKAN</th>
                 </tr>
               </thead>
               <tbody>
@@ -149,17 +148,6 @@ const AdminReview = () => {
                       <td className="py-2 px-3 text-xs text-red-800">{review.name}</td>
                       <td className="py-2 px-3 text-xs text-yellow-500">{renderStars(review.rating)}</td>
                       <td className="py-2 px-3 text-xs text-left text-red-800">{review.review}</td>
-                      <td className="py-2 px-3">
-                        <button
-                          onClick={() => toggleAppearance(review.keranjang_id)}
-                          className={`px-4 py-1 rounded-md text-white text-xs ${
-                            review.appearance ? 'bg-green-500' : 'bg-gray-500'
-                          }`}
-                        >
-                          {review.appearance && <FaCheck className="inline mr-1" />}
-                          {review.appearance ? 'YA' : 'JANGAN'}
-                        </button>
-                      </td>
                     </tr>
                   ))
                 )}

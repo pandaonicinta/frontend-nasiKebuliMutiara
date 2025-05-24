@@ -11,6 +11,7 @@ import profile1 from '../assets/images/profile1.jpg';
 import profile2 from '../assets/images/profile2.jpg';
 import profile3 from '../assets/images/profile3.jpg';
 import discount from '../assets/images/diskon.png';
+import nasikebuli from '../assets/images/NasiKebuliAyam.png'; 
 import nampanayam from '../assets/images/PaketNampanAyam.png';
 import nampankambing from '../assets/images/PaketNampanKambing.png';
 import nampansapi from '../assets/images/PaketNampanSapi.png';
@@ -35,6 +36,15 @@ const Home = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   
+  // User profile state
+  const [userProfile, setUserProfile] = useState({
+    profilePhoto: null,
+    name: '',
+    role: '',
+    initials: ''
+  });
+  const [isProfileLoading, setIsProfileLoading] = useState(false);
+  
   const cartContext = useContext(CartContext);
   const cartCount = cartContext?.cartCount || 0;
   const setCartCount = cartContext?.setCartCount;
@@ -43,7 +53,7 @@ const Home = () => {
   const API_URL = 'http://kebabmutiara.xyz';
   
   const categories = [
-    { id: 1, name: "Nasi Kebuli", image: foto, slug: "nasi-kebuli" },
+    { id: 1, name: "Nasi Kebuli", image: nasikebuli, slug: "nasi-kebuli" },
     { id: 2, name: "Paket Nampan Ayam", image: nampanayam, slug: "paket-nampan-ayam" },
     { id: 3, name: "Paket Nampan Kambing", image: nampankambing, slug: "paket-nampan-kambing" },
     { id: 4, name: "Paket Nampan Sapi", image: nampansapi, slug: "paket-nampan-sapi" }
@@ -61,100 +71,169 @@ const Home = () => {
     if (!price) return 'Rp. 0';
     return `Rp. ${parseInt(price).toLocaleString('id-ID')}`;
   };
-  
-  useEffect(() => {
-    const fetchPopularProducts = async () => {
-      try {
-        setIsLoading(true);
-        const response = await axios.get(`${API_URL}/api/produk`);
-        if (response.data && Array.isArray(response.data)) {
-          const kebuliKambing = response.data.find(item =>
-            item.nama_produk?.toLowerCase().includes('nasi kebuli kambing'));
-          const nampanAyam = response.data.find(item =>
-            item.nama_produk?.toLowerCase().includes('nampan kebuli ayam') ||
-            item.nama_produk?.toLowerCase().includes('paket nampan ayam'));
-          const nampanSapi = response.data.find(item =>
-            item.nama_produk?.toLowerCase().includes('nampan kebuli sapi') ||
-            item.nama_produk?.toLowerCase().includes('paket nampan sapi'));
-          const featuredItems = [];
-          
-          if (kebuliKambing) {
-            featuredItems.push({
-              id: kebuliKambing.produk_id,
-              name: kebuliKambing.nama_produk,
-              image: getImageUrl(kebuliKambing.gambar),
-              rating: kebuliKambing.rating || 4.9,
-              price: kebuliKambing.harga
-            });
-          } else {
-            featuredItems.push({
-              id: 1,
-              name: "Nasi Kebuli Kambing",
-              image: foto,
-              rating: 4.9,
-              price: 75000
-            });
-          }
-          
-          if (nampanAyam) {
-            featuredItems.push({
-              id: nampanAyam.produk_id,
-              name: nampanAyam.nama_produk,
-              image: getImageUrl(nampanAyam.gambar),
-              rating: nampanAyam.rating || 4.8,
-              price: nampanAyam.harga
-            });
-          } else {
-            featuredItems.push({
-              id: 2,
-              name: "Paket Nampan Kebuli Ayam",
-              image: nampanayam,
-              rating: 4.8,
-              price: 150000
-            });
-          }
-          
-          if (nampanSapi) {
-            featuredItems.push({
-              id: nampanSapi.produk_id,
-              name: nampanSapi.nama_produk,
-              image: getImageUrl(nampanSapi.gambar),
-              rating: nampanSapi.rating || 4.9,
-              price: nampanSapi.harga
-            });
-          } else {
-            featuredItems.push({
-              id: 3,
-              name: "Nampan Kebuli Sapi",
-              image: nampansapi,
-              rating: 4.9,
-              price: 200000
-            });
-          }
-          
-          setPopularProducts(featuredItems);
-        } else {
-          console.error('Invalid response format:', response.data);
-          setPopularProducts([
-            { id: 1, name: "Nasi Kebuli Kambing", image: foto, rating: 4.9, price: 75000 },
-            { id: 2, name: "Paket Nampan Kebuli Ayam", image: nampanayam, rating: 4.8, price: 150000 },
-            { id: 3, name: "Paket Nampan Kebuli Sapi", image: nampansapi, rating: 4.9, price: 200000 }
-          ]);
-        }
-      } catch (err) {
-        console.error("Error fetching popular products:", err);
-        setPopularProducts([
-          { id: 1, name: "Nasi Kebuli Kambing", image: foto, rating: 4.9, price: 75000 },
-          { id: 2, name: "Paket Nampan Kebuli Ayam", image: nampanayam, rating: 4.8, price: 150000 },
-          { id: 3, name: "Paket Nampan Kebuli Sapi", image: nampansapi, rating: 4.9, price: 200000 }
-        ]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+
+  const getInitials = (name) => {
+    if (!name) return 'U'; // Default to 'U' for User
+    const nameParts = name.trim().split(' ');
+    return nameParts[0].charAt(0).toUpperCase();
+  };
+
+  // Fetch user profile data
+  const fetchUserProfile = async () => {
+    const token = localStorage.getItem('authToken') || localStorage.getItem('token');
     
-    fetchPopularProducts();
-  }, [API_URL]);
+    if (!token) {
+      return;
+    }
+
+    try {
+      setIsProfileLoading(true);
+      const response = await axios.get('/aboutMe');
+
+      const userData = response.data;
+      const role = userData.role;
+      const name = userData.name;
+      const profilePhoto = userData.picture;
+
+      console.log("Fetched user data:", userData);
+
+      setUserProfile({
+        profilePhoto: profilePhoto || null,
+        name: name,
+        role: role,
+        initials: getInitials(name)
+      });
+
+      localStorage.setItem('userRole', role);
+      localStorage.setItem('userName', name);
+      
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+      setUserProfile({
+        profilePhoto: null,
+        name: localStorage.getItem('userName') || '',
+        role: localStorage.getItem('userRole') || '',
+        initials: getInitials(localStorage.getItem('userName') || '')
+      });
+    } finally {
+      setIsProfileLoading(false);
+    }
+  };
+
+  const ProfilePhoto = () => {
+    const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+    
+    if (!token) return null;
+
+    if (isProfileLoading) {
+      return (
+        <div className="w-10 h-10 bg-gray-300 rounded-full animate-pulse flex items-center justify-center">
+          <div className="w-5 h-5 bg-gray-400 rounded-full"></div>
+        </div>
+      );
+    }
+
+    if (userProfile.profilePhoto) {
+      return (
+        <div className="relative">
+          <img
+            src={userProfile.profilePhoto}
+            alt="Profile"
+            className="w-10 h-10 rounded-full object-cover border-2 border-yellow-400 hover:border-yellow-500 transition-colors cursor-pointer shadow-md"
+            onClick={handleAccountNavigation}
+            onError={(e) => {
+              // Fallback to initials if image fails to load
+              e.target.style.display = 'none';
+              e.target.nextSibling.style.display = 'flex';
+            }}
+          />
+          <div
+            className="w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center text-white font-semibold text-sm cursor-pointer hover:bg-yellow-600 transition-colors shadow-md"
+            style={{ display: 'none' }}
+            onClick={handleAccountNavigation}
+            title={userProfile.name || 'My Account'}
+          >
+            {userProfile.initials}
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div
+        className="w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center text-white font-semibold text-sm cursor-pointer hover:bg-yellow-600 transition-colors shadow-md"
+        onClick={handleAccountNavigation}
+        title={userProfile.name || 'My Account'}
+      >
+        {userProfile.initials}
+      </div>
+    );
+  };
+  
+useEffect(() => {
+  const fetchPopularProducts = async () => {
+    try {
+      setIsLoading(true);
+      
+      const reviewsResponse = await axios.get(`${API_URL}/api/allulasan`);
+      const allReviews = reviewsResponse.data;
+      
+      // Count reviews per product
+      const productReviewCount = {};
+      allReviews.forEach(review => {
+        const productId = parseInt(review.produk_id);
+        if (productReviewCount[productId]) {
+          productReviewCount[productId].reviewCount += 1;
+          productReviewCount[productId].totalRating += parseInt(review.rating_value);
+          productReviewCount[productId].name = review.nama_produk; // Use name from review
+        } else {
+          productReviewCount[productId] = {
+            id: productId,
+            name: review.nama_produk,
+            reviewCount: 1,
+            totalRating: parseInt(review.rating_value)
+          };
+        }
+      });
+      
+      // Sort by review count and get top 3
+      const sortedProducts = Object.values(productReviewCount)
+        .sort((a, b) => b.reviewCount - a.reviewCount)
+        .slice(0, 3);
+      
+      if (sortedProducts.length > 0) {
+        // Fetch product details for image and price
+        const productsResponse = await axios.get(`${API_URL}/api/produk`);
+        const allProducts = productsResponse.data;
+        
+        const popularProductsWithDetails = sortedProducts.map(product => {
+          const productDetail = allProducts.find(p => p.produk_id === product.id);         
+          const averageRating = (product.totalRating / product.reviewCount).toFixed(1);
+          
+          return {
+            id: product.id,
+            name: product.name,
+            image: productDetail ? getImageUrl(productDetail.gambar) : null,
+            rating: parseFloat(averageRating),
+            price: productDetail ? productDetail.harga : 0,
+            totalReviews: product.reviewCount
+          };
+        });
+        
+        setPopularProducts(popularProductsWithDetails);
+      } else {
+        setPopularProducts([]);
+      }
+    } catch (err) {
+      console.error("Error fetching popular products:", err);
+      setPopularProducts([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  fetchPopularProducts();
+}, [API_URL]);
   
   useEffect(() => {
     const fetchCartCount = async () => {
@@ -174,32 +253,58 @@ const Home = () => {
       fetchCartCount();
     }
   }, [setCartCount]);
+
+  // Fetch user profile when component mounts or when auth status changes
   useEffect(() => {
-    // Haven't fetched it from api yet
-    setTestimonials([
-      {
-        id: 1,
-        text: "Enak banget, bumbunya ga pelit. Besok besok bakal beli di sini lagi pasti...",
-        name: "Ciput",
-        rating: 5,
-        photo: profile1
-      },
-      {
-        id: 2,
-        text: "Gurih, enak, pas sekali dengan selera saya. Bakal jadi langganan nih...",
-        name: "Asep",
-        rating: 5,
-        photo: profile2
-      },
-      {
-        id: 3,
-        text: "ENAKK. Menu favoriteku nasi kebuli kambing, fix nanti repeat order...",
-        name: "Maman",
-        rating: 5,
-        photo: profile3 
-      }
-    ]);
+    const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+    if (token) {
+      fetchUserProfile();
+    }
   }, []);
+
+useEffect(() => {
+  const fetchReviews = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/api/allulasan`);
+      // Filter reviews to include only those with 5-star ratings
+      const fiveStarReviews = response.data.filter((review) => parseInt(review.rating_value) === 5);
+      // Group reviews by user name and select the one with the most words
+      const reviewsByUser = {};
+      fiveStarReviews.forEach((review) => {
+        if (!reviewsByUser[review.name]) {
+          reviewsByUser[review.name] = review;
+        } else {
+          // Compare by word count, pick the longest one
+          const existingReviewWordCount = reviewsByUser[review.name].comment.split(' ').length;
+          const newReviewWordCount = review.comment.split(' ').length;
+          if (newReviewWordCount > existingReviewWordCount) {
+            reviewsByUser[review.name] = review;
+          }
+        }
+      });
+      
+      setTestimonials(Object.values(reviewsByUser));
+    } catch (error) {
+      console.error('Error fetching reviews:', error);
+    }
+  };
+
+  fetchReviews();
+}, []);
+
+const checkIfTruncated = (text) => {
+  // Estimate characters per line (approximately 60-70 characters per line)
+  const estimatedCharsPerLine = 65;
+  const maxCharsForTwoLines = estimatedCharsPerLine * 2;
+  
+  return text.length > maxCharsForTwoLines;
+};
+
+  const getInitial = (name) => {
+    if (!name) return '';
+    return name.charAt(0).toUpperCase();
+  };
+
   
   const handleAddToCart = async (productId) => {
     const token = localStorage.getItem('authToken') || localStorage.getItem('token');
@@ -227,51 +332,49 @@ const Home = () => {
     }
   };
   
-  const handleAccountNavigation = () => {
+  const handleAccountNavigation = async () => {
     const token = localStorage.getItem('authToken') || localStorage.getItem('token');
-    const userRole = localStorage.getItem('userRole');
-    console.log("Button clicked! Token:", token, "UserRole:", userRole); // Debugging
     
-    if (token) {
-      if (!userRole || userRole === "undefined" || userRole === "unknown") {
-        axios.get('/aboutMe')
-          .then(response => {
-            const role = response.data.role || response.data.user?.role;
-            console.log("Fetched user role:", role);
-            if (role) {
-              localStorage.setItem('userRole', role);
-              if (role === 'admin') {
-                navigate('/admin');
-              } else if (role === 'pembeli') {
-                navigate('/customer');
-              } else {
-                console.log("Unknown user role after fetch:", role);
-                navigate('/login');
-              }
-            } else {
-              console.log("No role found in API response");
-              navigate('/login');
-            }
-          })
-          .catch(error => {
-            if (error.response && error.response.status === 404) {
-              console.error("User info endpoint not found (404)", error);
-            } else {
-              console.error("Error fetching user info:", error);
-            }
-            navigate('/login');
-          });
-      } else {
-        if (userRole === 'admin') {
-          navigate('/admin');
-        } else if (userRole === 'pembeli') {
-          navigate('/customer');
-        } else {
-          console.log("Unknown user role:", userRole);
-          navigate('/login');
-        }
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+
+    let userRole = userProfile.role || localStorage.getItem('userRole');
+    
+    // If no role or invalid role, fetch user data once
+    if (!userRole || userRole === "undefined" || userRole === "unknown") {
+      try {
+        const response = await axios.get('/aboutMe');
+        const userData = response.data;
+        userRole = userData.role;
+        
+        // Update profile state
+        setUserProfile({
+          profilePhoto: userData.picture || null,
+          name: userData.name,
+          role: userData.role,
+          initials: getInitials(userData.name)
+        });
+        
+        // Update localStorage
+        localStorage.setItem('userRole', userData.role);
+        localStorage.setItem('userName', userData.name);
+        
+      } catch (error) {
+        console.error("Error fetching user info:", error);
+        navigate('/login');
+        return;
       }
+    }
+
+    // Navigate based on role
+    if (userRole === 'admin') {
+      navigate('/admin');
+    } else if (userRole === 'pembeli') {
+      navigate('/customer');
     } else {
+      console.log("Unknown user role:", userRole);
       navigate('/login');
     }
   };
@@ -282,6 +385,9 @@ const Home = () => {
       localStorage.setItem('authToken', response.data.token);
       localStorage.setItem('userRole', response.data.user.role);
       localStorage.setItem('userName', response.data.user.name || response.data.user.username);
+      
+      // Fetch profile after login
+      await fetchUserProfile();
       
       if (response.data.user.role === 'admin') {
         navigate('/admin');
@@ -299,13 +405,18 @@ const Home = () => {
     localStorage.removeItem('userName');
     sessionStorage.clear();
     setIsAuthenticated(false);
+    setUserProfile({
+      profilePhoto: null,
+      name: '',
+      role: '',
+      initials: ''
+    });
     navigate('/login');
   };
   
   return (
     <div className="min-h-screen">
-      {/* Hero Section */}
-      <div className="bg-gradient-to-r from-[#EFECD7] via-[#FCFBF5] to-[#F9EAEA]">
+     <div className="bg-gradient-to-r from-[#EFECD7] via-[#FCFBF5] to-[#F9EAEA]">
         {/* Navbar */}
         <nav className="flex justify-between items-center px-24 py-5">
           <div>
@@ -322,12 +433,7 @@ const Home = () => {
               </span>
             </Link>
             {(localStorage.getItem('authToken') || localStorage.getItem('token')) ? (
-              <button
-                onClick={handleAccountNavigation}
-                className="px-8 py-3 bg-yellow-500 text-white rounded-full hover:bg-yellow-600 shadow-lg transition duration-300 flex items-center"
-              >
-                My Account <HiOutlineArrowNarrowRight className="ml-2" />
-              </button>
+              <ProfilePhoto />
             ) : (
               <Link to="/login" className="px-8 py-3 bg-yellow-500 text-white rounded-full hover:bg-yellow-600 shadow-lg transition duration-300 flex items-center">
                 Login <HiOutlineArrowNarrowRight className="ml-2" />
@@ -335,8 +441,7 @@ const Home = () => {
             )}
           </div>
         </nav>
-        
-        {/* Hero Section */}
+
         <section className="flex justify-between items-center px-28 py-16">
           <div className="w-1/2 pr-8">
             <div className="flex items-center mb-4">
@@ -489,45 +594,68 @@ const Home = () => {
           <p className="text-center text-gray-500 mb-12">
             Baca review dari mereka yang telah menikmati kebuli buatan tangan kami.
           </p>
-
-          <div className="flex justify-center gap-8 max-w-6xl mx-auto">
-            {testimonials.map((testimonial) => (
-                <div 
-                  key={testimonial.id} 
-                  className="bg-gray-50 rounded-xl shadow-md p-8 flex flex-col w-96 h-72"
-                >
+          
+          {/* Reviews Container */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {testimonials.map((testimonial) => {
+              const isTruncated = checkIfTruncated(testimonial.comment);
+              
+              return (
+                <div key={testimonial.id} className="bg-gray-50 rounded-xl shadow-md p-6 flex flex-col">
                   <div className="text-red-800 text-4xl font-serif mb-4">"</div>
-                  <p className="text-gray-600 mb-6 flex-grow">
-                    {testimonial.text}
-                  </p>
-                  <div className="mt-auto flex items-center">
-                    <img 
-                      src={testimonial.photo} 
-                      alt={`Foto ${testimonial.name}`} 
-                      className="w-12 h-12 rounded-full mr-4 object-cover" 
-                    />
-                    <div>
-                      <div className="flex text-yellow-400 mb-1">
-                        {[...Array(testimonial.rating)].map((_, i) => (
-                          <AiFillStar key={i} />
-                        ))}
+                  
+                  {/* Review text */}
+                  <div className="mb-6 flex-grow">
+                    <div className="text-gray-600 leading-relaxed relative" style={{ 
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                      lineHeight: '1.5',
+                      minHeight: '3rem'
+                    }}>
+                      {testimonial.comment}
+                    </div>
+                    {isTruncated && (
+                      <Link 
+                        to={`/menu/${testimonial.produk_id}`} 
+                        className="text-yellow-500 cursor-pointer hover:underline text-sm mt-1 inline-block"
+                      >
+                        ...view more
+                      </Link>
+                    )}
+                  </div>
+                  
+                  {/* User profile section - always at bottom */}
+                  <div className="mt-auto">
+                    <div className="flex items-center mb-4">
+                      <div className="w-12 h-12 flex items-center justify-center bg-red-800 text-white rounded-full mr-4">
+                        {getInitial(testimonial.name)}
                       </div>
-                      <div className="font-bold text-red-800">{testimonial.name}</div>
-                      <div className="text-sm text-gray-500">Happy Client</div>
+                      <div>
+                        <div className="flex text-yellow-400 mb-1">
+                          {[...Array(5)].map((_, i) => (
+                            <AiFillStar key={i} />
+                          ))}
+                        </div>
+                        <div className="font-bold text-red-800">{testimonial.name}</div>
+                      </div>
+                    </div>
+                    
+                    {/* Menu section - always at bottom */}
+                    <div className="text-sm">
+                      <span className="font-semibold text-gray-400 text-s">Menu:</span>
+                      <Link to={`/menu/${testimonial.produk_id}`} className="text-gray-400 text-s underline ml-1">
+                        {testimonial.nama_produk}
+                      </Link>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-          <div className="flex justify-center mt-10 space-x-2">
-            <div className="w-3 h-3 bg-red-800 rounded-full"></div>
-            <div className="w-3 h-3 bg-gray-300 rounded-full"></div>
-            <div className="w-3 h-3 bg-gray-300 rounded-full"></div>
+              );
+            })}
           </div>
         </div>
       </section>
-
-
 
         {/* Footer */}
         <footer className="bg-red-900 text-white py-8 px-6 md:px-20 lg:px-32 mt-16">
