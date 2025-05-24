@@ -207,7 +207,7 @@ const SignIn = () => {
           email: '',
           password: '',
           name: '',
-          gender: '',
+          // gender: '',
           phone: '',
           picture: null
         });
@@ -347,7 +347,7 @@ const SignIn = () => {
                   />
                 </div>
                 
-                <div>
+                {/* <div>
                   <label htmlFor="gender" className="block text-sm font-medium text-red-800 mb-2">Gender</label>
                   <select
                     id="gender"
@@ -360,9 +360,9 @@ const SignIn = () => {
                     <option value="male">Laki-laki</option>
                     <option value="female">Perempuan</option>
                   </select>
-                </div>
+                </div> */}
                 
-                <div>
+                {/* <div>
                   <label htmlFor="phone" className="block text-sm font-medium text-red-800 mb-2">Nomor Telepon</label>
                   <input
                     type="tel"
@@ -373,9 +373,9 @@ const SignIn = () => {
                     onChange={handleInputChange}
                     className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 shadow focus:outline-none focus:ring-red-500 focus:border-red-500"
                   />
-                </div>
+                </div> */}
                 
-                <div>
+                {/* <div>
                   <label htmlFor="picture" className="block text-sm font-medium text-red-800 mb-2">Foto Profil (Opsional)</label>
                   <input
                     type="file"
@@ -385,7 +385,7 @@ const SignIn = () => {
                     onChange={handleFileChange}
                     className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 shadow focus:outline-none focus:ring-red-500 focus:border-red-500"
                   />
-                </div>
+                </div> */}
               </>
             )}
             

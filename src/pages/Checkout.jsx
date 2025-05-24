@@ -316,8 +316,15 @@
     // Don't wait for response since page might redirect
     sessionStorage.removeItem('checkoutItems');
     sessionStorage.removeItem('selectedCartItemIds');
+  Swal.fire({
+    icon: 'info',
+    title: 'Pembayaran Pending',
+    text: 'Silakan selesaikan pembayaran.',
+    confirmButtonText: 'OK'
+  }).then(() => {
+    navigate('/customer');
+  });
 
-    alert('Pembayaran berhasil! Pesanan Anda telah dibuat.');
 
   } catch (error) {
     console.error('[handlePaymentSuccess] Error:', error);
@@ -527,7 +534,7 @@
                     <div>
                       <div className="flex items-center space-x-3">
                         <span className="text-red-800 font-semibold text-s">{selectedAddressDetails.label_alamat}</span>
-                        <span className="text-xs text-gray-500">{selectedAddressDetails.no_telepon}</span>
+                        {/* <span className="text-xs text-gray-500">{selectedAddressDetails.no_telepon}</span> */}
                       </div>
                       <div className="mt-2 text-gray-700 text-sm leading-snug">
                         {selectedAddressDetails.detail}

@@ -189,18 +189,18 @@ const AdminOrderDetail = () => {
       case 'on delivery':
       case 'otw':
       case 'diantar':
-        return 'ON DELIVERY';
+        return 'SEDANG DIKIRIM';
       case 'on process':
       case 'cooking':
       case 'masak':
       case 'diproses':
-        return 'COOKING';
+        return 'SEDANG DIMASAK';
       case 'delivered':
       case 'selesai':
-        return 'DELIVERED';
+        return 'SELESAI';
       case 'pending':
       case 'menunggu':
-        return 'PENDING';
+        return 'MENUNGGU';
       case 'success':
       case 'berhasil':
         return 'SUCCESS';
@@ -433,9 +433,9 @@ const AdminOrderDetail = () => {
                                 />
                               </div>
                             </div>
-                            <div className="flex-1">
+                            <div className="flex-1 ">
                               <h4 className="text-xs font-bold">{item.nama_produk}</h4>
-                              <p className="text-xs text-gray-500">Size: {item.ukuran}</p>
+                              {/* <p className="text-xs text-gray-500">Size: {item.ukuran}</p> */}
                             </div>
                             <div className="flex flex-col items-end">
                               <span className="text-xs">{item.quantity}x</span>

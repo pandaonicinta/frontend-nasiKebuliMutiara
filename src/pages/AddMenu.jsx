@@ -273,7 +273,7 @@ const AddMenu = () => {
             <p className="text-gray-500 text-xs mt-1">Enter the price without 'Rp.' prefix</p>
           </div>
           
-          <div className="mb-6">
+          {/* <div className="mb-6">
             <label className="block text-red-800 font-medium mb-2">Ukuran*</label>
             <select
               name="ukuran"
@@ -285,7 +285,7 @@ const AddMenu = () => {
               <option value="M">Sedang (M)</option>
               <option value="L">Besar (L)</option>
             </select>
-          </div>
+          </div> */}
           
           <div className="mb-6">
             <label className="block text-red-800 font-medium mb-2">Stok*</label>

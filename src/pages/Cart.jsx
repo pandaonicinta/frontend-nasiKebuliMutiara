@@ -497,9 +497,9 @@ const handleIncreaseQuantity = (id, size, currentQty) => handleChangeQuantity(id
                             className="w-16 h-16 object-cover rounded-md"
                             onError={(e) => { e.target.onerror = null; e.target.src = foto; }}
                           />
-                          <div className="pr-2">
+                          <div className="pr-2 flex items-center">
                             <h3 className="font-semibold text-gray-800 text-sm">{item.name}</h3>
-                            {item.size && <p className="text-xs text-gray-500">Ukuran: {item.size}</p>}
+                            {/* {item.size && <p className="text-xs text-gray-500">Ukuran: {item.size}</p>} */}
                           </div>
                         </div>
                         <div className="col-span-2 text-gray-700 text-sm">{formatPrice(item.price)}</div>

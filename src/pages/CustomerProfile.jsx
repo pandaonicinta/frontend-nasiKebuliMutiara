@@ -591,18 +591,18 @@ const CustomerProfile = () => {
                           <span className="text-gray-500 italic">Kata Sandi dienskripsi</span>
                         </div>
                       </div>
-                      <div className="mb-6">
+                      {/* <div className="mb-6">
                         <h3 className="text-red-800 font-medium mb-2">Jenis Kelamin</h3>
                         <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 shadow">
                           {displayGender()}
                         </div>
-                      </div>
-                      <div className="mb-6">
+                      </div> */}
+                      {/* <div className="mb-6">
                         <h3 className="text-red-800 font-medium mb-2">No. HP</h3>
                         <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 shadow">
                           {profile.phone || 'Not provided'}
                         </div>
-                      </div>
+                      </div> */}
                     </div>
                     <div className="flex justify-end">
                       <button

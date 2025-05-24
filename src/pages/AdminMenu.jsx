@@ -162,7 +162,6 @@ const AdminMenu = () => {
                     <th className="py-2 px-3 text-xs">NAMA</th>
                     <th className="py-2 px-3 text-xs">KATEGORI</th>
                     <th className="py-2 px-3 text-xs">DESKRIPSI</th>
-                    <th className="py-2 px-3 text-xs">UKURAN</th>
                     <th className="py-2 px-3 text-xs">HARGA</th>
                     <th className="py-2 px-3 text-xs">STOK</th>
                     <th className="py-2 px-3 text-xs">FOTO</th>
@@ -188,7 +187,6 @@ const AdminMenu = () => {
                             ? `${menu.deskripsi.substring(0, 50)}...`
                             : menu.deskripsi || 'No description'}
                         </td>
-                        <td className="py-2 px-3 text-xs text-red-800">{menu.ukuran}</td>
                         <td className="py-2 px-3 text-xs text-red-800">{formatCurrency(menu.harga)}</td>
                         <td className="py-2 px-3 text-xs text-red-800">{menu.stok}</td>
                         <td className="py-2 px-3">
