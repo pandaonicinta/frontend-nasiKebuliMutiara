@@ -17,18 +17,18 @@ const LegendControl = () => {
     legend.onAdd = () => {
       const div = L.DomUtil.create("div", "legend");
       div.innerHTML = `
-    <h3><center>Legend</center></h3><br />
+    <h3><center>Legenda</center></h3>
 <div style="display: flex; align-items: center; gap: 8px;">
-  <img src="${successImg}" style="width: 20px; height: 20px;" /> Completed
+  <img src="${successImg}" style="width: 20px; height: 20px;" /> Selesai
 </div>
 <div style="display: flex; align-items: center; gap: 8px;">
-  <img src="${otwImg}" style="width: 20px; height: 20px;" /> On Deliver
+  <img src="${otwImg}" style="width: 20px; height: 20px;" /> Sedang Dikirim
 </div>
 <div style="display: flex; align-items: center; gap: 8px;">
-  <img src="${pendingImg}" style="width: 20px; height: 20px;" /> On Process
+  <img src="${pendingImg}" style="width: 20px; height: 20px;" /> Sedang Dimasak
 </div>
 <div style="display: flex; align-items: center; gap: 8px;">
-  <img src="${failedImg}" style="width: 20px; height: 20px;" /> Canceled
+  <img src="${failedImg}" style="width: 20px; height: 20px;" /> Dibatalkan
 </div>
 <div style="display: flex; align-items: center; gap: 8px;">
   <img src="${shopImg}" style="width: 20px; height: 20px;" /> Nasi Kebuli Mutiara

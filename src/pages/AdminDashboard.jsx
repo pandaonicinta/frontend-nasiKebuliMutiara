@@ -299,7 +299,7 @@ const AdminDashboard = () => {
                     <p className="text-lg font-bold text-gray-800">{orderSummary.totalOrder}</p>
                   </div>
                   <div className="border border-red-800 rounded-lg p-2 text-center">
-                    <h5 className="text-gray-500 text-xs">SEDANG DIANTAR</h5>
+                    <h5 className="text-gray-500 text-xs">SEDANG DALAM PROSES</h5>
                     <p className="text-lg font-bold text-gray-800">{orderSummary.onDelivery}</p>
                   </div>
                   <div className="border border-red-800 rounded-lg p-2 text-center">

@@ -6,6 +6,7 @@
   import axios from 'axios';
   import logo from '../assets/images/logo.png';
   import foto from '../assets/images/foto.png';
+  import Swal from 'sweetalert2';
 
   const API_BASE_URL = 'http://kebabmutiara.xyz/api';
 
@@ -317,9 +318,9 @@
     sessionStorage.removeItem('checkoutItems');
     sessionStorage.removeItem('selectedCartItemIds');
   Swal.fire({
-    icon: 'info',
-    title: 'Pembayaran Pending',
-    text: 'Silakan selesaikan pembayaran.',
+    icon: 'success',
+    title: 'Sedang Diproses',
+    text: 'Terimakasih telah memesan.',
     confirmButtonText: 'OK'
   }).then(() => {
     navigate('/customer');
