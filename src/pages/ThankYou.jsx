@@ -15,9 +15,9 @@ const ThankYou = () => {
       </p>
       <button 
         className="bg-yellow-400 hover:bg-yellow-500 text-black px-6 py-3 rounded-full shadow-lg transition flex items-center"
-        onClick={() => navigate('/')}
+        onClick={() => navigate('/customer')}
       >
-        ← Back to Home
+        ← Lihat Pesanan
       </button>
     </div>
   );
