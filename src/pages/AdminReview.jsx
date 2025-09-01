@@ -1,10 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { FaUsers, FaCheck, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
-import aksen from '../assets/images/aksen.png';
-import AdminSidebar from './AdminSidebar';
-import axios from 'axios';
+import React, { useState, useEffect } from "react";
+import {
+  FaUsers,
+  FaCheck,
+  FaChevronLeft,
+  FaChevronRight,
+} from "react-icons/fa";
+import aksen from "../assets/images/aksen.png";
+import AdminSidebar from "./AdminSidebar";
+import axios from "axios";
 
-const API_BASE_URL = 'http://kebabmutiara.xyz/api/allulasan';
+const API_BASE_URL = "http://eggsperts.my.id/api/allulasan";
 
 const AdminReview = () => {
   const [reviews, setReviews] = useState([]);
@@ -17,14 +22,14 @@ const AdminReview = () => {
     const fetchReviews = async () => {
       try {
         setLoading(true);
-        const token = localStorage.getItem('token');
-        console.log('Token:', token);
+        const token = localStorage.getItem("token");
+        console.log("Token:", token);
 
         const response = await axios.get(API_BASE_URL, {
           headers: token ? { Authorization: `Bearer ${token}` } : undefined,
         });
 
-        console.log('API response:', response.data);
+        console.log("API response:", response.data);
 
         const data = response.data;
 
@@ -33,34 +38,38 @@ const AdminReview = () => {
 
         // Check the structure of the response data
         data.forEach((item) => {
-          console.log('Item:', item);
+          console.log("Item:", item);
 
           if (item.rating_value && item.comment) {
             allReviews.push({
               no: counter++,
               rating_id: item.rating_id,
               keranjang_id: item.id_keranjang,
-              buyer_name: item.name || 'Unknown', // Nama pembeli
-              product_name: item.nama_produk || 'Unknown Product', // Nama produk
+              buyer_name: item.name || "Unknown", // Nama pembeli
+              product_name: item.nama_produk || "Unknown Product", // Nama produk
               rating: Number(item.rating_value) || 0,
-              review: item.comment || '',
-              created_at: item.created_at || '',
-              appearance: true,  // Default appearance value
+              review: item.comment || "",
+              created_at: item.created_at || "",
+              appearance: true, // Default appearance value
             });
           }
         });
 
-        console.log('Filtered reviews:', allReviews);
+        console.log("Filtered reviews:", allReviews);
 
         if (allReviews.length === 0) {
-          setError('No reviews found.');
+          setError("No reviews found.");
         } else {
           setError(null);
         }
 
         setReviews(allReviews);
       } catch (err) {
-        setError(err.response?.data?.message || err.message || 'Failed to load reviews.');
+        setError(
+          err.response?.data?.message ||
+            err.message ||
+            "Failed to load reviews."
+        );
         setReviews([]);
       } finally {
         setLoading(false);
@@ -95,15 +104,16 @@ const AdminReview = () => {
   // Toggle appearance of a specific review based on keranjang_id
   const toggleAppearance = (keranjang_id) => {
     setReviews((prev) =>
-      prev.map((rev) =>
-        rev.keranjang_id === keranjang_id
-          ? { ...rev, appearance: !rev.appearance } // Toggle only the clicked review's appearance
-          : rev // Keep the other reviews unchanged
+      prev.map(
+        (rev) =>
+          rev.keranjang_id === keranjang_id
+            ? { ...rev, appearance: !rev.appearance } // Toggle only the clicked review's appearance
+            : rev // Keep the other reviews unchanged
       )
     );
   };
 
-  const renderStars = (rating) => '★'.repeat(rating);
+  const renderStars = (rating) => "★".repeat(rating);
 
   if (loading) {
     return (
@@ -128,8 +138,8 @@ const AdminReview = () => {
         className="absolute top-0 left-0 right-0 h-1/3 bg-red-800 z-0"
         style={{
           backgroundImage: `url(${aksen})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
+          backgroundSize: "cover",
+          backgroundPosition: "center",
         }}
       />
 
@@ -148,7 +158,9 @@ const AdminReview = () => {
           <div className="flex justify-between items-center p-4 border-b border-gray-200">
             <h3 className="font-bold text-gray-800">Semua Ulasan</h3>
             <div>
-              {error && <span className="text-red-500 text-xs mr-4">{error}</span>}
+              {error && (
+                <span className="text-red-500 text-xs mr-4">{error}</span>
+              )}
               <button
                 onClick={() => window.location.reload()}
                 className="bg-red-800 text-white px-3 py-1 rounded text-xs font-bold hover:bg-red-900 transition"
@@ -181,7 +193,10 @@ const AdminReview = () => {
                   <tbody>
                     {currentReviews.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="text-center py-4 text-gray-500">
+                        <td
+                          colSpan={5}
+                          className="text-center py-4 text-gray-500"
+                        >
                           No reviews found.
                         </td>
                       </tr>
@@ -191,11 +206,21 @@ const AdminReview = () => {
                           key={review.rating_id || review.keranjang_id}
                           className="border-b border-gray-200 text-center hover:bg-gray-50 transition-colors"
                         >
-                          <td className="py-2 px-3 text-xs w-12">{indexOfFirstReview + review.no}</td>
-                          <td className="py-2 px-3 text-xs text-red-800 font-medium w-1/6">{review.buyer_name}</td>
-                          <td className="py-2 px-3 text-xs text-gray-700 w-1/6">{review.product_name}</td>
-                          <td className="py-2 px-3 text-xs text-yellow-500 w-20">{renderStars(review.rating)}</td>
-                          <td className="py-2 px-3 text-xs text-left text-red-800 break-words">{review.review}</td>
+                          <td className="py-2 px-3 text-xs w-12">
+                            {indexOfFirstReview + review.no}
+                          </td>
+                          <td className="py-2 px-3 text-xs text-red-800 font-medium w-1/6">
+                            {review.buyer_name}
+                          </td>
+                          <td className="py-2 px-3 text-xs text-gray-700 w-1/6">
+                            {review.product_name}
+                          </td>
+                          <td className="py-2 px-3 text-xs text-yellow-500 w-20">
+                            {renderStars(review.rating)}
+                          </td>
+                          <td className="py-2 px-3 text-xs text-left text-red-800 break-words">
+                            {review.review}
+                          </td>
                         </tr>
                       ))
                     )}
@@ -207,7 +232,9 @@ const AdminReview = () => {
               {reviews.length > 0 && (
                 <div className="flex justify-between items-center p-4 border-t border-gray-200">
                   <div className="text-sm text-gray-600">
-                    Menampilkan {indexOfFirstReview + 1} - {Math.min(indexOfLastReview, reviews.length)} dari {reviews.length} ulasan
+                    Menampilkan {indexOfFirstReview + 1} -{" "}
+                    {Math.min(indexOfLastReview, reviews.length)} dari{" "}
+                    {reviews.length} ulasan
                   </div>
                   <div className="flex items-center space-x-2">
                     <button
@@ -215,24 +242,24 @@ const AdminReview = () => {
                       disabled={currentPage === 1}
                       className={`p-2 rounded-md ${
                         currentPage === 1
-                          ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                          : 'bg-red-800 text-white hover:bg-red-900'
+                          ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                          : "bg-red-800 text-white hover:bg-red-900"
                       } transition`}
                     >
                       <FaChevronLeft className="text-xs" />
                     </button>
-                    
+
                     <span className="px-3 py-1 bg-red-800 text-white rounded-md text-sm">
                       {currentPage} / {totalPages}
                     </span>
-                    
+
                     <button
                       onClick={handleNextPage}
                       disabled={currentPage === totalPages}
                       className={`p-2 rounded-md ${
                         currentPage === totalPages
-                          ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                          : 'bg-red-800 text-white hover:bg-red-900'
+                          ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                          : "bg-red-800 text-white hover:bg-red-900"
                       } transition`}
                     >
                       <FaChevronRight className="text-xs" />

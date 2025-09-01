@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { FaUsers, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
-import aksen from '../assets/images/aksen.png';
-import AdminSidebar from './AdminSidebar';
-import axios from 'axios';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { FaUsers, FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import aksen from "../assets/images/aksen.png";
+import AdminSidebar from "./AdminSidebar";
+import axios from "axios";
 
 const AdminCustomer = () => {
   const navigate = useNavigate();
@@ -14,9 +14,9 @@ const AdminCustomer = () => {
   const [customersPerPage] = useState(10);
 
   useEffect(() => {
-    const userRole = localStorage.getItem('userRole');
-    if (!userRole || userRole !== 'admin') {
-      navigate('/');
+    const userRole = localStorage.getItem("userRole");
+    if (!userRole || userRole !== "admin") {
+      navigate("/");
     } else {
       fetchCustomers();
     }
@@ -26,18 +26,21 @@ const AdminCustomer = () => {
     try {
       setLoading(true);
       setError(null);
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       const headers = { Authorization: `Bearer ${token}` };
 
-      const response = await axios.get('http://kebabmutiara.xyz/api/dashboard/customer', { headers });
+      const response = await axios.get(
+        "http://eggsperts.my.id/api/dashboard/customer",
+        { headers }
+      );
 
       let fetchedCustomers = response.data;
 
       setCustomers(fetchedCustomers);
       setLoading(false);
     } catch (err) {
-      console.error('Error fetching customers:', err);
-      setError('Failed to load customers. Please try again later.');
+      console.error("Error fetching customers:", err);
+      setError("Failed to load customers. Please try again later.");
       setLoading(false);
     }
   };
@@ -46,7 +49,10 @@ const AdminCustomer = () => {
   const totalPages = Math.ceil(customers.length / customersPerPage);
   const indexOfLastCustomer = currentPage * customersPerPage;
   const indexOfFirstCustomer = indexOfLastCustomer - customersPerPage;
-  const currentCustomers = customers.slice(indexOfFirstCustomer, indexOfLastCustomer);
+  const currentCustomers = customers.slice(
+    indexOfFirstCustomer,
+    indexOfLastCustomer
+  );
 
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
@@ -70,8 +76,8 @@ const AdminCustomer = () => {
         className="absolute top-0 left-0 right-0 h-1/3 bg-red-800 z-0"
         style={{
           backgroundImage: `url(${aksen})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
+          backgroundSize: "cover",
+          backgroundPosition: "center",
         }}
       ></div>
 
@@ -90,7 +96,9 @@ const AdminCustomer = () => {
           <div className="flex justify-between items-center p-4 border-b border-gray-200">
             <h3 className="font-bold text-gray-800">Daftar Pembeli</h3>
             <div>
-              {error && <span className="text-red-500 text-xs mr-4">{error}</span>}
+              {error && (
+                <span className="text-red-500 text-xs mr-4">{error}</span>
+              )}
               <button
                 onClick={fetchCustomers}
                 className="bg-red-800 text-white px-3 py-1 rounded text-xs font-bold hover:bg-red-900 transition"
@@ -99,7 +107,7 @@ const AdminCustomer = () => {
               </button>
             </div>
           </div>
-          
+
           {loading ? (
             <div className="flex justify-center items-center h-64">
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-800"></div>
@@ -124,7 +132,10 @@ const AdminCustomer = () => {
                   <tbody>
                     {currentCustomers.length === 0 ? (
                       <tr>
-                        <td colSpan="5" className="text-center py-4 text-gray-500">
+                        <td
+                          colSpan="5"
+                          className="text-center py-4 text-gray-500"
+                        >
                           Tidak ada pembeli ditemukan.
                         </td>
                       </tr>
@@ -134,20 +145,26 @@ const AdminCustomer = () => {
                           key={idx}
                           className="border-b border-gray-200 text-center hover:bg-gray-50 transition-colors"
                         >
-                          <td className="py-2 px-3 text-xs">{indexOfFirstCustomer + idx + 1}</td>
-                          <td className="py-2 px-3 text-xs text-red-800">{customer.Nama}</td>
-                          <td className="py-2 px-3 text-xs text-left text-red-800">{customer.Alamat}</td>
+                          <td className="py-2 px-3 text-xs">
+                            {indexOfFirstCustomer + idx + 1}
+                          </td>
                           <td className="py-2 px-3 text-xs text-red-800">
-                            {new Intl.NumberFormat('id-ID', {
-                              style: 'currency',
-                              currency: 'IDR',
+                            {customer.Nama}
+                          </td>
+                          <td className="py-2 px-3 text-xs text-left text-red-800">
+                            {customer.Alamat}
+                          </td>
+                          <td className="py-2 px-3 text-xs text-red-800">
+                            {new Intl.NumberFormat("id-ID", {
+                              style: "currency",
+                              currency: "IDR",
                               minimumFractionDigits: 0,
                             }).format(customer.total_spent)}
                           </td>
                           <td className="py-2 px-3 text-xs text-red-800">
-                            {new Intl.NumberFormat('id-ID', {
-                              style: 'currency',
-                              currency: 'IDR',
+                            {new Intl.NumberFormat("id-ID", {
+                              style: "currency",
+                              currency: "IDR",
                               minimumFractionDigits: 0,
                             }).format(Number(customer.last_spent))}
                           </td>
@@ -162,7 +179,9 @@ const AdminCustomer = () => {
               {customers.length > 0 && (
                 <div className="flex justify-between items-center p-4 border-t border-gray-200">
                   <div className="text-sm text-gray-600">
-                    Menampilkan {indexOfFirstCustomer + 1} - {Math.min(indexOfLastCustomer, customers.length)} dari {customers.length} pembeli
+                    Menampilkan {indexOfFirstCustomer + 1} -{" "}
+                    {Math.min(indexOfLastCustomer, customers.length)} dari{" "}
+                    {customers.length} pembeli
                   </div>
                   <div className="flex items-center space-x-2">
                     <button
@@ -170,24 +189,24 @@ const AdminCustomer = () => {
                       disabled={currentPage === 1}
                       className={`p-2 rounded-md ${
                         currentPage === 1
-                          ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                          : 'bg-red-800 text-white hover:bg-red-900'
+                          ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                          : "bg-red-800 text-white hover:bg-red-900"
                       } transition`}
                     >
                       <FaChevronLeft className="text-xs" />
                     </button>
-                    
+
                     <span className="px-3 py-1 bg-red-800 text-white rounded-md text-sm">
                       {currentPage} / {totalPages}
                     </span>
-                    
+
                     <button
                       onClick={handleNextPage}
                       disabled={currentPage === totalPages}
                       className={`p-2 rounded-md ${
                         currentPage === totalPages
-                          ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                          : 'bg-red-800 text-white hover:bg-red-900'
+                          ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                          : "bg-red-800 text-white hover:bg-red-900"
                       } transition`}
                     >
                       <FaChevronRight className="text-xs" />

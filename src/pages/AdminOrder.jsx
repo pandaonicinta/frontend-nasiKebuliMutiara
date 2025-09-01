@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { FaUsers, FaEye, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
-import aksen from '../assets/images/aksen.png';
-import AdminSidebar from './AdminSidebar';
-import axios from 'axios';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { FaUsers, FaEye, FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import aksen from "../assets/images/aksen.png";
+import AdminSidebar from "./AdminSidebar";
+import axios from "axios";
 
 const AdminOrder = () => {
   const navigate = useNavigate();
@@ -17,13 +17,13 @@ const AdminOrder = () => {
     delivered: 0,
     onDelivery: 0,
     pending: 0,
-    cooking: 0
+    cooking: 0,
   });
 
   useEffect(() => {
-    const userRole = localStorage.getItem('userRole');
-    if (!userRole || userRole !== 'admin') {
-      navigate('/');
+    const userRole = localStorage.getItem("userRole");
+    if (!userRole || userRole !== "admin") {
+      navigate("/");
     } else {
       fetchOrdersData();
     }
@@ -33,35 +33,47 @@ const AdminOrder = () => {
     try {
       setLoading(true);
       setError(null);
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       const headers = { Authorization: `Bearer ${token}` };
 
-      const summaryResponse = await axios.get('http://kebabmutiara.xyz/api/dashboard', { headers });
+      const summaryResponse = await axios.get(
+        "http://eggsperts.my.id/api/dashboard",
+        { headers }
+      );
       const totalOrders = summaryResponse.data.total_order || 0;
       const delivered = summaryResponse.data.total_delivered || 0;
 
-      const ordersResponse = await axios.get('http://kebabmutiara.xyz/api/dashboard/order', { headers });
+      const ordersResponse = await axios.get(
+        "http://eggsperts.my.id/api/dashboard/order",
+        { headers }
+      );
       let ordersData = [];
 
       if (Array.isArray(ordersResponse.data)) {
         ordersData = ordersResponse.data;
-      } else if (ordersResponse.data && ordersResponse.data.data && Array.isArray(ordersResponse.data.data)) {
+      } else if (
+        ordersResponse.data &&
+        ordersResponse.data.data &&
+        Array.isArray(ordersResponse.data.data)
+      ) {
         ordersData = ordersResponse.data.data;
-      } else if (typeof ordersResponse.data === 'object') {
-        const possibleArrays = Object.values(ordersResponse.data).filter(val => Array.isArray(val));
+      } else if (typeof ordersResponse.data === "object") {
+        const possibleArrays = Object.values(ordersResponse.data).filter(
+          (val) => Array.isArray(val)
+        );
         if (possibleArrays.length > 0) {
           ordersData = possibleArrays[0];
         }
       }
 
-      const processedOrders = ordersData.map(order => ({
+      const processedOrders = ordersData.map((order) => ({
         transaksi_id: order.transaksi_id || order.id,
         created_at: order.created_at || order.tanggal_pembelian,
-        status: order.status || 'pending',
+        status: order.status || "pending",
         total: order.total || order.total_harga || 0,
         alamat: order.alamat || {},
-        customer_name: order.alamat?.user?.name || order.nama_pembeli || 'N/A',
-        jenis_pembayaran: order.jenis_pembayaran || 'N/A'
+        customer_name: order.alamat?.user?.name || order.nama_pembeli || "N/A",
+        jenis_pembayaran: order.jenis_pembayaran || "N/A",
       }));
 
       setOrders(processedOrders);
@@ -70,27 +82,29 @@ const AdminOrder = () => {
       let cooking = 0;
       let onDelivery = 0;
 
-      processedOrders.forEach(order => {
-        const status = (order.status || '').toLowerCase().trim();
-        if (['pending', 'new order', 'paid'].includes(status)) pending++;
-        else if (['masak', 'cooking', 'on process'].includes(status)) cooking++;
-        else if (['otw', 'on deliver', 'on delivery'].includes(status)) onDelivery++;
+      processedOrders.forEach((order) => {
+        const status = (order.status || "").toLowerCase().trim();
+        if (["pending", "new order", "paid"].includes(status)) pending++;
+        else if (["masak", "cooking", "on process"].includes(status)) cooking++;
+        else if (["otw", "on deliver", "on delivery"].includes(status))
+          onDelivery++;
       });
 
-      const calculatedOnDelivery = onDelivery || (totalOrders - delivered - pending - cooking);
+      const calculatedOnDelivery =
+        onDelivery || totalOrders - delivered - pending - cooking;
 
       setSummaryData({
         totalOrders,
         delivered,
         onDelivery: calculatedOnDelivery,
         pending,
-        cooking
+        cooking,
       });
 
       setLoading(false);
     } catch (err) {
-      console.error('Error fetching orders:', err);
-      setError('Failed to load orders. Please try again later.');
+      console.error("Error fetching orders:", err);
+      setError("Failed to load orders. Please try again later.");
       setLoading(false);
     }
   };
@@ -118,85 +132,101 @@ const AdminOrder = () => {
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
+    if (!dateString) return "N/A";
     try {
       const date = new Date(dateString);
-      if (isNaN(date.getTime())) return 'Invalid Date';
+      if (isNaN(date.getTime())) return "Invalid Date";
 
       const day = date.getDate();
       const monthNames = [
-        'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-        'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "Mei",
+        "Jun",
+        "Jul",
+        "Agu",
+        "Sep",
+        "Okt",
+        "Nov",
+        "Des",
       ];
       const month = monthNames[date.getMonth()];
       const year = date.getFullYear();
 
-      const hours = date.getHours().toString().padStart(2, '0');
-      const minutes = date.getMinutes().toString().padStart(2, '0');
+      const hours = date.getHours().toString().padStart(2, "0");
+      const minutes = date.getMinutes().toString().padStart(2, "0");
 
       return `${day}-${month}-${year} ${hours}:${minutes}`;
     } catch (e) {
-      console.error('Error formatting date:', e);
-      return 'Format Error';
+      console.error("Error formatting date:", e);
+      return "Format Error";
     }
   };
 
   const formatCurrency = (amount) => {
-    if (amount === undefined || amount === null) return 'Rp 0';
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0
+    if (amount === undefined || amount === null) return "Rp 0";
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      minimumFractionDigits: 0,
     }).format(amount);
   };
 
   const getStatusBadgeClass = (status) => {
-    if (!status) return 'bg-gray-500 text-white text-xs px-4 py-1 rounded-md w-24 inline-block';
+    if (!status)
+      return "bg-gray-500 text-white text-xs px-4 py-1 rounded-md w-24 inline-block";
 
     const s = status.toLowerCase().trim();
-    if (['delivered', 'sampai'].includes(s)) {
-      return 'bg-green-500 text-white text-xs px-4 py-1 rounded-md w-24 inline-block';
+    if (["delivered", "sampai"].includes(s)) {
+      return "bg-green-500 text-white text-xs px-4 py-1 rounded-md w-24 inline-block";
     }
-    if (['on delivery', 'otw', 'on deliver'].includes(s)) {
-      return 'bg-blue-500 text-white text-xs px-4 py-1 rounded-md w-24 inline-block';
+    if (["on delivery", "otw", "on deliver"].includes(s)) {
+      return "bg-blue-500 text-white text-xs px-4 py-1 rounded-md w-24 inline-block";
     }
-    if (['new order', 'pending', 'paid'].includes(s)) {
-      return 'bg-red-500 text-white text-xs px-4 py-1 rounded-md w-24 inline-block';
+    if (["new order", "pending", "paid"].includes(s)) {
+      return "bg-red-500 text-white text-xs px-4 py-1 rounded-md w-24 inline-block";
     }
-    if (['masak', 'cooking', 'on process'].includes(s)) {
-      return 'bg-yellow-500 text-white text-xs px-4 py-1 rounded-md w-24 inline-block';
+    if (["masak", "cooking", "on process"].includes(s)) {
+      return "bg-yellow-500 text-white text-xs px-4 py-1 rounded-md w-24 inline-block";
     }
-    return 'bg-gray-500 text-white text-xs px-4 py-1 rounded-md w-24 inline-block';
+    return "bg-gray-500 text-white text-xs px-4 py-1 rounded-md w-24 inline-block";
   };
 
   const getDisplayStatus = (status) => {
-    if (!status) return 'UNKNOWN';
+    if (!status) return "UNKNOWN";
 
     const s = status.toLowerCase().trim();
-    if (s === 'sampai' || s === 'delivered') return 'SELESAI';
-    if (['otw', 'on delivery', 'on deliver'].includes(s)) return 'SEDANG DIANTAR';
-    if (['masak', 'cooking', 'on process'].includes(s)) return 'DIMASAK';
-    if (['pending', 'paid', 'new order'].includes(s)) return 'PESANAN BARU';
+    if (s === "sampai" || s === "delivered") return "SELESAI";
+    if (["otw", "on delivery", "on deliver"].includes(s))
+      return "SEDANG DIANTAR";
+    if (["masak", "cooking", "on process"].includes(s)) return "DIMASAK";
+    if (["pending", "paid", "new order"].includes(s)) return "PESANAN BARU";
     return status.toUpperCase();
   };
 
   const getPaymentTypeBadgeClass = (paymentType) => {
-    if (!paymentType || paymentType === 'N/A') {
-      return 'bg-gray-500 text-white text-xs px-3 py-1 rounded-md inline-block';
+    if (!paymentType || paymentType === "N/A") {
+      return "bg-gray-500 text-white text-xs px-3 py-1 rounded-md inline-block";
     }
 
     const type = paymentType.toLowerCase().trim();
-    if (['cash', 'tunai', 'cod'].includes(type)) {
-      return 'bg-green-600 text-white text-xs px-3 py-1 rounded-md inline-block';
+    if (["cash", "tunai", "cod"].includes(type)) {
+      return "bg-green-600 text-white text-xs px-3 py-1 rounded-md inline-block";
     }
-    if (['transfer', 'bank', 'qris', 'e-wallet', 'gopay', 'ovo', 'dana'].includes(type)) {
-      return 'bg-blue-600 text-white text-xs px-3 py-1 rounded-md inline-block';
+    if (
+      ["transfer", "bank", "qris", "e-wallet", "gopay", "ovo", "dana"].includes(
+        type
+      )
+    ) {
+      return "bg-blue-600 text-white text-xs px-3 py-1 rounded-md inline-block";
     }
-    return 'bg-purple-600 text-white text-xs px-3 py-1 rounded-md inline-block';
+    return "bg-purple-600 text-white text-xs px-3 py-1 rounded-md inline-block";
   };
 
   const getDisplayPaymentType = (paymentType) => {
-    if (!paymentType || paymentType === 'N/A') return 'N/A';
+    if (!paymentType || paymentType === "N/A") return "N/A";
     return paymentType.toUpperCase();
   };
 
@@ -206,20 +236,47 @@ const AdminOrder = () => {
 
   const handleStatusChange = async (orderId, currentStatus) => {
     if (!currentStatus) {
-      setError('Cannot update order with unknown status');
+      setError("Cannot update order with unknown status");
       return;
     }
 
     const statusMap = {
-      pending: { endpoint: `http://kebabmutiara.xyz/api/masak/${orderId}`, nextStatus: 'on process' },
-      'new order': { endpoint: `http://kebabmutiara.xyz/api/masak/${orderId}`, nextStatus: 'on process' },
-      paid: { endpoint: `http://kebabmutiara.xyz/api/masak/${orderId}`, nextStatus: 'on process' },
-      'on process': { endpoint: `http://kebabmutiara.xyz/api/otw/${orderId}`, nextStatus: 'on deliver' },
-      cooking: { endpoint: `http://kebabmutiara.xyz/api/otw/${orderId}`, nextStatus: 'on deliver' },
-      masak: { endpoint: `http://kebabmutiara.xyz/api/otw/${orderId}`, nextStatus: 'on deliver' },
-      otw: { endpoint: `http://kebabmutiara.xyz/api/sampai/${orderId}`, nextStatus: 'delivered' },
-      'on delivery': { endpoint: `http://kebabmutiara.xyz/api/sampai/${orderId}`, nextStatus: 'delivered' },
-      'on deliver': { endpoint: `http://kebabmutiara.xyz/api/sampai/${orderId}`, nextStatus: 'delivered' }
+      pending: {
+        endpoint: `http://eggsperts.my.id/api/masak/${orderId}`,
+        nextStatus: "on process",
+      },
+      "new order": {
+        endpoint: `http://eggsperts.my.id/api/masak/${orderId}`,
+        nextStatus: "on process",
+      },
+      paid: {
+        endpoint: `http://eggsperts.my.id/api/masak/${orderId}`,
+        nextStatus: "on process",
+      },
+      "on process": {
+        endpoint: `http://eggsperts.my.id/api/otw/${orderId}`,
+        nextStatus: "on deliver",
+      },
+      cooking: {
+        endpoint: `http://eggsperts.my.id/api/otw/${orderId}`,
+        nextStatus: "on deliver",
+      },
+      masak: {
+        endpoint: `http://eggsperts.my.id/api/otw/${orderId}`,
+        nextStatus: "on deliver",
+      },
+      otw: {
+        endpoint: `http://eggsperts.my.id/api/sampai/${orderId}`,
+        nextStatus: "delivered",
+      },
+      "on delivery": {
+        endpoint: `http://eggsperts.my.id/api/sampai/${orderId}`,
+        nextStatus: "delivered",
+      },
+      "on deliver": {
+        endpoint: `http://eggsperts.my.id/api/sampai/${orderId}`,
+        nextStatus: "delivered",
+      },
     };
 
     const normalizedStatus = currentStatus.toLowerCase().trim();
@@ -232,17 +289,17 @@ const AdminOrder = () => {
 
     try {
       setError(null);
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       await axios.get(flow.endpoint, {
         headers: {
-          Authorization: `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       await fetchOrdersData();
     } catch (err) {
-      console.error('Error updating order status:', err);
-      setError('Failed to update order status. Please try again.');
+      console.error("Error updating order status:", err);
+      setError("Failed to update order status. Please try again.");
     }
   };
 
@@ -252,8 +309,8 @@ const AdminOrder = () => {
         className="absolute top-0 left-0 right-0 h-1/3 bg-red-800 z-0"
         style={{
           backgroundImage: `url(${aksen})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center'
+          backgroundSize: "cover",
+          backgroundPosition: "center",
         }}
       ></div>
 
@@ -273,7 +330,9 @@ const AdminOrder = () => {
             <div className="p-3">
               <p className="text-xs text-gray-500">TOTAL PESANAN</p>
               <div className="flex justify-between items-center mt-2">
-                <h2 className="text-lg font-bold text-gray-800">{summaryData.totalOrders}</h2>
+                <h2 className="text-lg font-bold text-gray-800">
+                  {summaryData.totalOrders}
+                </h2>
                 <div className="p-2 bg-gray-800 text-white rounded">
                   <FaUsers className="text-xs" />
                 </div>
@@ -285,7 +344,9 @@ const AdminOrder = () => {
             <div className="p-3">
               <p className="text-xs text-gray-500">PESANAN BARU</p>
               <div className="flex justify-between items-center mt-2">
-                <h2 className="text-lg font-bold text-gray-800">{summaryData.pending}</h2>
+                <h2 className="text-lg font-bold text-gray-800">
+                  {summaryData.pending}
+                </h2>
                 <div className="p-2 bg-red-500 text-white rounded">
                   <FaUsers className="text-xs" />
                 </div>
@@ -297,7 +358,9 @@ const AdminOrder = () => {
             <div className="p-3">
               <p className="text-xs text-gray-500">DIMASAK</p>
               <div className="flex justify-between items-center mt-2">
-                <h2 className="text-lg font-bold text-gray-800">{summaryData.cooking}</h2>
+                <h2 className="text-lg font-bold text-gray-800">
+                  {summaryData.cooking}
+                </h2>
                 <div className="p-2 bg-yellow-500 text-white rounded">
                   <FaUsers className="text-xs" />
                 </div>
@@ -309,7 +372,9 @@ const AdminOrder = () => {
             <div className="p-3">
               <p className="text-xs text-gray-500">SEDANG DIANTAR</p>
               <div className="flex justify-between items-center mt-2">
-                <h2 className="text-lg font-bold text-gray-800">{summaryData.onDelivery}</h2>
+                <h2 className="text-lg font-bold text-gray-800">
+                  {summaryData.onDelivery}
+                </h2>
                 <div className="p-2 bg-blue-500 text-white rounded">
                   <FaUsers className="text-xs" />
                 </div>
@@ -321,7 +386,9 @@ const AdminOrder = () => {
             <div className="p-3">
               <p className="text-xs text-gray-500">SELESAI</p>
               <div className="flex justify-between items-center mt-2">
-                <h2 className="text-lg font-bold text-gray-800">{summaryData.delivered}</h2>
+                <h2 className="text-lg font-bold text-gray-800">
+                  {summaryData.delivered}
+                </h2>
                 <div className="p-2 bg-green-500 text-white rounded">
                   <FaUsers className="text-xs" />
                 </div>
@@ -334,7 +401,9 @@ const AdminOrder = () => {
           <div className="flex justify-between items-center p-4 border-b border-gray-200">
             <h3 className="font-bold text-gray-800">Daftar Pesanan</h3>
             <div>
-              {error && <span className="text-red-500 text-xs mr-4">{error}</span>}
+              {error && (
+                <span className="text-red-500 text-xs mr-4">{error}</span>
+              )}
               <button
                 onClick={() => fetchOrdersData()}
                 className="bg-red-800 text-white px-3 py-1 rounded text-xs font-bold hover:bg-red-900 transition"
@@ -371,15 +440,17 @@ const AdminOrder = () => {
                     {currentOrders.length === 0 ? (
                       <tr>
                         <td colSpan="7" className="text-center py-4">
-                          No orders found.{' '}
+                          No orders found.{" "}
                           {summaryData.totalOrders > 0
                             ? `There should be ${summaryData.totalOrders} orders according to the dashboard. Please check the API connection.`
-                            : 'No orders are available at this time.'}
+                            : "No orders are available at this time."}
                         </td>
                       </tr>
                     ) : (
                       currentOrders.map((order) => {
-                        const status = (order.status || '').toLowerCase().trim();
+                        const status = (order.status || "")
+                          .toLowerCase()
+                          .trim();
                         return (
                           <tr
                             key={order.transaksi_id}
@@ -387,43 +458,98 @@ const AdminOrder = () => {
                           >
                             <td
                               className="py-2 px-3 text-xs text-red-800 cursor-pointer"
-                              onClick={() => handleOrderClick(order.transaksi_id)}
+                              onClick={() =>
+                                handleOrderClick(order.transaksi_id)
+                              }
                             >
                               #{order.transaksi_id}
                             </td>
-                            <td className="py-2 px-3 text-xs text-red-800">{formatDate(order.created_at)}</td>
-                            <td className="py-2 px-3 text-xs text-red-800">{order.customer_name}</td>
-                            <td className="py-2 px-3 text-xs text-red-800">{formatCurrency(order.total)}</td>
+                            <td className="py-2 px-3 text-xs text-red-800">
+                              {formatDate(order.created_at)}
+                            </td>
+                            <td className="py-2 px-3 text-xs text-red-800">
+                              {order.customer_name}
+                            </td>
+                            <td className="py-2 px-3 text-xs text-red-800">
+                              {formatCurrency(order.total)}
+                            </td>
                             <td className="py-2 px-3">
-                              <span className={getPaymentTypeBadgeClass(order.jenis_pembayaran)}>
+                              <span
+                                className={getPaymentTypeBadgeClass(
+                                  order.jenis_pembayaran
+                                )}
+                              >
                                 {getDisplayPaymentType(order.jenis_pembayaran)}
                               </span>
                             </td>
                             <td className="py-2 px-3 flex justify-center">
-                              <span className={`${getStatusBadgeClass(order.status)} uppercase`}>
+                              <span
+                                className={`${getStatusBadgeClass(
+                                  order.status
+                                )} uppercase`}
+                              >
                                 {getDisplayStatus(order.status)}
                               </span>
                             </td>
                             <td className="py-2 px-3 align-top">
                               <div className="flex flex-col gap-1">
-                                {['pending', 'new order', 'paid', 'masak', 'cooking', 'on process', 'otw', 'on delivery', 'on deliver'].includes(status) && (
+                                {[
+                                  "pending",
+                                  "new order",
+                                  "paid",
+                                  "masak",
+                                  "cooking",
+                                  "on process",
+                                  "otw",
+                                  "on delivery",
+                                  "on deliver",
+                                ].includes(status) && (
                                   <button
-                                    onClick={() => handleStatusChange(order.transaksi_id, order.status)}
+                                    onClick={() =>
+                                      handleStatusChange(
+                                        order.transaksi_id,
+                                        order.status
+                                      )
+                                    }
                                     className="bg-red-800 text-white text-xs px-2 py-1 rounded-md hover:bg-red-900 transition w-full"
                                   >
                                     {(() => {
-                                      if (['pending', 'new order', 'paid'].includes(status)) return 'Mulai Memasak';
-                                      if (['masak', 'cooking', 'on process'].includes(status)) return 'Kirim';
-                                      if (['otw', 'on delivery', 'on deliver'].includes(status)) return 'Tandai Selesai';
-                                      return '';
+                                      if (
+                                        [
+                                          "pending",
+                                          "new order",
+                                          "paid",
+                                        ].includes(status)
+                                      )
+                                        return "Mulai Memasak";
+                                      if (
+                                        [
+                                          "masak",
+                                          "cooking",
+                                          "on process",
+                                        ].includes(status)
+                                      )
+                                        return "Kirim";
+                                      if (
+                                        [
+                                          "otw",
+                                          "on delivery",
+                                          "on deliver",
+                                        ].includes(status)
+                                      )
+                                        return "Tandai Selesai";
+                                      return "";
                                     })()}
                                   </button>
                                 )}
                                 <button
-                                  onClick={() => handleOrderClick(order.transaksi_id)}
+                                  onClick={() =>
+                                    handleOrderClick(order.transaksi_id)
+                                  }
                                   className="bg-gray-200 text-gray-800 text-xs px-2 py-1 rounded-md hover:bg-gray-300 transition w-full"
                                 >
-                                  <FaEye className="inline text-xs mr-1" /> Lihat
+                                  <FaEye className="inline text-xs mr-1" />{" "}
+                                  Lihat
                                 </button>
                               </div>
                             </td>
@@ -439,7 +565,9 @@ const AdminOrder = () => {
               {orders.length > 0 && (
                 <div className="flex justify-between items-center p-4 border-t border-gray-200">
                   <div className="text-sm text-gray-600">
-                    Menampilkan {indexOfFirstOrder + 1} - {Math.min(indexOfLastOrder, orders.length)} dari {orders.length} pesanan
+                    Menampilkan {indexOfFirstOrder + 1} -{" "}
+                    {Math.min(indexOfLastOrder, orders.length)} dari{" "}
+                    {orders.length} pesanan
                   </div>
                   <div className="flex items-center space-x-2">
                     <button
@@ -447,24 +575,24 @@ const AdminOrder = () => {
                       disabled={currentPage === 1}
                       className={`p-2 rounded-md ${
                         currentPage === 1
-                          ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                          : 'bg-red-800 text-white hover:bg-red-900'
+                          ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                          : "bg-red-800 text-white hover:bg-red-900"
                       } transition`}
                     >
                       <FaChevronLeft className="text-xs" />
                     </button>
-                    
+
                     <span className="px-3 py-1 bg-red-800 text-white rounded-md text-sm">
                       {currentPage} / {totalPages}
                     </span>
-                    
+
                     <button
                       onClick={handleNextPage}
                       disabled={currentPage === totalPages}
                       className={`p-2 rounded-md ${
                         currentPage === totalPages
-                          ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                          : 'bg-red-800 text-white hover:bg-red-900'
+                          ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                          : "bg-red-800 text-white hover:bg-red-900"
                       } transition`}
                     >
                       <FaChevronRight className="text-xs" />

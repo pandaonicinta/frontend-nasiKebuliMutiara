@@ -1,24 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { FaUser } from 'react-icons/fa';
-import CustomerSidebar from './CustomerSidebar';
-import aksen from '../assets/images/aksen.png';
-import axios from 'axios';
-import defaultImage from '../assets/images/foto.png';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { FaUser } from "react-icons/fa";
+import CustomerSidebar from "./CustomerSidebar";
+import aksen from "../assets/images/aksen.png";
+import axios from "axios";
+import defaultImage from "../assets/images/foto.png";
 
-const API_BASE_URL = 'http://kebabmutiara.xyz/api';
+const API_BASE_URL = "http://eggsperts.my.id/api";
 
 const CustomerReview = () => {
   const navigate = useNavigate();
-  const customerName = localStorage.getItem('userName') || 'Customer';
+  const customerName = localStorage.getItem("userName") || "Customer";
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const userRole = localStorage.getItem('userRole');
-    if (!userRole || (userRole !== 'customer' && userRole !== 'pembeli')) {
-      navigate('/');
+    const userRole = localStorage.getItem("userRole");
+    if (!userRole || (userRole !== "customer" && userRole !== "pembeli")) {
+      navigate("/");
     }
   }, [navigate]);
 
@@ -26,24 +26,28 @@ const CustomerReview = () => {
     const fetchOrders = async () => {
       try {
         setLoading(true);
-        const token = localStorage.getItem('token');
-        if (!token) throw new Error('Authentication token not found');
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("Authentication token not found");
 
         const response = await axios.get(`${API_BASE_URL}/ulasan`, {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         });
 
         const ordersData = response.data;
 
         if (!Array.isArray(ordersData) || ordersData.length === 0) {
-          setError('You have no delivered orders yet.');
+          setError("You have no delivered orders yet.");
           setOrders([]);
         } else {
           setOrders(ordersData);
           setError(null);
         }
       } catch (err) {
-        setError(err.response?.data?.message || err.message || 'Failed to load delivered orders.');
+        setError(
+          err.response?.data?.message ||
+            err.message ||
+            "Failed to load delivered orders."
+        );
         setOrders([]);
       } finally {
         setLoading(false);
@@ -54,21 +58,31 @@ const CustomerReview = () => {
   }, []);
 
   const formatDate = (dateString) => {
-    if (!dateString) return '-';
+    if (!dateString) return "-";
     try {
       const date = new Date(dateString);
-      if (isNaN(date.getTime())) return 'Invalid Date';
+      if (isNaN(date.getTime())) return "Invalid Date";
 
       const day = date.getDate();
       const monthNames = [
-        'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-        'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "Mei",
+        "Jun",
+        "Jul",
+        "Agu",
+        "Sep",
+        "Okt",
+        "Nov",
+        "Des",
       ];
       const month = monthNames[date.getMonth()];
       const year = date.getFullYear();
 
-      const hours = date.getHours().toString().padStart(2, '0');
-      const minutes = date.getMinutes().toString().padStart(2, '0');
+      const hours = date.getHours().toString().padStart(2, "0");
+      const minutes = date.getMinutes().toString().padStart(2, "0");
 
       return `${day}-${month}-${year} ${hours}:${minutes}`;
     } catch {
@@ -78,36 +92,42 @@ const CustomerReview = () => {
 
   const getImageUrl = (imagePath) => {
     if (!imagePath) return defaultImage;
-    if (imagePath.startsWith('http')) return imagePath;
-    return `${API_BASE_URL.replace('/api', '')}/storage/${imagePath}`;
+    if (imagePath.startsWith("http")) return imagePath;
+    return `${API_BASE_URL.replace("/api", "")}/storage/${imagePath}`;
   };
 
   const getOrderItems = (order) => {
     if (!order || !order.keranjang) return [];
-    return order.keranjang.map(item => ({
-      nama: item.nama_produk || 'Unknown',
-      ukuran: item.ukuran || '-',
+    return order.keranjang.map((item) => ({
+      nama: item.nama_produk || "Unknown",
+      ukuran: item.ukuran || "-",
       jumlah: item.quantity || 1,
       harga: item.harga || 0,
       gambar: item.gambar || null,
       keranjang_id: item.keranjang_id,
       israted: item.israted,
       rating: item.rating?.rating_value || null,
-      comment: item.rating?.comment || '',
+      comment: item.rating?.comment || "",
     }));
   };
 
-  const getOrderId = (order) => order.transaksi_id || order.id || '';
+  const getOrderId = (order) => order.transaksi_id || order.id || "";
 
   const handleViewReview = (keranjangId, product) => {
-    navigate(`/customer/review/${keranjangId}`, { state: { product, viewOnly: true } });
+    navigate(`/customer/review/${keranjangId}`, {
+      state: { product, viewOnly: true },
+    });
   };
 
   return (
     <div className="flex min-h-screen bg-gray-100">
       <div
         className="absolute top-0 left-0 right-0 h-1/3 bg-red-800 z-0"
-        style={{ backgroundImage: `url(${aksen})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+        style={{
+          backgroundImage: `url(${aksen})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
       />
 
       <CustomerSidebar activePage="review" />
@@ -123,7 +143,9 @@ const CustomerReview = () => {
 
         <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-6">
           <div className="p-4">
-            <h2 className="text-base font-bold text-gray-800">Lihat Ulasan Saya</h2>
+            <h2 className="text-base font-bold text-gray-800">
+              Lihat Ulasan Saya
+            </h2>
           </div>
           <div className="h-0.5 bg-red-800"></div>
 
@@ -140,7 +162,7 @@ const CustomerReview = () => {
           ) : error ? (
             <div className="p-8 text-center">
               <p className="text-red-600">{error}</p>
-              {error !== 'You have no delivered orders yet.' && (
+              {error !== "You have no delivered orders yet." && (
                 <button
                   onClick={() => window.location.reload()}
                   className="mt-2 bg-red-800 text-white px-4 py-2 rounded text-sm"
@@ -150,7 +172,9 @@ const CustomerReview = () => {
               )}
             </div>
           ) : orders.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">You have no delivered orders to review.</div>
+            <div className="p-8 text-center text-gray-500">
+              You have no delivered orders to review.
+            </div>
           ) : (
             orders.map((order, index) => {
               const orderId = getOrderId(order);
@@ -169,15 +193,22 @@ const CustomerReview = () => {
                               <span className="text-white text-xs">✓</span>
                             </div>
                             <span className="text-sm font-bold">Selesai</span>
-                            <span className="text-xs text-gray-500 ml-2">Selamat makan~</span>
+                            <span className="text-xs text-gray-500 ml-2">
+                              Selamat makan~
+                            </span>
                           </div>
-                          <span className="text-xs text-gray-500">{formatDate(order.tanggal_pembelian)}</span>
+                          <span className="text-xs text-gray-500">
+                            {formatDate(order.tanggal_pembelian)}
+                          </span>
                         </div>
 
                         <div className="w-full h-px bg-gray-300 my-3"></div>
 
                         {getOrderItems(order).map((item, itemIndex) => (
-                          <div key={itemIndex} className="w-full flex items-center mt-2">
+                          <div
+                            key={itemIndex}
+                            className="w-full flex items-center mt-2"
+                          >
                             <div className="w-10 mr-3" />
                             <div className="w-12 h-12 mr-3">
                               <div className="w-full h-full bg-gray-200 rounded-lg overflow-hidden">
@@ -185,28 +216,44 @@ const CustomerReview = () => {
                                   src={getImageUrl(item.gambar)}
                                   alt={item.nama}
                                   className="w-full h-full object-cover"
-                                  onError={(e) => { e.target.src = defaultImage; }}
+                                  onError={(e) => {
+                                    e.target.src = defaultImage;
+                                  }}
                                 />
                               </div>
                             </div>
                             <div className="flex-1">
                               <h4 className="text-xs font-bold">{item.nama}</h4>
-                              <p className="text-xs text-gray-500">Ukuran: {item.ukuran}</p>
+                              <p className="text-xs text-gray-500">
+                                Ukuran: {item.ukuran}
+                              </p>
                             </div>
                             <div className="w-28 text-right">
                               {item.rating ? (
                                 <button
-                                  onClick={() => handleViewReview(item.keranjang_id, item)}
+                                  onClick={() =>
+                                    handleViewReview(item.keranjang_id, item)
+                                  }
                                   className="text-xs whitespace-nowrap text-white bg-red-800 px-5 py-1 rounded mt-1 inline-flex w-28 justify-center items-center"
-                                  style={{ lineHeight: '1.2' }}
+                                  style={{ lineHeight: "1.2" }}
                                 >
                                   LIHAT ULASAN
                                 </button>
                               ) : (
                                 <button
-                                  onClick={() => navigate(`/customer/review/${item.keranjang_id}`, { state: { product: item, viewOnly: false } })}
+                                  onClick={() =>
+                                    navigate(
+                                      `/customer/review/${item.keranjang_id}`,
+                                      {
+                                        state: {
+                                          product: item,
+                                          viewOnly: false,
+                                        },
+                                      }
+                                    )
+                                  }
                                   className="text-xs whitespace-nowrap text-white bg-red-800 px-5 py-1 rounded mt-1 inline-flex w-28 justify-center items-center"
-                                  style={{ lineHeight: '1.2' }}
+                                  style={{ lineHeight: "1.2" }}
                                 >
                                   ULASAN
                                 </button>
@@ -217,7 +264,9 @@ const CustomerReview = () => {
 
                         {getOrderItems(order).length === 0 && (
                           <div className="w-full text-center py-2">
-                            <p className="text-sm text-gray-500">No items in this order</p>
+                            <p className="text-sm text-gray-500">
+                              No items in this order
+                            </p>
                           </div>
                         )}
                       </div>
